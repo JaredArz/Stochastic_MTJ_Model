@@ -19,10 +19,11 @@ J_she = 1e-3
 Jappl = 1e-3
 fsum_t = 0
 fsum_p = 0
+#e_f,_,theta_f,phi_f = ss.single_sample(Jappl,J_she,device_f.theta,device_f.phi,ki_f,tmr_f,rp_f,0)
 for i in range(num_iter):
     #print(device_f.phi)
     #print(device_f.theta)
-    e_f,_,theta_f,phi_f = ss.single_sample(Jappl,J_she,device_f.theta,device_f.phi,ki_f,tmr_f,rp_f,0)
+    e_f,_,theta_f,phi_f = ss.single_sample(Jappl,J_she,device_f.theta,device_f.phi,ki_f,tmr_f,rp_f,1)
     device_f.theta=theta_f
     device_f.phi=phi_f
     fsum_t += theta_f
