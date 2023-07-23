@@ -4,13 +4,13 @@
 ! translated from C by Alan Miller (amiller@bigpond.net.au) with edits by Jared Arzate
 ! ======================================================================================================
 module ziggurat
-   use iso_c_binding, only: sp=>c_float, dp=>c_double
    implicit none
    private
 
+   integer,parameter:: dpz = selected_real_kind(12,60)
    logical,  save            ::  initialized=.FALSE.
-   real, parameter  ::  m1=2147483648.0,   m2=2147483648.0, half=0.5
-   real             ::  dn, tn, vn, de, te, ve, q
+   real(dpz), parameter  ::  m1=2147483648.0_dpz,   m2=2147483648.0_dpz, half=0.5_dpz
+   real(dpz)             ::  dn, tn, vn, de, te, ve, q
    integer,  save            ::  iz, jz, jsr, hz
    ! ====================================================================
    ! ========= avoiding allocatable arrays for pythons sake =============
@@ -19,7 +19,7 @@ module ziggurat
    !integer, allocatable, save        :: kn(:), ke(:)
    !real, allocatable, save  :: wn(:), fn(:), we(:), fe(:)
    integer, save        :: kn(0:127), ke(0:255)
-   real, save  :: wn(0:127), fn(0:127), we(0:255), fe(0:255)
+   real(dpz), save  :: wn(0:127), fn(0:127), we(0:255), fe(0:255)
 
    PUBLIC  :: zigset, shr3, uni, rnor,get_init_status!, cleanZig
 
@@ -46,12 +46,12 @@ contains
        !allocate(kn(128))
        !allocate(ke(256))
 
-       dn=3.442619855899
-       tn=3.442619855899
-       vn=0.00991256303526217
-       de=7.697117470131487
-       te=7.697117470131487
-       ve=0.003949659822581572
+       dn=3.442619855899_dpz
+       tn=3.442619855899_dpz
+       vn=0.00991256303526217_dpz
+       de=7.697117470131487_dpz
+       te=7.697117470131487_dpz
+       ve=0.003949659822581572_dpz
 
        !  Tables for RNOR
        q = vn*exp(half*dn*dn)
@@ -59,10 +59,10 @@ contains
        kn(1) = 0
        wn(0) = q/m1
        wn(127) = dn/m1
-       fn(0) = 1.0
+       fn(0) = 1.0_dpz
        fn(127) = exp( -half*dn*dn )
        do  i = 126, 1, -1
-          dn = SQRT( -2.0 * LOG( vn/dn + exp( -half*dn*dn ) ) )
+          dn = SQRT( -2.0_dpz * LOG( vn/dn + exp( -half*dn*dn ) ) )
           kn(i+1) = int((dn/tn)*m1)
           tn = dn
           fn(i) = exp(-half*dn*dn)
@@ -98,17 +98,19 @@ contains
 
     !Generate uniformly distributed random numbers
     function uni( ) RESULT( fn_val )
-       real  ::  fn_val
+       integer,parameter:: dpz = selected_real_kind(12,60)
+       real(dpz)  ::  fn_val
 
-       fn_val = half + 0.2328306e-9 * shr3( )
+       fn_val = half + 0.2328306e-9_dpz * shr3( )
        RETURN
     end function uni
 
     !Generate random normals
     function rnor( ) RESULT( fn_val )
-       real(dp)             ::  fn_val
-       real, PARAMETER  ::  r = 3.442620
-       real             ::  x, y
+       integer,parameter:: dpz = selected_real_kind(12,60)
+       real(dpz)             ::  fn_val
+       real(dpz), PARAMETER  ::  r = 3.442620_dpz
+       real(dpz)             ::  x, y
 
        if( .NOT. initialized ) then
            print*, "ZIGGURAT NOT INITIALIZED. CALL ZIGSET(int(SEED)). EXITING."
@@ -122,7 +124,7 @@ contains
           do
              if( iz == 0 ) then
                 do
-                   x = -0.2904764* LOG( uni( ) )
+                   x = -0.2904764_dpz* LOG( uni( ) )
                    y = -LOG( uni( ) )
                    if( y+y >= x*x ) EXIT
                 end do
@@ -149,16 +151,16 @@ end module ziggurat
  
 ! slower than ziggurat, good for massively parallel operations.
 Module Box_Muller
-    use iso_c_binding, only: sp=>c_float, dp=>c_double
     implicit none
     contains
     function get_Box_Muller(mu,sig) result(r_norm)
        implicit none
+       integer,parameter:: dpz = selected_real_kind(12,60)
         
-       real(dp) :: pi=4.D0*DATAN(1.D0)
-       real(dp) :: r_norm
-       real(dp) :: u1,u2
-       real(dp),intent(in) :: mu,sig
+       real(dpz) :: pi=4.D0*DATAN(1.D0)
+       real(dpz) :: r_norm
+       real(dpz) :: u1,u2
+       real(dpz) ,intent(in) :: mu,sig
 
        !FIXME: can most likely implement a uniform dist rand for better speed here.
        call random_number(u1)
@@ -171,14 +173,14 @@ Module Box_Muller
 end Module Box_Muller
 
 Program test
-    use iso_c_binding, only: sp=>c_float, dp=>c_double
     use ziggurat
     use Box_Muller
     implicit none
-    real(dp)  :: x,zig_actual_mean,zig_std_dev,bm_actual_mean,bm_std_dev
-    real(dp)  :: T1,T2,time_zig,time_bm
-    real(dp)  :: cum_sum_mean,cum_sum_dev
-    real(dp)  :: mean_bm,sig_bm,mean_zig !not sure how to modify zig algorithm to accomdate variable mean and std dev
+    integer,parameter:: dpz = selected_real_kind(12,60)
+    real(dpz)  :: x,zig_actual_mean,zig_std_dev,bm_actual_mean,bm_std_dev
+    real(dpz)  :: T1,T2,time_zig,time_bm
+    real(dpz)  :: cum_sum_mean,cum_sum_dev
+    real(dpz)  :: mean_bm,sig_bm,mean_zig !not sure how to modify zig algorithm to accomdate variable mean and std dev
     !naive solution: do a simple range mapping
     integer :: i,num_iters=1000000
 

@@ -5,11 +5,11 @@
 ! or cycle-to-cycle variation is stored within the python dev class.
 ! -------------------------*---------*--------------------------
 
+!these variables do not change
 module SHE_MTJ_rng_params
-    use iso_c_binding, only: sp=>c_float, dp=>c_double
     implicit none
-    !these variables do not change per device
-    real(dp),parameter :: pi    = 4.0*DATAN(real(1.0,dp))
+    integer,parameter :: dp = kind(0.0d0)
+    real(dp),parameter :: pi    = real(4.0,dp)*DATAN(real(1.0,dp))
     real(dp),parameter :: uB    = 9.274e-24
     real(dp),parameter :: h_bar = 1.054e-34          
     real(dp),parameter :: u0    = pi*4e-7               
@@ -17,7 +17,6 @@ module SHE_MTJ_rng_params
     real(dp),parameter :: kb    = 1.38e-23   
     real(dp),parameter :: gammall = 2.0*u0*uB/h_bar 
     real(dp),parameter :: gammab  = gammall/u0
-
     real(dp),parameter :: t_step = 5e-11
     real(dp) :: v_pulse = 0.0
     real(dp) :: Jshe = 5e11
