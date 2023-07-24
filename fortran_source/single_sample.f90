@@ -12,12 +12,15 @@ module single_sample
         !   mimics the python function call: out,energy = dev.single_sample(Jappl,Jshe_in, self.theta, self.phi, self.Ki....)
         !
         ! --------------------------------*------------*-----------------------------------
+        !FIXME: Jshe is now device, Jappl, changes
         subroutine pulse_then_relax(energy_usage,bit,theta_end,phi_end,&
-                                    Jappl,Jshe_in,theta_init,phi_init,dev_Ki,dev_TMR,dev_Rp,dump_flag) 
+                                    Jappl,Jshe,theta_init,phi_init,dev_Ki,dev_TMR,dev_Rp,&
+                                    t_pulse,a,b,tf,alpha,Ms,eta,d,dump_flag) 
         implicit none
-        integer          :: i,t_iter
-        real,intent(in)  :: Jappl, Jshe_in,theta_init,phi_init !input
-        real,intent(in)  :: dev_Ki,dev_TMR,dev_Rp !device params
+        integer             :: i,t_iter
+        real,intent(in)     :: Jappl,Jshe,theta_init,phi_init !input
+        real,intent(in)     :: dev_Ki,dev_TMR,dev_Rp !device params
+        real,intent(in)     :: t_pulse,a,b,tf,alpha,Ms,eta,d
         logical, intent(in) :: dump_flag
         !return values
         real,intent(out) :: energy_usage,theta_end,phi_end
@@ -25,12 +28,32 @@ module single_sample
         !=================================================================
         !   time evolution for solve variables. uncomment if needed. array dump/print from this function is straightforward
         !
-        !real,dimension(pulse_steps+relax_steps)    :: R,energy
-        real,dimension(pulse_steps+relax_steps+1)    :: theta_over_time,phi_over_time  
+        !real,allocatable :: R,energy
+        real,allocatable :: theta_over_time(:),phi_over_time(:)  
+        real,allocatable :: cumulative_pow(:)
         !==================================================================
-        real,dimension(pulse_steps+relax_steps+1) :: cumulative_pow
+        integer  :: pulse_steps 
         real(dp) :: V,J_SHE,J_STT,Hk,Ax,Ay,Az,dphi,dtheta,R1
         real(dp) :: phi_i,theta_i,power_i,seed!,energy_i
+        real(dp) :: Bsat,gammap,volume,A1,A2,cap_mgo,R2,Htherm,F  
+
+        !==================================================================
+        !/////
+
+        pulse_steps =  int(real( t_pulse, dp )/(t_step))
+        Bsat  = real(Ms,dp)*u0
+        gammap = gammall/(1.0_dp+real(alpha,dp)*real(alpha,dp))
+        volume = real(tf,dp)*pi*real(b,dp)*real(a,dp)/4.0_dp
+        A1    = real(a,dp)*real(b,dp)*pi/4.0_dp
+        A2 = real(d,dp)*w
+        cap_mgo = 8.854e-12_dp*eps_mgo*A1/tox !changed from const
+        R2 = rho*l/(w*real(d,dp))
+        Htherm = sqrt((2.0_dp*u0*real(alpha,dp)*kb*T)/(Bsat*gammab*t_step*volume))/u0
+        F  = (gammall*h_bar)/(2.0_dp*u0*e*real(tf,dp)*real(Ms,dp))
+
+        allocate(theta_over_time(pulse_steps+relax_steps+1))
+        allocate(phi_over_time(pulse_steps+relax_steps+1))
+        allocate(cumulative_pow(pulse_steps+relax_steps+1))
 
         !                            -*- some notes -*-                                                                       !
         !  static variables do not persist back in python so zigset (rng init function) is called each time this code runs                   !
@@ -53,7 +76,7 @@ module single_sample
 
         !====================== Pulse current and set device to be in-place ======================
         V     = v_pulse
-        J_SHE = real(Jshe_in,dp)
+        J_SHE = real(Jshe,dp)
         J_STT = real(Jappl,dp)
         Hk    = (2.0*real(dev_Ki,dp))/(tf*Ms*u0)-(2.0*ksi*V)/(u0*tox*tf)
         do i = 1, pulse_steps

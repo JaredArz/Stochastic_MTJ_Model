@@ -14,7 +14,7 @@ tmr_f = device_f.TMR
 rp_f  = device_f.Rp
 
 
-num_iter = 1000
+num_iter = 1
 J_she = 1e-3
 Jappl = 1e-3
 fsum_t = 0
