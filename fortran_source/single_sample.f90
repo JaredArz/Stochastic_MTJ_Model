@@ -28,7 +28,7 @@ module single_sample
         !==================================================================
         real,dimension(pulse_steps+relax_steps+1) :: theta_over_time,phi_over_time
         real,dimension(pulse_steps+relax_steps+1) :: cumulative_pow
-        character(len=4) :: proc_string
+        character(len=7) :: proc_string
         real(dp) :: V,J_SHE,J_STT,Hk,Ax,Ay,Az,dphi,dtheta,R1
         real(dp) :: phi_i,theta_i,power_i,seed!,energy_i
         real(dp) :: Bsat,gammap,volume,A1,A2,cap_mgo,R2,Htherm,F
@@ -126,16 +126,14 @@ module single_sample
 
         ! ===== array dump to file of theta/phi time evolution  ====
         if(dump_flag)then
-            write (proc_string,'(I4.4)') proc_ID
-            open(unit = 15, file = "time_evol_phi_"//proc_string//".txt", action = "write", status = "replace", &
+            write (proc_string,'(I7.7)') proc_ID
+            open(unit = proc_ID, file = "time_evol_mag_"//proc_string//".txt", action = "write", status = "replace", &
                     form = 'formatted')
-            open(unit = 20, file = "time_evol_theta_"//proc_string//".txt", action = "write", status = "replace", &
-                    form = 'formatted')
-            write(15,*) phi_over_time
-            write(20,*) theta_over_time
+            write(proc_ID,*) phi_over_time
+            write(proc_ID,*) theta_over_time
 
-            close(15)
-            close(20)
+            close(proc_ID)
+            close(proc_ID)
         end if
         ! ========================================================== 
 

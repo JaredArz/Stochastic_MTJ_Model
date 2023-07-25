@@ -9,7 +9,7 @@ def run_in_parallel_batch(func,samples,\
                             dev,k,init,lmda,hist,bitstream,energy_avg,\
                             mag_view_flag,batch_size=None) -> (list,list,list):
   if batch_size is None:
-      batch_size = os.cpu_count() 
+      batch_size = 2*os.cpu_count() 
   else:
       pass
   samples_to_run = samples
@@ -52,17 +52,16 @@ def mtj_sample(dev,Jstt,view_mag_flag,proc_ID):
         dev.theta = theta_end
         dev.phi   = phi_end
         # These file names are determined by fortran subroutine single_sample.
-        phi_from_txt   = np.loadtxt("time_evol_phi_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
-        theta_from_txt = np.loadtxt("time_evol_theta_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
-        os.remove("time_evol_phi_" + format_proc_ID(proc_ID) + ".txt")
-        os.remove("time_evol_theta_" + format_proc_ID(proc_ID) + ".txt")
+        theta_from_txt = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
+        phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
+        os.remove("time_evol_mag_" + format_proc_ID(proc_ID) + ".txt")
         dev.thetaHistory.append(list(theta_from_txt))
         dev.phiHistory.append(list(phi_from_txt))
         return bit,energy
 
 # generate random number string and check to ensure all are unique
 def generate_proc_IDs(batch_size) -> list:
-    proc_IDs = (np.random.uniform(1,1000,size=(1,batch_size)))[0]
+    proc_IDs = (np.random.uniform(1,9999999,size=(1,batch_size)))[0]
     set_of_IDs = set(proc_IDs)
     if(len(set_of_IDs) < batch_size):  
         return generate_proc_IDs(batch_size)
@@ -72,6 +71,6 @@ def generate_proc_IDs(batch_size) -> list:
 # format to length four with 0's to the left
 def format_proc_ID(pid) -> str:
     str_pid = str(pid)
-    while len(str_pid) < 4:
+    while len(str_pid) < 7:
         str_pid = '0' + str_pid
     return str_pid
