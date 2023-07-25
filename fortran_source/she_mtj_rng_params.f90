@@ -18,18 +18,17 @@ module SHE_MTJ_rng_params
     real(dp),parameter :: gammall = 2.0*u0*uB/h_bar 
     real(dp),parameter :: gammab  = gammall/u0
     real(dp),parameter :: t_step = 5e-11
+    real(dp),parameter :: t_pulse = 10e-9
     real(dp),parameter :: v_pulse = 0.0
     real(dp),parameter :: t_relax = 15e-9
     real(dp),parameter :: tox = 1.5e-9
-    real(dp),parameter :: RA = 7e-12
     real(dp),parameter :: P   = 0.6
     real(dp),parameter :: T     = 300.0
     real(dp),parameter :: ksi = 75e-15
     real(dp),parameter :: Vh    = 0.5
-    real(dp),parameter :: delta = 88.0 !changed from 40?
-    real(dp),parameter :: Eb  = delta*kb*T
     real(dp),parameter :: w = 100e-9
     real(dp),parameter :: l = 100e-9
+    real(dp),parameter :: RA = 7e-12
     real(dp),parameter :: rho = 200e-8
     real(dp),parameter :: eps_mgo = 4.0
     real(dp),parameter :: Hx = 0.0
@@ -39,6 +38,12 @@ module SHE_MTJ_rng_params
     real(dp),parameter :: Ny = 0.010613177892974
     real(dp),parameter :: Nz = 0.978773644214052
     integer,parameter :: relax_steps = int(t_relax/t_step)
+    integer,parameter :: pulse_steps = int(t_pulse/t_step)
+    ! ======  used to calculate device Rp ==========
+    ! ==== Calculation not used in current model ===
+    ! real(dp),parameter :: delta = 40.0 
+    ! real(dp),parameter :: Eb  = delta*kb*T
+    ! ==============================================
 end module SHE_MTJ_rng_params
 
 !FIXME: add module for VCMA driven mtj device

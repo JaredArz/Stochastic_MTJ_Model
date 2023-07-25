@@ -14,7 +14,7 @@ all: ${OBJS}
 
 %.o: %.f90
 	# $< evaluates to successive .f90
-	${FC} -shared ${FCLAGS} -c $< -o $@
+	${FC} -shared ${FCLAGS} -fPIC -c $< -o $@
 
 # Clean target
 clean:

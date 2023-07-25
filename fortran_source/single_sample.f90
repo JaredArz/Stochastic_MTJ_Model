@@ -9,61 +9,51 @@ module single_sample
         !   will return back to python as a tuple (not sure exactly why, see numpy f2py)
         !
         !
-        !   mimics the python function call: out,energy = dev.single_sample(Jappl,Jshe_in, self.theta, self.phi, self.Ki....)
+        !   intended to mimic the python function call: out,energy = dev.single_sample(Jappl,Jshe_in, self.theta, self.phi, self.Ki....)
         !
         ! --------------------------------*------------*-----------------------------------
-        !FIXME: Jshe is now device, Jappl, changes
         subroutine pulse_then_relax(energy_usage,bit,theta_end,phi_end,&
                                     Jappl,Jshe,theta_init,phi_init,dev_Ki,dev_TMR,dev_Rp,&
-                                    t_pulse,a,b,tf,alpha,Ms,eta,d,dump_flag) 
+                                    a,b,tf,alpha,Ms,eta,d,dump_flag,proc_ID) 
         implicit none
         integer             :: i,t_iter
         real,intent(in)     :: Jappl,Jshe,theta_init,phi_init !input
         real,intent(in)     :: dev_Ki,dev_TMR,dev_Rp !device params
-        real,intent(in)     :: t_pulse,a,b,tf,alpha,Ms,eta,d
+        real,intent(in)     :: a,b,tf,alpha,Ms,eta,d
+        integer, intent(in) :: proc_ID
         logical, intent(in) :: dump_flag
         !return values
         real,intent(out) :: energy_usage,theta_end,phi_end
         integer,intent(out) :: bit
-        !=================================================================
-        !   time evolution for solve variables. uncomment if needed. array dump/print from this function is straightforward
-        !
-        !real,allocatable :: R,energy
-        real,allocatable :: theta_over_time(:),phi_over_time(:)  
-        real,allocatable :: cumulative_pow(:)
         !==================================================================
-        integer  :: pulse_steps 
+        real,dimension(pulse_steps+relax_steps+1) :: theta_over_time,phi_over_time
+        real,dimension(pulse_steps+relax_steps+1) :: cumulative_pow
+        character(len=4) :: proc_string
         real(dp) :: V,J_SHE,J_STT,Hk,Ax,Ay,Az,dphi,dtheta,R1
         real(dp) :: phi_i,theta_i,power_i,seed!,energy_i
-        real(dp) :: Bsat,gammap,volume,A1,A2,cap_mgo,R2,Htherm,F  
-
+        real(dp) :: Bsat,gammap,volume,A1,A2,cap_mgo,R2,Htherm,F
         !==================================================================
-        !/////
+        !//////////////////////////////////////////////////////////////////
 
-        pulse_steps =  int(real( t_pulse, dp )/(t_step))
-        Bsat  = real(Ms,dp)*u0
-        gammap = gammall/(1.0_dp+real(alpha,dp)*real(alpha,dp))
-        volume = real(tf,dp)*pi*real(b,dp)*real(a,dp)/4.0_dp
-        A1    = real(a,dp)*real(b,dp)*pi/4.0_dp
-        A2 = real(d,dp)*w
+        ! ==== computation of variables with sweepable dependencies ====
+        Bsat    = real(Ms,dp)*u0
+        gammap  = gammall/(1.0_dp+real(alpha,dp)*real(alpha,dp))
+        volume  = real(tf,dp)*pi*real(b,dp)*real(a,dp)/4.0_dp
+        A1      = real(a,dp)*real(b,dp)*pi/4.0_dp
+        A2      = real(d,dp)*w
         cap_mgo = 8.854e-12_dp*eps_mgo*A1/tox !changed from const
         R2 = rho*l/(w*real(d,dp))
         Htherm = sqrt((2.0_dp*u0*real(alpha,dp)*kb*T)/(Bsat*gammab*t_step*volume))/u0
         F  = (gammall*h_bar)/(2.0_dp*u0*e*real(tf,dp)*real(Ms,dp))
+        ! =================================================================
 
-        allocate(theta_over_time(pulse_steps+relax_steps+1))
-        allocate(phi_over_time(pulse_steps+relax_steps+1))
-        allocate(cumulative_pow(pulse_steps+relax_steps+1))
-
-        !                            -*- some notes -*-                                                                       !
-        !  static variables do not persist back in python so zigset (rng init function) is called each time this code runs                   !
-        !  This code is a module for an existing object-oriented code so the return values from this function                 ! 
-        !  should be made to update any existing objects if necessary                                                                    !
-
+        !  static variables do not persist back in python so zigset (rng init function) is called each time this code runs
+        !  This code is a module for an existing object-oriented code so the return values from this function               
+        !  should be made to update any existing objects if necessary                                                      
         call random_number(seed)
         call zigset(int(1+floor((1000001)*seed)))
 
-        !solve init 
+        ! ======== solve init ========= 
         t_iter  = 1 ! fortran has array indexing of 1, in math terms, t=0
         power_i = 0.0
         theta_i = real(theta_init,dp)
@@ -78,7 +68,7 @@ module single_sample
         V     = v_pulse
         J_SHE = real(Jshe,dp)
         J_STT = real(Jappl,dp)
-        Hk    = (2.0*real(dev_Ki,dp))/(tf*Ms*u0)-(2.0*ksi*V)/(u0*tox*tf)
+        Hk    = (2.0*real(dev_Ki,dp))/(real(tf,dp)*real(Ms,dp)*u0)-(2.0_dp*ksi*V)/(u0*tox*real(tf,dp))
         do i = 1, pulse_steps
             !keep track of time steps for array navigation
             t_iter=i+1
@@ -109,7 +99,7 @@ module single_sample
         V=0
         J_SHE = 0.0
         J_STT = real(Jappl,dp)
-        Hk = (2.0*real(dev_Ki,dp))/(tf*Ms*u0)-(2.0*ksi*V)/(u0*Ms*tox*tf)
+        Hk = (2.0*real(dev_Ki,dp))/(real(tf,dp)*real(Ms,dp)*u0)-(2.0_dp*ksi*V)/(u0*real(Ms,dp)*tox*real(tf,dp))
         do i = 1, relax_steps
             t_iter=t_iter+1
             Ax = Hx-Nx*Ms*sin(theta_i)*cos(phi_i)     +rnor()*Htherm
@@ -136,9 +126,10 @@ module single_sample
 
         ! ===== array dump to file of theta/phi time evolution  ====
         if(dump_flag)then
-            open(unit = 15, file = "time_evol_phi.txt", action = "write", status = "replace", &
+            write (proc_string,'(I4.4)') proc_ID
+            open(unit = 15, file = "time_evol_phi_"//proc_string//".txt", action = "write", status = "replace", &
                     form = 'formatted')
-            open(unit = 20, file = "time_evol_theta.txt", action = "write", status = "replace", &
+            open(unit = 20, file = "time_evol_theta_"//proc_string//".txt", action = "write", status = "replace", &
                     form = 'formatted')
             write(15,*) phi_over_time
             write(20,*) theta_over_time
