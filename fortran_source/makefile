@@ -1,7 +1,11 @@
 FC           = gfortran
 FCFLAGS      = -O3 -Wall -Wextra
 F2PYC        = python3 -m numpy.f2py
+<<<<<<< HEAD
 F2PYFLAGS    = --fcompiler=gnu95 -I.
+=======
+F2PYFLAGS    = --fcompiler=gnu95 -I.  #if libraries, include -L/path
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
 F2PY_TARGET  = single_sample
 
 #we'll compile the f2py target seperately (using f2py not gfortran)
@@ -11,12 +15,14 @@ OBJS    = $(SOURCES:.f90=.o)
 #all, one rule to rule them all
 all: ${OBJS}
 	${F2PYC} -c ${F2PYFLAGS} ${OBJS} -m ${F2PY_TARGET} ${F2PY_TARGET}.f90
-	#in case you want to run the pseudo rngs directly from python as well
-	#${F2PYC} -c --fcompiler=gnu95 -m pseudo_rngs pseudo_RNGs.f90
 
 %.o: %.f90
 	# $< evaluates to successive .f90
+<<<<<<< HEAD
 	${FC} ${FCLAGS} -fPIC -c $< -o $@
+=======
+	${FC} -shared ${FCLAGS} -c $< -o $@
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
 
 # Clean target
 clean:

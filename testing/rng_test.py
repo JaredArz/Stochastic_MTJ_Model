@@ -1,3 +1,7 @@
+import sys
+# import functions to test directly
+sys.path.append('../')
+sys.path.append('../fortran_source')
 import pseudo_rngs as prngs
 import time
 import math as m

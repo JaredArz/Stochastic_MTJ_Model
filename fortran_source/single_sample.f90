@@ -17,7 +17,7 @@ module single_sample
         implicit none
         integer          :: i,t_iter
         real,intent(in)  :: Jappl, Jshe_in,theta_init,phi_init !input
-        real,intent(in)  :: dev_Ki,dev_TMR, dev_Rp !device params
+        real,intent(in)  :: dev_Ki,dev_TMR,dev_Rp !device params
         logical, intent(in) :: dump_flag
         !return values
         real,intent(out) :: energy_usage,theta_end,phi_end
@@ -25,6 +25,10 @@ module single_sample
         !   time evolution for solve variables. uncomment if needed. array dump/print from this function is straightforward
         !real,dimension(pulse_steps+relax_steps)    :: R,energy
         real,dimension(pulse_steps+relax_steps+1)    :: theta_over_time,phi_over_time  
+<<<<<<< HEAD
+=======
+        !==================================================================
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
         real,dimension(pulse_steps+relax_steps+1) :: cumulative_pow
         real(dp) :: V,J_SHE,J_STT,Hk,Ax,Ay,Az,dphi,dtheta,R1
         real(dp) :: phi_i,theta_i,power_i,seed!,energy_i
@@ -39,7 +43,11 @@ module single_sample
 
         !solve init 
         t_iter  = 1 ! fortran has array indexing of 1, in math terms, t=0
+<<<<<<< HEAD
         power_i = 0.0_dp
+=======
+        power_i = 0.0
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
         theta_i = real(theta_init,dp)
         phi_i   = real(phi_init,dp)
         if(dump_flag) then
@@ -74,20 +82,26 @@ module single_sample
             cumulative_pow(t_iter) = real(power_i)
             if(dump_flag) then
                 theta_over_time(t_iter) = real(theta_i)
+<<<<<<< HEAD
                 phi_over_time(t_iter) = real(phi_i)
+=======
+                phi_over_time(t_iter) =  real(phi_i)
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
             end if
 
-            !uneeded time evolution
-            !R(t_iter)  = R1
-            !energy_i= energy_i+t_step*power_i 
-            !energy(t_iter) = energy_i
         end do
 
         !=================  Relax into a one of two low-energy states out-of-plane  ===================
         V=0
+<<<<<<< HEAD
         J_SHE = 0
         J_STT = real(Jappl,dp)
         Hk = (2.0*real(dev_Ki,dp))/(tf*Ms*u0)-(2*ksi*V)/(u0*Ms*tox*tf)
+=======
+        J_SHE = 0.0
+        J_STT = real(Jappl,dp)
+        Hk = (2.0*real(dev_Ki,dp))/(tf*Ms*u0)-(2.0*ksi*V)/(u0*Ms*tox*tf)
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
         do i = 1, relax_steps
             t_iter=t_iter+1
             Ax = Hx-Nx*Ms*sin(theta_i)*cos(phi_i)     +rnor()*Htherm
@@ -110,9 +124,6 @@ module single_sample
                 theta_over_time(t_iter) = real(theta_i)
                 phi_over_time(t_iter) = real(phi_i)
             end if
-            !R(t_iter) = R1
-            !energy_i= energy_i+t_step*power_i
-            !energy(t_iter) = energy_i
         end do
 
         ! ===== array dump to file of theta/phi time evolution  ====
@@ -121,22 +132,36 @@ module single_sample
                     form = 'formatted')
             open(unit = 20, file = "time_evol_theta.txt", action = "write", status = "replace", &
                     form = 'formatted')
+<<<<<<< HEAD
             write(15,*)phi_over_time
             write(20,*)theta_over_time
+=======
+            write(15,*) phi_over_time
+            write(20,*) theta_over_time
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
 
             close(15)
             close(20)
         end if
         ! ========================================================== 
 
+
         ! ===== return final solve values: energy,bit,theta,phi ====
         theta_end = real(theta_i)
+<<<<<<< HEAD
         phi_end = real(phi_i)
+=======
+        phi_end   = real(phi_i)
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
         if( cos(theta_end) > 0.0 ) then
             bit = 1
         else
             bit = 0
         end if
         energy_usage = real(sum(cumulative_pow))*real(t_step)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6c22d92022764d687d7dc31b46c3883d278ec104
         end subroutine pulse_then_relax
 end module single_sample
