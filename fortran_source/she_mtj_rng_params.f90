@@ -6,10 +6,10 @@
 ! -------------------------*---------*--------------------------
 
 module SHE_MTJ_rng_params
-    use iso_c_binding, only: sp=>c_float, dp=>c_double
     implicit none
     !these variables do not change per device
-    real(dp),parameter :: pi    = 4.0*DATAN(real(1.0,dp))
+    integer,parameter  :: dp = kind(0.0d0)
+    real(dp),parameter :: pi    = 4.0_dp*DATAN(1.0_dp)
     real(dp),parameter :: uB    = 9.274e-24
     real(dp),parameter :: h_bar = 1.054e-34          
     real(dp),parameter :: u0    = pi*4e-7               

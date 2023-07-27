@@ -1,7 +1,7 @@
 FC           = gfortran
 FCFLAGS      = -O3 -Wall -Wextra
 F2PYC        = python3 -m numpy.f2py
-F2PYFLAGS    = --fcompiler=gnu95 -L. -I.
+F2PYFLAGS    = --fcompiler=gnu95 -I.
 F2PY_TARGET  = single_sample
 
 #we'll compile the f2py target seperately (using f2py not gfortran)
@@ -16,7 +16,7 @@ all: ${OBJS}
 
 %.o: %.f90
 	# $< evaluates to successive .f90
-	${FC} ${FCLAGS} -c $< -o $@
+	${FC} ${FCLAGS} -fPIC -c $< -o $@
 
 # Clean target
 clean:
