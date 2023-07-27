@@ -91,7 +91,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
 
   #======debug============
   alpha   = 0.03            # damping constant
-  Ms   = 1.2e6        # saturation magnetization
+  Ms   = 0.4e6        # saturation magnetization
   TMR   = 1.2                      # tunneling magnetoresistance ratio
   Ki   = 0.9056364e-3   # anistrophy energy    
   Rp   = 8e3          # parallel resistance
@@ -116,7 +116,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   hist = []
   bitstream = []
   energy_avg = []
-  mag_view_flag = 1
+  mag_view_flag = True
   # FIXME: implement safeguard to prevent computer bog-down???
   parallel_batch_size = None # ==== NOTE:  None value defaults to the total number of cores on the CPU ====
 

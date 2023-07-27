@@ -41,7 +41,7 @@ module single_sample
         volume  = real(tf,dp)*pi*real(b,dp)*real(a,dp)/4.0_dp
         A1      = real(a,dp)*real(b,dp)*pi/4.0_dp
         A2      = real(d,dp)*w
-        cap_mgo = 8.854e-12_dp*eps_mgo*A1/tox !changed from const
+        cap_mgo = 8.854e-12_dp*eps_mgo*A1/tox 
         R2 = rho*l/(w*real(d,dp))
         Htherm = sqrt((2.0_dp*u0*real(alpha,dp)*kb*T)/(Bsat*gammab*t_step*volume))/u0
         F  = (gammall*h_bar)/(2.0_dp*u0*e*real(tf,dp)*real(Ms,dp))
@@ -132,7 +132,6 @@ module single_sample
             write(proc_ID,*) phi_over_time
             write(proc_ID,*) theta_over_time
 
-            close(proc_ID)
             close(proc_ID)
         end if
         ! ========================================================== 

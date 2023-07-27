@@ -41,8 +41,7 @@ def run_in_parallel_batch(func,samples,\
       samples_to_run -= batch_size
   return hist,bitstream,energy_avg
 
-#FIXME dev_rp not sure to put in fortran or py
-def mtj_sample(dev,Jstt,view_mag_flag,proc_ID):
+def mtj_sample(dev,Jstt,view_mag_flag,proc_ID) -> (int,float):
         # fortran call here.
         energy, bit, theta_end, phi_end = f90.single_sample.pulse_then_relax(Jstt,\
                 dev.J_she,dev.theta,dev.phi,dev.Ki,dev.TMR,dev.Rp,\
@@ -51,17 +50,19 @@ def mtj_sample(dev,Jstt,view_mag_flag,proc_ID):
         # Need to update device objects and put together time evolution data after return.
         dev.theta = theta_end
         dev.phi   = phi_end
-        # These file names are determined by fortran subroutine single_sample.
-        theta_from_txt = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
-        phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
-        os.remove("time_evol_mag_" + format_proc_ID(proc_ID) + ".txt")
-        dev.thetaHistory.append(list(theta_from_txt))
-        dev.phiHistory.append(list(phi_from_txt))
+        if(view_mag_flag):
+            # These file names are determined by fortran subroutine single_sample.
+            theta_from_txt = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
+            phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
+            os.remove("time_evol_mag_" + format_proc_ID(proc_ID) + ".txt")
+            dev.thetaHistory.append(list(theta_from_txt))
+            dev.phiHistory.append(list(phi_from_txt))
         return bit,energy
 
 # generate random number string and check to ensure all are unique
 def generate_proc_IDs(batch_size) -> list:
-    proc_IDs = (np.random.uniform(1,9999999,size=(1,batch_size)))[0]
+    # important for prod ID to not be 6 for fortran interoperability
+    proc_IDs = (np.random.uniform(7,9999999,size=(1,batch_size)))[0]
     set_of_IDs = set(proc_IDs)
     if(len(set_of_IDs) < batch_size):  
         return generate_proc_IDs(batch_size)
