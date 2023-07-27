@@ -9,8 +9,6 @@
 module SHE_MTJ_rng_params
     implicit none
     !these variables do not change per device
-    integer,parameter  :: dp = kind(0.0d0)
-    real(dp),parameter :: pi    = 4.0_dp*DATAN(1.0_dp)
     integer,parameter :: dp = kind(0.0d0)
     real(dp),parameter :: pi    = real(4.0,dp)*DATAN(real(1.0,dp))
     real(dp),parameter :: uB    = 9.274e-24
