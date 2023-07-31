@@ -43,20 +43,13 @@ class SHE_MTJ_rng():
          self.params_set_flag = None
 
      #================================================================================
-     # check if all parameters have been set after each set attribute
-     '''
-     def __setattr__(self, name, value, private_flag=None):
-         super(SHE_MTJ_rng, self).__setattr__(name, value)
-         if(private_flag == True):
-             pass
+     # check if all parameters have been set after each set attribute (wasteful)
+     def __setattr__(self, name, value, check_flag=None):
+         SHE_MTJ_rng.__dict__[name].__set__(self, value)
+         if(check_flag is None):
+             self.check_parameters()
          else:
-             all_set = True
-             for p in all_params:
-                 if hasattr(self,p) is False:
-                     all_set = False
-             if all_set == True:
-                 self.params_set_flag = True
-     '''
+             pass
 
      #================================================================================
      # can call print(device) to list all parameters assigned
@@ -68,6 +61,16 @@ class SHE_MTJ_rng():
              except(AttributeError):
                  out_string += "\r" + str(p) + ": " + " \n" 
          return out_string
+
+     #================================================================================
+     def check_parameters(self):
+         all_set = True
+         for p in all_params:
+             if hasattr(self,p) is False:
+                 all_set = False
+         if all_set == True:
+             #recusrive loop, exit with flag
+             SHE_MTJ_rng.__setattr__(self,"params_set_flag",True,check_flag=1)
 
      #================================================================================
      def set_mag_vector(self,phi,theta):
@@ -102,19 +105,12 @@ class SHE_MTJ_rng():
          elif debug_flag is None:
              try:
                  for param_key, param_val in params.items():
-                     self.__setattr__(param_key, param_val)
+                     self.__setattr__(param_key, param_val, 1)
              except(KeyError):
                  print_key_error()
                  raise
              finally:
-                 #check if fully initialized
-                 if self.params_set_flag is None:
-                     all_set = True
-                     for p in all_params:
-                         if hasattr(self,p) is False:
-                             all_set = False
-                     if all_set == True:
-                         self.params_set_flag = True
+                 self.check_parameters()
          #catch anything else, just in case
          else:
              print_key_error()

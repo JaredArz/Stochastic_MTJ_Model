@@ -21,7 +21,7 @@ phi = 0
 for idev in range(devnum):
     #FIXME: using default parameters
     dev = SHE_MTJ_rng(dd_flag = True)
-    dev.set_vals(True)
+    dev.set_vals(1)
     dev.set_mag_vector(phi,theta)
     bitstr_avg = []
     energy_avg = []
