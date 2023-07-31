@@ -9,8 +9,8 @@ import cProfile, pstats, io
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from mtj_types_Ki import SHE_MTJ_rng
-from jz_lut import jz_lut_she,jz_lut_vcma,jz_lut_write
+from mtj_types_v3 import SHE_MTJ_rng
+from jz_lut import jz_lut_she#,jz_lut_vcma,jz_lut_write
 
 def profile(func):
   def inner(*args, **kwargs):
@@ -38,8 +38,8 @@ def single_run_wrapper(dev,k,init,lmda,\
     x1 = (x2+x0)/2
     theta = init
     phi = np.random.rand()*2*np.pi
-    dev.theta= init
-    dev.phi  = phi
+    # NOTE: new method
+    dev.set_mag_vector(phi,theta)
     temp = 0
     bits = []
     energies = []
@@ -68,16 +68,17 @@ def cdf(x, lmda):
 dir_check = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
 def check_output_paths() -> None:
     dir_check("./results")
-    dir_check("results/parameter_files/")
-    dir_check("results/chi2Data")
-    dir_check("results/plots/distribution_plots/")
-    dir_check("results/plots/magnetization_plots/")
-    dir_check("results/magPhi/")
-    dir_check("results/bitstream_results/")
-    dir_check("results/magTheta/")
-    dir_check("results/energy_results/")
-    dir_check("results/countData/")
-    dir_check("results/bitData/")
+    dir_check("./results/parameter_files")
+    dir_check("./results/chi2Data")
+    dir_check("./results/plots")
+    dir_check("./results/plots/distribution_plots")
+    dir_check("./results/plots/magnetization_plots")
+    dir_check("./results/magPhi")
+    dir_check("./results/bitstream_results")
+    dir_check("./results/magTheta")
+    dir_check("./results/energy_results")
+    dir_check("./results/countData")
+    dir_check("./results/bitData")
 
 @profile
 def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
@@ -86,33 +87,17 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   #   f = open(csvFile, "a")
   #   writeFile = csv.writer(f)
 
-  dd_on = 0
-  dev = SHE_MTJ_rng(init_th=None, init_phi=None, init_Ms=Ms, init_Ki=Ki, var=dd_on)
-
-  #======debug============
-  alpha   = 0.03            # damping constant
-  Ms   = 0.4e6        # saturation magnetization
-  TMR   = 1.2                      # tunneling magnetoresistance ratio
-  Ki   = 0.9056364e-3   # anistrophy energy    
-  Rp   = 8e3          # parallel resistance
-  d   = 3e-9                                     # free layer diameter
-  tf   = 1.1e-9                                    # free layer thickness
-  eta   = 0.3                # spin hall angle
-  #====================
-  dev.alpha = alpha
-  dev.Ki = Ki
-  dev.Ms = Ms
-  dev.Rp = Rp
-  dev.TMR = TMR
-  dev.a, dev.b = d, d
-  dev.tf = tf
-  dev.eta = eta
-  dev.J_she = J_she
+  dd = 1
+  # NOTE: device init only takes in dev-to-dev variation flag
+  dev = SHE_MTJ_rng(dd_flag=dd)
+  # NOTE: parameter setting done manually or with set_vals method
+  dev.set_vals(1)
+  print(dev)
 
   k = 8
   lmda = 0.01
   init_t = 9*np.pi/10
-  samples = 10
+  samples = 1000
   hist = []
   bitstream = []
   energy_avg = []
@@ -129,7 +114,6 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
                                                         dev,k,init_t,lmda,hist,bitstream,energy_avg,\
                                                         mag_view_flag,parallel_batch_size)
   # ==============================================================================================
-  print(hist)
   # Build an analytical exponential probability density function (PDF)
   xxis = []
   exp_pdf = []

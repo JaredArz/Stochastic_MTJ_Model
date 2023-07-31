@@ -2,6 +2,7 @@ import sys
 sys.path.append("./fortran_source")
 import single_sample as f90
 import os
+import signal
 import numpy as np
 import multiprocessing as mp
 
@@ -42,22 +43,25 @@ def run_in_parallel_batch(func,samples,\
   return hist,bitstream,energy_avg
 
 def mtj_sample(dev,Jstt,view_mag_flag,proc_ID) -> (int,float):
-        # fortran call here.
-        energy, bit, theta_end, phi_end = f90.single_sample.pulse_then_relax(Jstt,\
-                dev.J_she,dev.theta,dev.phi,dev.Ki,dev.TMR,dev.Rp,\
-                dev.a,dev.b,dev.tf,dev.alpha,dev.Ms,dev.eta,dev.d,\
-                view_mag_flag,proc_ID)
-        # Need to update device objects and put together time evolution data after return.
-        dev.theta = theta_end
-        dev.phi   = phi_end
-        if(view_mag_flag):
-            # These file names are determined by fortran subroutine single_sample.
-            theta_from_txt = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
-            phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
-            os.remove("time_evol_mag_" + format_proc_ID(proc_ID) + ".txt")
-            dev.thetaHistory.append(list(theta_from_txt))
-            dev.phiHistory.append(list(phi_from_txt))
-        return bit,energy
+        if dev.theta is None or dev.phi is None or dev.params_set_flag is None:
+            print("\nMag vector or device parameters not initialized, exititng.")
+            os.kill(os.getppid(), signal.SIGTERM)
+        else:
+            # fortran call here.
+            energy, bit, theta_end, phi_end = f90.single_sample.pulse_then_relax(Jstt,\
+                    dev.J_she,dev.theta,dev.phi,dev.Ki,dev.TMR,dev.Rp,\
+                    dev.a,dev.b,dev.tf,dev.alpha,dev.Ms,dev.eta,dev.d,\
+                    view_mag_flag,proc_ID)
+            # Need to update device objects and put together time evolution data after return.
+            dev.set_mag_vector(phi_end,theta_end)
+            if(view_mag_flag):
+                # These file names are determined by fortran subroutine single_sample.
+                theta_from_txt = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
+                phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
+                os.remove("time_evol_mag_" + format_proc_ID(proc_ID) + ".txt")
+                dev.thetaHistory.append(list(theta_from_txt))
+                dev.phiHistory.append(list(phi_from_txt))
+            return bit,energy
 
 # generate random number string and check to ensure all are unique
 def generate_proc_IDs(batch_size) -> list:

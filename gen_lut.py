@@ -1,7 +1,7 @@
 import sys
 sys.path.append("./fortran_source")
-from interface_funcs import run_in_parallel_batch, mtj_sample
-from mtj_types_Ki import SHE_MTJ_rng
+from interface_funcs import mtj_sample
+from mtj_types_v3 import SHE_MTJ_rng
 #============================================================
 #from original_mtj_types_Ki_sweep_optimized import SHE_MTJ_rng
 import numpy as np
@@ -13,15 +13,16 @@ steps = 41
 Happl = np.linspace(-2e4,2e4,steps)
 Happl = np.zeros_like(Happl)
 Jappl = np.linspace(-6e9,6e9,steps)
-# Jappl = np.zeros_like(Jappl)
 cycles = 10000
 reps = 1
 devnum = 20
-theta = np.pi/2
+theta = np.pi/100
 phi = 0
 for idev in range(devnum):
-    #FIXME: parameters not checked
-    dev = SHE_MTJ_rng(np.pi/100,0,0.00014759392802570008,0.4e6,True)
+    #FIXME: using default parameters
+    dev = SHE_MTJ_rng(dd_flag = True)
+    dev.set_vals(True)
+    dev.set_mag_vector(phi,theta)
     bitstr_avg = []
     energy_avg = []
     for rep in range(reps):
