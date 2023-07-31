@@ -13,8 +13,8 @@ def run_in_parallel_batch(func,samples,\
       #f = open("cpu_count.txt",'a')
       #f.write(str(os.cpu_count()) + "\n")
       #f.close
-      #batch_size = os.cpu_count() 
-      batch_size = 128
+      batch_size = os.cpu_count() 
+      #batch_size = 128
   else:
       #FIXME:
       pass

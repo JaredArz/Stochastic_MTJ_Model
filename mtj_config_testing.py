@@ -31,20 +31,52 @@ def profile(func):
 #       NOTE: do not call this function directly —              
 #       arguments handeled by interface function "run_in_parllel_batch"
 # =====================================================================
+'''
 def single_run_parallel(dev,k,init,lmda,\
                       hist_queue,bitstream_queue,energy_avg_queue,mag_view_flag,proc_ID):
       temp,bits,energies = rng(dev,k,init,lmda,mag_view_flag,proc_ID)
       hist_queue.put(temp)
       bitstream_queue.put(''.join(str(i) for i in bits))
       energy_avg_queue.put(np.average(energies))
+'''
 
 # =====================================================================
 #            to be called directly in serial operation
 # =====================================================================
-def single_run_serial(dev,k,init,lmda\
+def single_run_serial(dev,k,init,lmda,\
                       hist,bitstream,energy_avg,mag_view_flag,iterator_never_equal_6):
       temp,bits,energies = rng(dev,k,init,lmda,mag_view_flag,iterator_never_equal_6)
       return temp,bits,energies
+
+def single_run_parallel(dev,k,init,lmda,\
+                      hist_queue,bitstream_queue,energy_avg_queue,mag_view_flag,proc_ID):
+    x2 = 2**k
+    x0 = 1
+    x1 = (x2+x0)/2
+    theta = init
+    phi = np.random.rand()*2*np.pi
+    # NOTE: new method
+    dev.set_mag_vector(phi,theta)
+    temp = 0
+    bits = []
+    energies = []
+
+    for i in range(k):
+      pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
+      out,energy = mtj_sample(dev,jz_lut_she(pright),mag_view_flag,proc_ID)
+      bits.append(out)
+      energies.append(energy)
+
+      if out == 1:
+        x0 = x1
+      elif out == 0:
+        x2 = x1
+      x1 = (x2+x0)/2
+      temp += out*2**(k-i-1)
+
+    hist_queue.put(temp)
+    bitstream_queue.put(''.join(str(i) for i in bits))
+    energy_avg_queue.put(np.average(energies))
 
 def rng(dev,k,init,lmda,mag_view_flag,proc_ID):
     x2 = 2**k
@@ -108,7 +140,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   k = 8
   lmda = 0.01
   init_t = 9*np.pi/10
-  samples = 1000
+  samples = 100
   hist = []
   bitstream = []
   energy_avg = []
@@ -129,7 +161,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   else:
       for j in range(samples):
           temp_j,bits_j,energies_j = single_run_serial(dev,k,init_t,lmda,hist,bitstream,energy_avg,\
-                                                             mag_view_flag,parallel_batch_size,j+7)
+                                                             mag_view_flag,j+7)
           hist.append(temp_j)
           bitstream.append(''.join(str(i) for i in bits_j))
           energy_avg.append(np.average(energies_j))
