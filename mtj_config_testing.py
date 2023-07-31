@@ -31,8 +31,22 @@ def profile(func):
 #       NOTE: do not call this function directly —              
 #       arguments handeled by interface function "run_in_parllel_batch"
 # =====================================================================
-def single_run_wrapper(dev,k,init,lmda,\
+def single_run_parallel(dev,k,init,lmda,\
                       hist_queue,bitstream_queue,energy_avg_queue,mag_view_flag,proc_ID):
+      temp,bits,energies = rng(dev,k,init,lmda,mag_view_flag,proc_ID)
+      hist_queue.put(temp)
+      bitstream_queue.put(''.join(str(i) for i in bits))
+      energy_avg_queue.put(np.average(energies))
+
+# =====================================================================
+#            to be called directly in serial operation
+# =====================================================================
+def single_run_serial(dev,k,init,lmda\
+                      hist,bitstream,energy_avg,mag_view_flag,iterator_never_equal_6):
+      temp,bits,energies = rng(dev,k,init,lmda,mag_view_flag,iterator_never_equal_6)
+      return temp,bits,energies
+
+def rng(dev,k,init,lmda,mag_view_flag,proc_ID):
     x2 = 2**k
     x0 = 1
     x1 = (x2+x0)/2
@@ -56,13 +70,10 @@ def single_run_wrapper(dev,k,init,lmda,\
         x2 = x1
       x1 = (x2+x0)/2
       temp += out*2**(k-i-1)
-
-    hist_queue.put(temp)
-    bitstream_queue.put(''.join(str(i) for i in bits))
-    energy_avg_queue.put(np.average(energies))
+    return temp,bits,energies
 
 def cdf(x, lmda):
-  return 1-np.exp(-lmda*x)
+    return 1-np.exp(-lmda*x)
 
 
 dir_check = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
@@ -92,7 +103,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   dev = SHE_MTJ_rng(dd_flag=dd)
   # NOTE: parameter setting done manually or with set_vals method
   dev.set_vals(1)
-  print(dev)
+  #print(dev)
 
   k = 8
   lmda = 0.01
@@ -101,8 +112,9 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   hist = []
   bitstream = []
   energy_avg = []
-  mag_view_flag = True
+  mag_view_flag = False
   # FIXME: implement safeguard to prevent computer bog-down???
+  parallel_flag = True
   parallel_batch_size = None # ==== NOTE:  None value defaults to the total number of cores on the CPU ====
 
   # ===================== entry point to parallelized fortran interface ==========================
@@ -110,9 +122,18 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   # the dynamical computation jobs to fortran. After this functions return, there are no
   # more diverges from this python script.
   # ========================================
-  hist, energy_avg, bitstream = run_in_parallel_batch(single_run_wrapper,samples,\
-                                                        dev,k,init_t,lmda,hist,bitstream,energy_avg,\
-                                                        mag_view_flag,parallel_batch_size)
+  if (parallel_flag):
+      hist, energy_avg, bitstream = run_in_parallel_batch(single_run_parallel,samples,\
+                                                            dev,k,init_t,lmda,hist,bitstream,energy_avg,\
+                                                            mag_view_flag,parallel_batch_size)
+  else:
+      for j in range(samples):
+          temp_j,bits_j,energies_j = single_run_serial(dev,k,init_t,lmda,hist,bitstream,energy_avg,\
+                                                             mag_view_flag,parallel_batch_size,j+7)
+          hist.append(temp_j)
+          bitstream.append(''.join(str(i) for i in bits_j))
+          energy_avg.append(np.average(energies_j))
+
   # ==============================================================================================
   # Build an analytical exponential probability density function (PDF)
   xxis = []

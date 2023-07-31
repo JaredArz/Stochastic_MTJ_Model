@@ -10,8 +10,13 @@ def run_in_parallel_batch(func,samples,\
                             dev,k,init,lmda,hist,bitstream,energy_avg,\
                             mag_view_flag,batch_size=None) -> (list,list,list):
   if batch_size is None:
-      batch_size = 2*os.cpu_count() 
+      #f = open("cpu_count.txt",'a')
+      #f.write(str(os.cpu_count()) + "\n")
+      #f.close
+      #batch_size = os.cpu_count() 
+      batch_size = 128
   else:
+      #FIXME:
       pass
   samples_to_run = samples
   while samples_to_run >= 1:        
