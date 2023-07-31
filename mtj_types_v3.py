@@ -43,6 +43,22 @@ class SHE_MTJ_rng():
          self.params_set_flag = None
 
      #================================================================================
+     # check if all parameters have been set after each set attribute
+     '''
+     def __setattr__(self, name, value, private_flag=None):
+         super(SHE_MTJ_rng, self).__setattr__(name, value)
+         if(private_flag == True):
+             pass
+         else:
+             all_set = True
+             for p in all_params:
+                 if hasattr(self,p) is False:
+                     all_set = False
+             if all_set == True:
+                 self.params_set_flag = True
+     '''
+
+     #================================================================================
      # can call print(device) to list all parameters assigned
      def __str__(self):
          out_string = "\nDevice parameters:\n"
@@ -86,7 +102,7 @@ class SHE_MTJ_rng():
          elif debug_flag is None:
              try:
                  for param_key, param_val in params.items():
-                     setattr(self, param_key, param_val)
+                     self.__setattr__(param_key, param_val)
              except(KeyError):
                  print_key_error()
                  raise

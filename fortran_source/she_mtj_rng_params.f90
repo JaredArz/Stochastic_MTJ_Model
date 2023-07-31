@@ -28,7 +28,6 @@ module SHE_MTJ_rng_params
     real(dp),parameter :: Vh    = 0.5
     real(dp),parameter :: w = 100e-9
     real(dp),parameter :: l = 100e-9
-    real(dp),parameter :: RA = 7e-12
     real(dp),parameter :: rho = 200e-8
     real(dp),parameter :: eps_mgo = 4.0
     real(dp),parameter :: Hx = 0.0
@@ -43,6 +42,7 @@ module SHE_MTJ_rng_params
     ! ==== Calculation not used in current model ===
     ! real(dp),parameter :: delta = 40.0 
     ! real(dp),parameter :: Eb  = delta*kb*T
+    ! real(dp),parameter :: RA = 7e-12
     ! ==============================================
 end module SHE_MTJ_rng_params
 

@@ -31,14 +31,12 @@ def profile(func):
 #       NOTE: do not call this function directly —              
 #       arguments handeled by interface function "run_in_parllel_batch"
 # =====================================================================
-'''
 def single_run_parallel(dev,k,init,lmda,\
                       hist_queue,bitstream_queue,energy_avg_queue,mag_view_flag,proc_ID):
       temp,bits,energies = rng(dev,k,init,lmda,mag_view_flag,proc_ID)
       hist_queue.put(temp)
       bitstream_queue.put(''.join(str(i) for i in bits))
       energy_avg_queue.put(np.average(energies))
-'''
 
 # =====================================================================
 #            to be called directly in serial operation
@@ -47,36 +45,6 @@ def single_run_serial(dev,k,init,lmda,\
                       hist,bitstream,energy_avg,mag_view_flag,iterator_never_equal_6):
       temp,bits,energies = rng(dev,k,init,lmda,mag_view_flag,iterator_never_equal_6)
       return temp,bits,energies
-
-def single_run_parallel(dev,k,init,lmda,\
-                      hist_queue,bitstream_queue,energy_avg_queue,mag_view_flag,proc_ID):
-    x2 = 2**k
-    x0 = 1
-    x1 = (x2+x0)/2
-    theta = init
-    phi = np.random.rand()*2*np.pi
-    # NOTE: new method
-    dev.set_mag_vector(phi,theta)
-    temp = 0
-    bits = []
-    energies = []
-
-    for i in range(k):
-      pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
-      out,energy = mtj_sample(dev,jz_lut_she(pright),mag_view_flag,proc_ID)
-      bits.append(out)
-      energies.append(energy)
-
-      if out == 1:
-        x0 = x1
-      elif out == 0:
-        x2 = x1
-      x1 = (x2+x0)/2
-      temp += out*2**(k-i-1)
-
-    hist_queue.put(temp)
-    bitstream_queue.put(''.join(str(i) for i in bits))
-    energy_avg_queue.put(np.average(energies))
 
 def rng(dev,k,init,lmda,mag_view_flag,proc_ID):
     x2 = 2**k
@@ -92,6 +60,7 @@ def rng(dev,k,init,lmda,mag_view_flag,proc_ID):
 
     for i in range(k):
       pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
+      #fortran call wrapper in interface_funcs
       out,energy = mtj_sample(dev,jz_lut_she(pright),mag_view_flag,proc_ID)
       bits.append(out)
       energies.append(energy)
@@ -133,26 +102,27 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   dd = 1
   # NOTE: device init only takes in dev-to-dev variation flag
   dev = SHE_MTJ_rng(dd_flag=dd)
-  # NOTE: parameter setting done manually or with set_vals method
+  # NOTE: parameter setting done manually or with set_vals method, 1 uses default values
   dev.set_vals(1)
-  #print(dev)
+  #print(dev) #NOTE: can print device to list all parameters
 
   k = 8
   lmda = 0.01
   init_t = 9*np.pi/10
-  samples = 100
+  samples = 10000
   hist = []
   bitstream = []
   energy_avg = []
   mag_view_flag = False
-  # FIXME: implement safeguard to prevent computer bog-down???
-  parallel_flag = True
+  parallel_flag = False #NOTE: dont use parallel, much slower
   parallel_batch_size = None # ==== NOTE:  None value defaults to the total number of cores on the CPU ====
 
   # ===================== entry point to parallelized fortran interface ==========================
   # This function will spawn multiple processes of single_run_wrapper which then passes
   # the dynamical computation jobs to fortran. After this functions return, there are no
   # more diverges from this python script.
+  #
+  #FIXME: currently much slower than the serial version. To be fixed with MPI or OMP
   # ========================================
   if (parallel_flag):
       hist, energy_avg, bitstream = run_in_parallel_batch(single_run_parallel,samples,\
