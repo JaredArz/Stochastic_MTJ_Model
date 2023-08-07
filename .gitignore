@@ -1,0 +1,27 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+*.swp
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Executables
+*.exe
+*.out
+
+# outputs
+**/results
+
+#cache
+**/__pycache__
+.DS_Store
