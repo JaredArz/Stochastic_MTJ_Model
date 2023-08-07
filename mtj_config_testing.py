@@ -27,6 +27,16 @@ def profile(func):
     return retval
   return inner
 
+def draw_norm(x,var,psig):
+    if not var:
+        return x
+    return x*np.random.normal(1,psig,1)
+
+def draw_const(x,var,csig):
+    if not var:
+        return x
+    return x + np.random.normal(-csig,csig,1)
+
 # =====================================================================
 #       NOTE: do not call this function directly —              
 #       arguments handeled by interface function "run_in_parllel_batch"
@@ -104,6 +114,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   dev = SHE_MTJ_rng(dd_flag=dd)
   # NOTE: parameter setting done manually or with set_vals method, 1 uses default values
   dev.set_vals(1)
+  #dev.set_vals(TMR = draw_norm(1.5,dev.dd_flag,0.05))
   #print(dev) #NOTE: can print device to list all parameters
 
   k = 8

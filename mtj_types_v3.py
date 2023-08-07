@@ -1,26 +1,11 @@
 import numpy as np
 
-#========================== helper functions ==================================
-def draw_norm(x,var,psig):
-    if var:
-        return x*np.random.normal(1,psig,1)
-    else:
-        return x
-
-def draw_const(x,var,csig):
-    if var:
-        return x + np.random.normal(-csig,csig,1)
-    else:
-        return x
-
 def print_key_error():
      print("One or more parameter values were passed incorrectly or not at all.")
      print("Use named parameters, expecting: Ms,Ki,TMR,Rp,J_she,a,b,tf,alpha,eta,d.")
      print("--------------------------------*--*-----------------------------------")
 #================================================================================
 #////////////////////////////////////////////////////////////////////////////////
-
-
 
 # this list, along with __slots__ dictate what the class is expecting
 # changes to the parameter list should go in here, __slots__ and to the debug option in set_vals
@@ -92,7 +77,7 @@ class SHE_MTJ_rng():
              self.J_she = 5e11
              self.Ms = 0.4e6
              self.Ki = 0.00014759392802570008
-             self.TMR   = draw_norm(1.5,self.dd_flag,0.05)  # TMR ratio at V=0,120%  
+             self.TMR   = 1.5  # TMR ratio at V=0,120%  
              self.Rp    = 3861.20994613      # Magenetoresistance at parallel state, 8000 Ohm
              self.a     = 50e-9              # Width of the MTJ in m
              self.b     = 50e-9              # Length of the MTJ in m
