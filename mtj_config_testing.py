@@ -27,15 +27,12 @@ def profile(func):
     return retval
   return inner
 
+# Inject noise
 def draw_norm(x,var,psig):
-    if not var:
-        return x
-    return x*np.random.normal(1,psig,1)
+    return (x if not var else(x*np.random.normal(1,psig,1)))
 
 def draw_const(x,var,csig):
-    if not var:
-        return x
-    return x + np.random.normal(-csig,csig,1)
+    return (x if not var else(x+np.random.normal(-csig,csig,1)))
 
 # =====================================================================
 #       NOTE: do not call this function directly —              
@@ -120,11 +117,11 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   k = 8
   lmda = 0.01
   init_t = 9*np.pi/10
-  samples = 1000
+  samples = 8000
   hist = []
   bitstream = []
   energy_avg = []
-  mag_view_flag = False
+  mag_view_flag = True
   parallel_flag = False #NOTE: dont use parallel, much slower
   parallel_batch_size = None # ==== NOTE:  None value defaults to the total number of cores on the CPU ====
 
