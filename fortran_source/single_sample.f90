@@ -14,14 +14,14 @@ module single_sample
         ! --------------------------------*------------*-----------------------------------
         subroutine pulse_then_relax(energy_usage,bit,theta_end,phi_end,&
                                     Jappl,Jshe,theta_init,phi_init,dev_Ki,dev_TMR,dev_Rp,&
-                                    a,b,tf,alpha,Ms,eta,d,dump_flag,proc_ID) 
+                                    a,b,tf,alpha,Ms,eta,d,view_mag_flag,dump_count,proc_ID) 
         implicit none
         integer             :: i,t_iter
         real,intent(in)     :: Jappl,Jshe,theta_init,phi_init !input
         real,intent(in)     :: dev_Ki,dev_TMR,dev_Rp !device params
         real,intent(in)     :: a,b,tf,alpha,Ms,eta,d
-        integer, intent(in) :: proc_ID
-        logical, intent(in) :: dump_flag
+        integer, intent(in) :: proc_ID, dump_count
+        logical, intent(in) :: view_mag_flag
         !return values
         real,intent(out) :: energy_usage,theta_end,phi_end
         integer,intent(out) :: bit
@@ -32,6 +32,7 @@ module single_sample
         real(dp) :: V,J_SHE,J_STT,Hk,Ax,Ay,Az,dphi,dtheta,R1
         real(dp) :: phi_i,theta_i,power_i,seed!,energy_i
         real(dp) :: Bsat,gammap,volume,A1,A2,cap_mgo,R2,Htherm,F
+        integer,parameter  :: mod_val = 8000 
         !==================================================================
         !//////////////////////////////////////////////////////////////////
 
@@ -58,7 +59,7 @@ module single_sample
         power_i = 0.0
         theta_i = real(theta_init,dp)
         phi_i   = real(phi_init,dp)
-        if(dump_flag) then
+        if(mod(dump_count,mod_val) .eq. 0 .and. view_mag_flag) then
             theta_over_time(t_iter) = real(theta_i)
             phi_over_time(t_iter) = real(phi_i)
         end if
@@ -88,7 +89,7 @@ module single_sample
             phi_i   = phi_i+t_step*dphi 
             theta_i = theta_i+t_step*dtheta
             cumulative_pow(t_iter) = real(power_i)
-            if(dump_flag) then
+            if(mod(dump_count,mod_val) .eq. 0 .and. view_mag_flag) then
                 theta_over_time(t_iter) = real(theta_i)
                 phi_over_time(t_iter) =  real(phi_i)
             end if
@@ -118,14 +119,14 @@ module single_sample
             phi_i   = phi_i+t_step*dphi
             theta_i = theta_i+t_step*dtheta
             cumulative_pow(t_iter) = real(power_i)
-            if(dump_flag) then
+            if(mod(dump_count,mod_val) .eq. 0 .and. view_mag_flag) then
                 theta_over_time(t_iter) = real(theta_i)
                 phi_over_time(t_iter) = real(phi_i)
             end if
         end do
 
         ! ===== array dump to file of theta/phi time evolution  ====
-        if(dump_flag)then
+        if(mod(dump_count,mod_val) .eq. 0 .and. view_mag_flag) then
             write (proc_string,'(I7.7)') proc_ID
             open(unit = proc_ID, file = "time_evol_mag_"//proc_string//".txt", action = "write", status = "replace", &
                     form = 'formatted')

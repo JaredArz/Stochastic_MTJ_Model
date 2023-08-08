@@ -14,7 +14,7 @@ all_params = ('Ms','Ki','TMR','Rp','J_she','a','b','tf','alpha','eta','d')
 class SHE_MTJ_rng():
      #   adds immutability to class. Only these values can be modified/created.
      __slots__ = ('theta','phi','Ms','Ki','TMR','Rp','J_she','a','b','tf','alpha','eta','d',
-                  'phiHistory','thetaHistory','dd_flag','params_set_flag')
+                  'phiHistory','thetaHistory','dd_flag','params_set_flag','dump_count')
 
      #================================================================================
      # initialize device with a dev-to-dev variation flag
@@ -22,6 +22,7 @@ class SHE_MTJ_rng():
          self.dd_flag=dd_flag
          self.phiHistory   = []
          self.thetaHistory = []
+         self.dump_count = 0
          # use None value to check for mag initialization 
          self.phi   = None
          self.theta = None

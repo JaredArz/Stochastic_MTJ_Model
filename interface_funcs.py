@@ -15,16 +15,19 @@ def mtj_sample(dev,Jstt,view_mag_flag,proc_ID) -> (int,float):
             energy, bit, theta_end, phi_end = f90.single_sample.pulse_then_relax(Jstt,\
                     dev.J_she,dev.theta,dev.phi,dev.Ki,dev.TMR,dev.Rp,\
                     dev.a,dev.b,dev.tf,dev.alpha,dev.Ms,dev.eta,dev.d,\
-                    view_mag_flag,proc_ID)
+                    view_mag_flag,dev.dump_count,proc_ID)
             # Need to update device objects and put together time evolution data after return.
             dev.set_mag_vector(phi_end,theta_end)
-            if(view_mag_flag):
+            # condition hardcoded in fortran as well, change in both places
+            if(view_mag_flag and (dev.dump_count % 8000 == 0)):
                 # These file names are determined by fortran subroutine single_sample.
                 theta_from_txt = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
                 phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
                 os.remove("time_evol_mag_" + format_proc_ID(proc_ID) + ".txt")
                 dev.thetaHistory.append(list(theta_from_txt))
                 dev.phiHistory.append(list(phi_from_txt))
+            if(view_mag_flag):
+                dev.dump_count+=1
             return bit,energy
 
 def run_in_parallel_batch(func,samples,\

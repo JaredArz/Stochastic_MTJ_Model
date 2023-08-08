@@ -121,7 +121,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   hist = []
   bitstream = []
   energy_avg = []
-  mag_view_flag = True
+  mag_view_flag = False
   parallel_flag = False #NOTE: dont use parallel, much slower
   parallel_batch_size = None # ==== NOTE:  None value defaults to the total number of cores on the CPU ====
 
@@ -143,6 +143,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
           hist.append(temp_j)
           bitstream.append(''.join(str(i) for i in bits_j))
           energy_avg.append(np.average(energies_j))
+
 
   # ==============================================================================================
   # Build an analytical exponential probability density function (PDF)
