@@ -27,13 +27,6 @@ def profile(func):
     return retval
   return inner
 
-# Inject noise
-def draw_norm(x,var,psig):
-    return (x if not var else(x*np.random.normal(1,psig,1)))
-
-def draw_const(x,var,csig):
-    return (x if not var else(x+np.random.normal(-csig,csig,1)))
-
 # =====================================================================
 #       NOTE: do not call this function directly —              
 #       arguments handeled by interface function "run_in_parllel_batch"
@@ -54,50 +47,50 @@ def single_run_serial(dev,k,init,lmda,\
       return temp,bits,energies
 
 def rng(dev,k,init,lmda,mag_view_flag,proc_ID):
-    x2 = 2**k
-    x0 = 1
+  x2 = 2**k
+  x0 = 1
+  x1 = (x2+x0)/2
+  theta = init
+  phi = np.random.rand()*2*np.pi
+  # NOTE: new method
+  dev.set_mag_vector(phi,theta)
+  temp = 0
+  bits = []
+  energies = []
+
+  for i in range(k):
+    pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
+    #fortran call wrapper in interface_funcs
+    out,energy = mtj_sample(dev,jz_lut_she(pright),mag_view_flag,proc_ID)
+    bits.append(out)
+    energies.append(energy)
+
+    if out == 1:
+      x0 = x1
+    elif out == 0:
+      x2 = x1
     x1 = (x2+x0)/2
-    theta = init
-    phi = np.random.rand()*2*np.pi
-    # NOTE: new method
-    dev.set_mag_vector(phi,theta)
-    temp = 0
-    bits = []
-    energies = []
-
-    for i in range(k):
-      pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
-      #fortran call wrapper in interface_funcs
-      out,energy = mtj_sample(dev,jz_lut_she(pright),mag_view_flag,proc_ID)
-      bits.append(out)
-      energies.append(energy)
-
-      if out == 1:
-        x0 = x1
-      elif out == 0:
-        x2 = x1
-      x1 = (x2+x0)/2
-      temp += out*2**(k-i-1)
-    return temp,bits,energies
+    temp += out*2**(k-i-1)
+  return temp,bits,energies
 
 def cdf(x, lmda):
-    return 1-np.exp(-lmda*x)
+  return 1-np.exp(-lmda*x)
 
 
 dir_check = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
 def check_output_paths() -> None:
-    dir_check("./results")
-    dir_check("./results/parameter_files")
-    dir_check("./results/chi2Data")
-    dir_check("./results/plots")
-    dir_check("./results/plots/distribution_plots")
-    dir_check("./results/plots/magnetization_plots")
-    dir_check("./results/magPhi")
-    dir_check("./results/bitstream_results")
-    dir_check("./results/magTheta")
-    dir_check("./results/energy_results")
-    dir_check("./results/countData")
-    dir_check("./results/bitData")
+  dir_check("./results")
+  dir_check("./results/parameter_files")
+  dir_check("./results/chi2Data")
+  dir_check("./results/plots")
+  dir_check("./results/plots/distribution_plots")
+  dir_check("./results/plots/magnetization_plots")
+  dir_check("./results/magPhi")
+  dir_check("./results/bitstream_results")
+  dir_check("./results/magTheta")
+  dir_check("./results/energy_results")
+  dir_check("./results/countData")
+  dir_check("./results/bitData")
 
 @profile
 def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
@@ -111,17 +104,17 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   dev = SHE_MTJ_rng(dd_flag=dd)
   # NOTE: parameter setting done manually or with set_vals method, 1 uses default values
   dev.set_vals(1)
-  #dev.set_vals(TMR = draw_norm(1.5,dev.dd_flag,0.05))
   #print(dev) #NOTE: can print device to list all parameters
 
   k = 8
   lmda = 0.01
   init_t = 9*np.pi/10
-  samples = 8000
+  samples = 1000000
+  # samples = 1000
   hist = []
   bitstream = []
   energy_avg = []
-  mag_view_flag = False
+  mag_view_flag = True
   parallel_flag = False #NOTE: dont use parallel, much slower
   parallel_batch_size = None # ==== NOTE:  None value defaults to the total number of cores on the CPU ====
 
@@ -133,17 +126,16 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   #FIXME: currently much slower than the serial version. To be fixed with MPI or OMP
   # ========================================
   if (parallel_flag):
-      hist, energy_avg, bitstream = run_in_parallel_batch(single_run_parallel,samples,\
-                                                            dev,k,init_t,lmda,hist,bitstream,energy_avg,\
-                                                            mag_view_flag,parallel_batch_size)
+    hist, energy_avg, bitstream = run_in_parallel_batch(single_run_parallel,samples,\
+                                                          dev,k,init_t,lmda,hist,bitstream,energy_avg,\
+                                                          mag_view_flag,parallel_batch_size)
   else:
-      for j in range(samples):
-          temp_j,bits_j,energies_j = single_run_serial(dev,k,init_t,lmda,hist,bitstream,energy_avg,\
-                                                             mag_view_flag,j+7)
-          hist.append(temp_j)
-          bitstream.append(''.join(str(i) for i in bits_j))
-          energy_avg.append(np.average(energies_j))
-
+    for j in range(samples):
+      temp_j,bits_j,energies_j = single_run_serial(dev,k,init_t,lmda,hist,bitstream,energy_avg,\
+                                                          mag_view_flag,j+7)
+      hist.append(temp_j)
+      bitstream.append(''.join(str(i) for i in bits_j))
+      energy_avg.append(np.average(energies_j))
 
   # ==============================================================================================
   # Build an analytical exponential probability density function (PDF)
@@ -170,8 +162,6 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   exp_pdf = exp_pdf/expsum
   exp_pdf = exp_pdf*samples
   counts, _ = np.histogram(hist,bins=256)
-
-
 
 
   # Calculate the chi_square parameter
@@ -316,83 +306,40 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
 
 
 def main():
-  #alpha_vals   = [0.01, 0.03, 0.05, 0.07, 0.1]            # damping constant
-  #Ki_vals      = [0.2e-3, 0.4e-3, 0.6e-3, 0.8e-3, 1e-3]   # anistrophy energy    
-  #Ms_vals      = [0.3e6, 0.7e6, 1.2e6, 1.6e6, 2e6]        # saturation magnetization
-  #Rp_vals      = [500, 1000, 5000, 25000, 50000]          # parallel resistance
-  #TMR_vals     = [0.3, 0.5, 2, 4, 6]                      # tunneling magnetoresistance ratio
-  #d_vals       = [50]                                     # free layer diameter
-  #tf_vals      = [1.1]                                    # free layer thickness
-  #eta_vals     = [0.1, 0.2, 0.4, 0.6, 0.8]                # spin hall angle
-  #J_she_vals   = [0.01e12, 0.1e12, 0.25e12, 0.5e12, 1e12] # current density
+  # alpha_vals   = [0.01]     # damping constant
+  # Ki_vals      = [0.2e-3]   # anistrophy energy    
+  # Ms_vals      = [0.3e6]    # saturation magnetization
+  # Rp_vals      = [500]      # parallel resistance
+  # TMR_vals     = [0.3]      # tunneling magnetoresistance ratio
+  # d_vals       = [50]       # free layer diameter
+  # tf_vals      = [1.1]      # free layer thickness
+  # eta_vals     = [0.1]      # spin hall angle
+  # J_she_vals   = [0.01e12]  # current density
 
-  alpha_vals   = [0.01]            # damping constant
-  Ki_vals      = [0.2e-3]   # anistrophy energy    
-  Ms_vals      = [0.3e6]        # saturation magnetization
-  Rp_vals      = [500]          # parallel resistance
-  TMR_vals     = [0.3]                      # tunneling magnetoresistance ratio
-  d_vals       = [50]                                     # free layer diameter
-  tf_vals      = [1.1]                                    # free layer thickness
-  eta_vals     = [0.1]                # spin hall angle
-  J_she_vals   = [0.01e12] # current density
+  # csvFile = "MTJ_Results.csv"
+  # f = open(csvFile, "w")
+  # writeFile = csv.writer(f)
+  # writeFile.writerow(['alpha', 'Ki', 'Ms', 'Rp', 'TMR', 'd', 'tf', 'eta', 'J_she', 
+  #                     'distribution_plot_path', 'magnetization_plot_path', 'bitstream_path', 'energy_path', 'countData_path', 'bitData_path', 'magTheta_path', 'magPhi_path', 'chi2Data_path'])
 
-  csvFile = "MTJ_Results.csv"
-  f = open(csvFile, "w")
-  writeFile = csv.writer(f)
-  writeFile.writerow(['alpha', 'Ki', 'Ms', 'Rp', 'TMR', 'd', 'tf', 'eta', 'J_she', 
-                      'distribution_plot_path', 'magnetization_plot_path', 'bitstream_path', 'energy_path', 'countData_path', 'bitData_path', 'magTheta_path', 'magPhi_path', 'chi2Data_path'])
-
-  total_num_runs = len(alpha_vals)*len(Ki_vals)*len(Ms_vals)*len(Rp_vals)*\
-               len(TMR_vals)*len(d_vals)*len(tf_vals)*len(eta_vals)*len(J_she_vals)
-  pbar = tqdm(total=total_num_runs,ncols=80)
-  run = 0
-  for alpha in alpha_vals:
-    for Ki in Ki_vals:
-      for Ms in Ms_vals:
-        for Rp in Rp_vals:
-          for TMR in TMR_vals:
-            for d in d_vals:
-              for tf in tf_vals:
-                for eta in eta_vals:
-                    for J_she in J_she_vals:
-                      mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=writeFile)
-                      run += 1
-  pbar.update(1)
-
-  f.close()
-
-if __name__ == "__main__":
-  start_time = time.time()
-  main()
-  print("--- %s seconds ---" % (time.time() - start_time))
-  exit()
-
-  # parser = argparse.ArgumentParser(description="MTJ Parameter Testing")
-  # parser.add_argument("--alpha", required=True, help="damping constant", type=float)
-  # parser.add_argument("--Ki", required=True, help="anistrophy energy", type=float)
-  # parser.add_argument("--Ms", required=True, help="saturation magnetization", type=float)
-  # parser.add_argument("--Rp", required=True, help="parallel resistance", type=float)
-  # parser.add_argument("--TMR", required=True, help="tunneling magnetoresistance ratio", type=float)
-  # parser.add_argument("--d", required=True, help="free layer diameter", type=float)
-  # parser.add_argument("--tf", required=True, help="free layer thickness", type=float)
-  # parser.add_argument("--eta", required=True, help="spin hall angle", type=float)
-  # parser.add_argument("--J_she", required=True, help="current density", type=float)
-  # parser.add_argument("--run", required=True, help="run number", type=int)
-  # args = parser.parse_args()
+  # total_num_runs = len(alpha_vals)*len(Ki_vals)*len(Ms_vals)*len(Rp_vals)*\
+  #              len(TMR_vals)*len(d_vals)*len(tf_vals)*len(eta_vals)*len(J_she_vals)
+  # pbar = tqdm(total=total_num_runs,ncols=80)
+  # run = 0
+  # for alpha in alpha_vals:
+  #   for Ki in Ki_vals:
+  #     for Ms in Ms_vals:
+  #       for Rp in Rp_vals:
+  #         for TMR in TMR_vals:
+  #           for d in d_vals:
+  #             for tf in tf_vals:
+  #               for eta in eta_vals:
+  #                   for J_she in J_she_vals:
+  #                     mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=writeFile)
+  #                     run += 1
   
-  # alpha = args.alpha
-  # Ki = args.Ki
-  # Ms = args.Ms
-  # Rp = args.Rp
-  # TMR = args.TMR
-  # d = args.d
-  # tf = args.tf
-  # eta = args.eta
-  # J_she = args.J_she
-  # run = args.run
-
-  # print(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run)
-  # mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None)
+  # pbar.update(1)
+  # f.close()
 
   parser = argparse.ArgumentParser(description="MTJ Parameter Testing")
   parser.add_argument("--ID", required=True, help="run ID", type=int)
@@ -416,4 +363,8 @@ if __name__ == "__main__":
   # print(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run)
   mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None)
   
-    
+
+if __name__ == "__main__":
+  start_time = time.time()
+  main()
+  print("--- %s seconds ---" % (time.time() - start_time))
