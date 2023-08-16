@@ -93,7 +93,7 @@ def check_output_paths() -> None:
   dir_check("./results/bitData")
 
 @profile
-def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
+def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run):
   # if writeFile == None:
   #   csvFile = "MTJ_Results.csv"
   #   f = open(csvFile, "a")
@@ -109,8 +109,8 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   k = 8
   lmda = 0.01
   init_t = 9*np.pi/10
-  samples = 1000000
-  # samples = 1000
+  # samples = 1000000
+  samples = 1000
   hist = []
   bitstream = []
   energy_avg = []
@@ -173,24 +173,24 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
 
   check_output_paths()
   # File holds the Chi2 value
-  chi2Data_path = "results/chi2Data/chi2Data_{}.txt".format(run)
-  f = open(chi2Data_path,'w')
-  f.write(str(chi2))
-  f.close
+  # chi2Data_path = "results/chi2Data/chi2Data_{}.txt".format(run)
+  # f = open(chi2Data_path,'w')
+  # f.write(str(chi2))
+  # f.close
       
   counts = counts/samples
   exp_pdf = exp_pdf/samples
 
   # Build plot 2, overlay computed distribution to ideal exponential
-  plt.figure(2)
-  plt.plot(xxis, counts, 'b-')
-  plt.plot(xxis, exp_pdf,'k--')
-  plt.xlabel("Generated Number")
-  plt.ylabel("Normalized")
-  distribution_plot_path = "results/plots/distribution_plots/distribution_plot_{}.png".format(run)
-  plt.savefig(distribution_plot_path)
-  plt.clf()
-  plt.close()
+  # plt.figure(2)
+  # plt.plot(xxis, counts, 'b-')
+  # plt.plot(xxis, exp_pdf,'k--')
+  # plt.xlabel("Generated Number")
+  # plt.ylabel("Normalized")
+  # distribution_plot_path = "results/plots/distribution_plots/distribution_plot_{}.png".format(run)
+  # plt.savefig(distribution_plot_path)
+  # plt.clf()
+  # plt.close()
 
   # Build plot 3, will track the magnetization path of the first generated random number
   # look at this picture to see if IMA or PMA; if magnetization stays strongly in XY plane,
@@ -211,100 +211,102 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   except IndexError:
     pass
 
-  fig, axs = plt.subplots(1,2)
-  axs[0].scatter(yvals,zvals)
-  axs[0].axis('equal')
-  axs[0].axis(xmin = -1, xmax = 1)
-  axs[0].axis(ymin = -1, ymax = 1)
-  axs[0].set_xlabel('Y')
-  axs[0].set_ylabel('Z')
-  axs[1].scatter(xvals,zvals)
-  axs[1].axis('equal')
-  axs[1].axis(xmin = -1, xmax = 1)
-  axs[1].axis(ymin = -1, ymax = 1)
-  axs[1].set_xlabel('X')
-  axs[1].set_ylabel('Z')
-  axs[1].yaxis.set_label_position("right")
-  axs[1].yaxis.tick_right()
-  fig.tight_layout()
-  magnetization_plot_path = "results/plots/magnetization_plots/magnetization_plot_{}.png".format(run)
-  plt.savefig(magnetization_plot_path)
-  plt.clf()
-  plt.close()
+  # fig, axs = plt.subplots(1,2)
+  # axs[0].scatter(yvals,zvals)
+  # axs[0].axis('equal')
+  # axs[0].axis(xmin = -1, xmax = 1)
+  # axs[0].axis(ymin = -1, ymax = 1)
+  # axs[0].set_xlabel('Y')
+  # axs[0].set_ylabel('Z')
+  # axs[1].scatter(xvals,zvals)
+  # axs[1].axis('equal')
+  # axs[1].axis(xmin = -1, xmax = 1)
+  # axs[1].axis(ymin = -1, ymax = 1)
+  # axs[1].set_xlabel('X')
+  # axs[1].set_ylabel('Z')
+  # axs[1].yaxis.set_label_position("right")
+  # axs[1].yaxis.tick_right()
+  # fig.tight_layout()
+  # magnetization_plot_path = "results/plots/magnetization_plots/magnetization_plot_{}.png".format(run)
+  # plt.savefig(magnetization_plot_path)
+  # plt.clf()
+  # plt.close()
 
   # Save bitstream and energy values
-  bitstream_path = "results/bitstream_results/bitstream_{}.npy".format(run)
-  np.save(bitstream_path, np.array(bitstream))
-  energy_path = "results/energy_results/energy_{}.npy".format(run)
-  np.save(energy_path, np.array(energy_avg))
+  # bitstream_path = "results/bitstream_results/bitstream_{}.npy".format(run)
+  # np.save(bitstream_path, np.array(bitstream))
+  # energy_path = "results/energy_results/energy_{}.npy".format(run)
+  # np.save(energy_path, np.array(energy_avg))
 
   # File holds the number of times each number was generated; use for a histogram
-  countData_path = "results/countData/countData_{}.txt".format(run)
-  f = open(countData_path,'w')
-  for i in range(256):
-    f.write(str(counts[i]))
-    f.write('\n')
-  f.close
+  # countData_path = "results/countData/countData_{}.txt".format(run)
+  # f = open(countData_path,'w')
+  # for i in range(256):
+  #   f.write(str(counts[i]))
+  #   f.write('\n')
+  # f.close
 
   # File holds the list of all random numbers generated at each sample
-  bitData_path = "results/bitData/bitData_{}.txt".format(run)
-  f = open(bitData_path,'w')
-  for i in range(samples):
-    f.write(str(hist[i]))
-    f.write('\n')
-  f.close
+  # bitData_path = "results/bitData/bitData_{}.txt".format(run)
+  # f = open(bitData_path,'w')
+  # for i in range(samples):
+  #   f.write(str(hist[i]))
+  #   f.write('\n')
+  # f.close
 
   # File holds the outputs of the magnetization path generating the first random number (only theta)
-  magTheta_path = "results/magTheta/magTheta_{}.txt".format(run)
-  f = open(magTheta_path,'w')
-  try:
-    for j in range(1):
-      for i in range(500): 
-        f.write(str(dev.thetaHistory[j][i]))
-        f.write('\n')
-  except IndexError:
-    pass
-  finally:
-    f.close()
+  # magTheta_path = "results/magTheta/magTheta_{}.txt".format(run)
+  # f = open(magTheta_path,'w')
+  # try:
+  #   for j in range(1):
+  #     for i in range(500): 
+  #       f.write(str(dev.thetaHistory[j][i]))
+  #       f.write('\n')
+  # except IndexError:
+  #   pass
+  # finally:
+  #   f.close()
 
   # File holds the outputs of the magnetization path generating the first random number (only phi)
-  magPhi_path = "results/magPhi/magPhi_{}.txt".format(run)
-  f = open(magPhi_path,'w')
-  try:
-    for j in range(1):
-      for i in range(500):
-        f.write(str(dev.phiHistory[j][i]))
-        f.write('\n')
-  except IndexError:
-    pass
-  finally:
-    f.close
+  # magPhi_path = "results/magPhi/magPhi_{}.txt".format(run)
+  # f = open(magPhi_path,'w')
+  # try:
+  #   for j in range(1):
+  #     for i in range(500):
+  #       f.write(str(dev.phiHistory[j][i]))
+  #       f.write('\n')
+  # except IndexError:
+  #   pass
+  # finally:
+  #   f.close
 
-  if writeFile == None:
-    parameterFile_path = "results/parameter_files/parameterFile_{}.txt".format(run)
-    with open(parameterFile_path, "w") as f:
-      f.write("alpha: {}\n".format(str(alpha)))
-      f.write("Ki: {}\n".format(str(Ki)))
-      f.write("Ms: {}\n".format(str(Ms)))
-      f.write("Rp: {}\n".format(str(Rp)))
-      f.write("TMR: {}\n".format(str(TMR)))
-      f.write("d: {}\n".format(str(d)))
-      f.write("tf: {}\n".format(str(tf)))
-      f.write("eta: {}\n".format(str(eta)))
-      f.write("J_she: {}\n".format(str(J_she)))
-      f.write("distribution_plot_path: {}\n".format(distribution_plot_path))
-      f.write("magnetization_plot_path: {}\n".format(magnetization_plot_path))
-      f.write("bitstream_path: {}\n".format(bitstream_path))
-      f.write("energy_path: {}\n".format(energy_path))
-      f.write("countData_path: {}\n".format(countData_path))
-      f.write("bitData_path: {}\n".format(bitData_path))
-      f.write("magTheta_path: {}\n".format(magTheta_path))
-      f.write("magPhi_path: {}\n".format(magPhi_path))
-      f.write("chi2Data_path: {}\n".format(chi2Data_path))
-  else:
-    writeFile.writerow([alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, 
-                        distribution_plot_path, magnetization_plot_path, bitstream_path, 
-                        energy_path, countData_path, bitData_path, magTheta_path, magPhi_path, chi2Data_path])
+  # if writeFile == None:
+  #   parameterFile_path = "results/parameter_files/parameterFile_{}.txt".format(run)
+  #   with open(parameterFile_path, "w") as f:
+  #     f.write("alpha: {}\n".format(str(alpha)))
+  #     f.write("Ki: {}\n".format(str(Ki)))
+  #     f.write("Ms: {}\n".format(str(Ms)))
+  #     f.write("Rp: {}\n".format(str(Rp)))
+  #     f.write("TMR: {}\n".format(str(TMR)))
+  #     f.write("d: {}\n".format(str(d)))
+  #     f.write("tf: {}\n".format(str(tf)))
+  #     f.write("eta: {}\n".format(str(eta)))
+  #     f.write("J_she: {}\n".format(str(J_she)))
+  #     f.write("distribution_plot_path: {}\n".format(distribution_plot_path))
+  #     f.write("magnetization_plot_path: {}\n".format(magnetization_plot_path))
+  #     f.write("bitstream_path: {}\n".format(bitstream_path))
+  #     f.write("energy_path: {}\n".format(energy_path))
+  #     f.write("countData_path: {}\n".format(countData_path))
+  #     f.write("bitData_path: {}\n".format(bitData_path))
+  #     f.write("magTheta_path: {}\n".format(magTheta_path))
+  #     f.write("magPhi_path: {}\n".format(magPhi_path))
+  #     f.write("chi2Data_path: {}\n".format(chi2Data_path))
+  # else:
+  #   writeFile.writerow([alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, 
+  #                       distribution_plot_path, magnetization_plot_path, bitstream_path, 
+  #                       energy_path, countData_path, bitData_path, magTheta_path, magPhi_path, chi2Data_path])
+  
+  return chi2, bitstream, energy_avg, counts[0:256], hist[0:samples], dev.thetaHistory[0][0:500], dev.phiHistory[0][0:500]
 
 
 def main():
