@@ -104,7 +104,16 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   dev = SHE_MTJ_rng(dd_flag=dd)
   # NOTE: parameter setting done manually or with set_vals method, 1 uses default values
   dev.set_vals(1)
-  #print(dev) #NOTE: can print device to list all parameters
+  dev.alpha = alpha
+  dev.Ki = Ki
+  dev.Ms = Ms
+  dev.Rp = Rp
+  dev.TMR = TMR
+  dev.d = d
+  dev.tf = tf
+  dev.eta = eta
+  dev.J_she = J_she
+  print(dev) #NOTE: can print device to list all parameters
 
   k = 8
   lmda = 0.01

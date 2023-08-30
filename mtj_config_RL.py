@@ -92,25 +92,36 @@ def check_output_paths() -> None:
   dir_check("./results/countData")
   dir_check("./results/bitData")
 
-@profile
-def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run):
+# @profile
+def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, samples=1000):
   # if writeFile == None:
   #   csvFile = "MTJ_Results.csv"
   #   f = open(csvFile, "a")
   #   writeFile = csv.writer(f)
 
   dd = 1
+  
   # NOTE: device init only takes in dev-to-dev variation flag
   dev = SHE_MTJ_rng(dd_flag=dd)
+  
   # NOTE: parameter setting done manually or with set_vals method, 1 uses default values
   dev.set_vals(1)
-  #print(dev) #NOTE: can print device to list all parameters
+  dev.alpha = alpha
+  dev.Ki = Ki
+  dev.Ms = Ms
+  dev.Rp = Rp
+  dev.TMR = TMR
+  dev.d = d
+  dev.tf = tf
+  dev.eta = eta
+  dev.J_she = J_she
+  # print(dev) #NOTE: can print device to list all parameters
 
   k = 8
   lmda = 0.01
   init_t = 9*np.pi/10
   # samples = 1000000
-  samples = 1000
+  # samples = 100
   hist = []
   bitstream = []
   energy_avg = []
