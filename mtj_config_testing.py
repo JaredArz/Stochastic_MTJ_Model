@@ -118,7 +118,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
   k = 8
   lmda = 0.01
   init_t = 9*np.pi/10
-  samples = 1000000
+  samples = 100000
   # samples = 1000
   hist = []
   bitstream = []
@@ -370,6 +370,18 @@ def main():
   tf = f[run][6]
   eta = f[run][7]
   J_she = f[run][8]
+
+  # J_she = 5e11
+  # Ms = 0.4e6
+  # Ki = 0.00014759392802570008
+  # TMR   = 1.5  # TMR ratio at V=0,120%  
+  # Rp    = 3861.20994613      # Magenetoresistance at parallel state, 8000 Ohm
+  # a     = 50e-9              # Width of the MTJ in m
+  # b     = 50e-9              # Length of the MTJ in m
+  # tf    = 1.1e-9             # Thickness of the freelayer in m                           
+  # alpha = 0.03               # Gilbert damping damping factor
+  # eta   = 0.3                # Spin hall angle
+  # d     = 3e-9
 
   # print(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run)
   mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None)
