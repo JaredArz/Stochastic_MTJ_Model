@@ -14,6 +14,9 @@ from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewar
 
 from mtj_config_RL import mtj_run
 
+# Hyperparameters
+EPISODE_LENGTH = 150
+DEV_SAMPLES = 250
 
 
 class MTJ_Env(Env):
@@ -39,7 +42,7 @@ class MTJ_Env(Env):
     self.d = 50
     self.tf = 1.1
 
-    self.dev_samples = 100
+    self.dev_samples = DEV_SAMPLES
 
     # Parameter ranges
     self.alpha_range = [0.01, 0.1]
@@ -61,8 +64,8 @@ class MTJ_Env(Env):
 
     # Get initial config score
     chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, run=0, samples=self.dev_samples)
-    self.min_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi)
-    self.current_config_score = self.min_config_score
+    self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi)
+    self.min_config_score = self.current_config_score
     self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "d":self.d, "tf":self.tf}
 
     # Actions: increase/decrease the 7 parameters
@@ -80,11 +83,19 @@ class MTJ_Env(Env):
                                    "min_config_score":Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32)})
     
     # Gather observation space
-    self.obs = [self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.eta, self.J_she, self.current_config_score, self.min_config_score]
-    self.obs = np.array(self.obs)
+    self.obs = self.observation_space.sample()
+    self.obs["alpha"] = np.array([self.alpha], dtype=np.float32)
+    self.obs["Ki"] = np.array([self.Ki], dtype=np.float32)
+    self.obs["Ms"] = np.array([self.Ms], dtype=np.float32)
+    self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
+    self.obs["TMR"] = np.array([self.TMR], dtype=np.float32)
+    self.obs["eta"] = np.array([self.eta], dtype=np.float32)
+    self.obs["J_she"] = np.array([self.J_she], dtype=np.float32)
+    self.obs["current_config_score"] = np.array([self.current_config_score], dtype=np.float32)
+    self.obs["min_config_score"] = np.array([self.min_config_score], dtype=np.float32)
     
     # Set episode length
-    self.episode_length = 60
+    self.episode_length = EPISODE_LENGTH
   
 
   def apply_action(self, action):
@@ -161,12 +172,20 @@ class MTJ_Env(Env):
     chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, run=0, samples=self.dev_samples)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi)
     
+    # Gather observation space
+    self.obs = self.observation_space.sample()
+    self.obs["alpha"] = np.array([self.alpha], dtype=np.float32)
+    self.obs["Ki"] = np.array([self.Ki], dtype=np.float32)
+    self.obs["Ms"] = np.array([self.Ms], dtype=np.float32)
+    self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
+    self.obs["TMR"] = np.array([self.TMR], dtype=np.float32)
+    self.obs["eta"] = np.array([self.eta], dtype=np.float32)
+    self.obs["J_she"] = np.array([self.J_she], dtype=np.float32)
+    self.obs["current_config_score"] = np.array([self.current_config_score], dtype=np.float32)
+    self.obs["min_config_score"] = np.array([self.min_config_score], dtype=np.float32)
+
     # Calculate reward
     reward = self.reward_function()
-    
-    # Gather observation space
-    self.obs = [self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.eta, self.J_she, self.current_config_score, self.min_config_score]
-    self.obs = np.array(self.obs)
     
     # Set placeholder for info
     self.info = {'alpha': self.alpha,
@@ -209,44 +228,26 @@ class MTJ_Env(Env):
     
     # Get initial config score
     chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, run=0, samples=self.dev_samples)
-    self.min_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi)
-    self.current_config_score = self.min_config_score
+    self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi)
+    # self.min_config_score = self.current_config_score
 
     # Gather observation space
-    self.obs = [self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.eta, self.J_she, self.current_config_score, self.min_config_score]
-    self.obs = np.array(self.obs)
+    self.obs = self.observation_space.sample()
+    self.obs["alpha"] = np.array([self.alpha], dtype=np.float32)
+    self.obs["Ki"] = np.array([self.Ki], dtype=np.float32)
+    self.obs["Ms"] = np.array([self.Ms], dtype=np.float32)
+    self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
+    self.obs["TMR"] = np.array([self.TMR], dtype=np.float32)
+    self.obs["eta"] = np.array([self.eta], dtype=np.float32)
+    self.obs["J_she"] = np.array([self.J_she], dtype=np.float32)
+    self.obs["current_config_score"] = np.array([self.current_config_score], dtype=np.float32)
+    self.obs["min_config_score"] = np.array([self.min_config_score], dtype=np.float32)
 
     # Reset episode length
-    self.episode_length = 60
+    self.episode_length = EPISODE_LENGTH
     
     return self.obs
   
-
-def Test_Env():
-  env = MTJ_Env()
-
-  episodes = 5
-  for episode in range(1, episodes+1):
-    obs = env.reset()
-    done = False
-    score = 0 
-    
-    while not done:
-      # env.render()
-      action = env.action_space.sample()
-      obs, reward, done, info = env.step(action)
-      score += reward
-
-      print(f"Action: {action}")
-      print(f"Obs   : {obs}")
-      print(f"Reward: {reward}")
-
-    print(f"\nEpisode: {episode} Score: {score}")
-    print("**************************************************************************\n")
-  
-  print(f"Best Config: {env.best_config}")
-
-  env.close()
 
 
 def Train_Model(model_name, training_timesteps:int, eval:bool=True):
@@ -298,6 +299,33 @@ def Test_Model(model_path:str, episodes:int):
   env.close()
 
 
+def Test_Env():
+  env = MTJ_Env()
+
+  episodes = 5
+  for episode in range(1, episodes+1):
+    obs = env.reset()
+    done = False
+    score = 0 
+    
+    while not done:
+      # env.render()
+      action = env.action_space.sample()
+      obs, reward, done, info = env.step(action)
+      score += reward
+
+      print(f"Action: {action}")
+      print(f"Obs   : {obs}")
+      print(f"Reward: {reward}")
+
+    print(f"\nEpisode: {episode} Score: {score}")
+    print("**************************************************************************\n")
+  
+  print(f"Best Config: {env.best_config}")
+
+  env.close()
+
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
@@ -306,7 +334,7 @@ if __name__ == "__main__":
 
   if (args.activity == "TrainModel"):
     model_name = "mtj_model_energyTest"
-    training_timesteps = 10000
+    training_timesteps = 500000
     eval = True
     Train_Model(model_name, training_timesteps, eval)
 
