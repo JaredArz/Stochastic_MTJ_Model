@@ -28,3 +28,5 @@
 runs/*
 results/*
 Training/Logs/*
+pid.txt
+junk.txt
