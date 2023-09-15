@@ -5,7 +5,7 @@ def get_m_vec_comps(dev):
     mx = np.sin(dev.thetaHistory)*np.cos(dev.phiHistory)
     my = np.sin(dev.thetaHistory)*np.sin(dev.phiHistory)
     mz = np.cos(dev.thetaHistory)
-    return mx,my,mz
+    return mx[0],my[0],mz[0]
 
 def configuration_check(dev):
     steps = 1
@@ -16,6 +16,7 @@ def configuration_check(dev):
     J_she = -4e11
     cycles = 100
     reps = 1
+    t_step = 5e-11
     # FIXME 50e-9 was andrews value, not the same for model
     pulse_check_start = (1/5) * dev.t_pulse
     relax_check_start = (3/5) * dev.t_relax
@@ -26,6 +27,8 @@ def configuration_check(dev):
     mz_avg = []
     mz_chk1_arr = np.zeros(pulse_steps)
     mz_chk2_arr = np.zeros(relax_steps)
+    print(pulse_steps)
+    print(relax_steps)
     point2point_variation = 0
     for rep in range(reps):
         for id,j in enumerate(J_stt):
@@ -33,13 +36,12 @@ def configuration_check(dev):
             dev.set_mag_vector(0, np.pi/2)
             mz_arr = []
             for cy in range(cycles):
-                theta,phi,bitstr,_,energy = mtj_sample(dev,J_stt,1,1,1,1)
+                _,_ = mtj_sample(dev,J_stt,1,1,1,1)
                 mx,my,mz = get_m_vec_comps(dev)
                 mz_arr.append(mz)
                 mz_chk1_arr = mz_chk1_arr + np.absolute(mz[0:pulse_steps])
                 mz_chk2_arr = mz_chk2_arr + np.absolute(mz[pulse_steps:pulse_steps+relax_steps])
                 point2point_variation = point2point_variation + np.sum(np.absolute(mz[1::] - mz[0:-1]))/(mz.size - 1)
-
             mz_avg.append(np.mean(mz_arr))
 
     mz_chk1_arr = mz_chk1_arr/cycles
