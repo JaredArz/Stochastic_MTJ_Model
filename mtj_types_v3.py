@@ -1,28 +1,35 @@
 import numpy as np
+import sys
+
+# Private functions to inject noise if device-to-device variation requested
+def draw_norm(x,var,psig):
+    return (x if not var else(x*np.random.normal(1,psig)))
+
+def draw_const(x,var,csig):
+    return (x if not var else(x+np.random.normal(-csig,csig)))
 
 def print_key_error():
      print("One or more parameter values were passed incorrectly or not at all.")
-     print("Use named parameters, expecting: Ms,Ki,TMR,Rp,J_she,a,b,tf,alpha,eta,d.")
+     print("Use named parameters, expecting the following to be set before use:")
+     print("Ms, Ki, TMR, Rp, J_she, a, b, tf, alpha, eta, d, t_pulse, t_relax")
      print("--------------------------------*--*-----------------------------------")
+
 #================================================================================
 #////////////////////////////////////////////////////////////////////////////////
 
 # this list, along with __slots__ dictate what the class is expecting
 # changes to the parameter list should go in here, __slots__ and to the debug option in set_vals
-all_params = ('Ms','Ki','TMR','Rp','J_she','a','b','tf','alpha','eta','d')
+all_params = ('Ms','Ki','TMR','Rp','J_she','a','b','tf','alpha','eta','d','t_pulse','t_relax')
 
 class SHE_MTJ_rng():
      #   adds immutability to class. Only these values can be modified/created.
-     __slots__ = ('theta','phi','Ms','Ki','TMR','Rp','J_she','a','b','tf','alpha','eta','d',
-                  'phiHistory','thetaHistory','dd_flag','params_set_flag','dump_count')
-
+     __slots__ = ('theta','phi','Ms','Ki','TMR','Rp','J_she','a','b','tf','alpha','eta','d','t_pulse','t_relax',\
+                    'phiHistory','thetaHistory','dd_var_flag','params_set_flag','sample_count')
      #================================================================================
-     # initialize device with a dev-to-dev variation flag
-     def __init__(self,dd_flag):
-         self.dd_flag=dd_flag
+     def __init__(self):
          self.phiHistory   = []
          self.thetaHistory = []
-         self.dump_count = 0
+         self.sample_count = 0
          # use None value to check for mag initialization 
          self.phi   = None
          self.theta = None
@@ -45,7 +52,7 @@ class SHE_MTJ_rng():
              try:
                  out_string += "\r" + str(p) + ": " + str(getattr(self,p)) + "\n"
              except(AttributeError):
-                 out_string += "\r" + str(p) + ": " + " \n" 
+                 out_string += "\r" + str(p) + ": " + " \n"
          return out_string
 
      #================================================================================
@@ -67,28 +74,42 @@ class SHE_MTJ_rng():
      #set_vals can be called with True flag to use a default device setup
      #otherwise it takes individual device parameters passed in as in named arguemnts.
      #================================================================================
-     def set_vals(self,debug_flag=None,**params):
+     def set_vals(self,default_flag=None,**params):
          #catch call with no arguments
-         if params == {} and debug_flag is None:
+         if params == {} and default_flag is None:
              print_key_error()
              raise(KeyError)
          #debug option with flag True: use known good device values
-         elif debug_flag == True and params == {}:
+         elif ( default_flag == True or default_flag == False ) and params == {}:
              # MTJ Parameters- This is experimental values from real STT-SOT p-MTJ%
+
+             #self.Ki    = 0.9056364e-3 sam
+             #self.Ki    = 1.0056364e-3 jaesuk
+             self.Ki     = draw_norm(0.00014759392802570008, default_flag, 0.05)
+
+             #self.Rp    = 8e3 #sam value
+             #self.Rp    = 5e3 #jaesuk
+             self.Rp     = draw_norm(3861.20994613, default_flag, 0.05)      # Magenetoresistance at parallel state, 8000 Ohm
+
+             #self.TMR   = draw_norm(1.2, default_flag, 0.05)                # sam/jaseuk
+             self.TMR   = draw_norm(1.5, default_flag, 0.05)                # TMR ratio at V=0,120%  
+
+             #self.Ms    = 1.2e6 sam value
+             self.Ms    = 0.4e6
+
+             #=================
              self.J_she = 5e11
-             self.Ms = 0.4e6
-             self.Ki = 0.00014759392802570008
-             self.TMR   = 1.5  # TMR ratio at V=0,120%  
-             self.Rp    = 3861.20994613      # Magenetoresistance at parallel state, 8000 Ohm
              self.a     = 50e-9              # Width of the MTJ in m
              self.b     = 50e-9              # Length of the MTJ in m
              self.tf    = 1.1e-9             # Thickness of the freelayer in m                           
              self.alpha = 0.03               # Gilbert damping damping factor
              self.eta   = 0.3                # Spin hall angle
              self.d     = 3e-9               # Width,length and thichness of beta-W strip (heavy metal layer)
+             self.t_pulse = 10e-9
+             self.t_relax = 15e-9
              self.params_set_flag = True
-         #normal usage, process args and set flag if device fully initialized
-         elif debug_flag is None:
+
+         elif default_flag is None:
              try:
                  for param_key, param_val in params.items():
                      self.__setattr__(param_key, param_val, 1)
