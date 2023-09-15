@@ -1,25 +1,26 @@
-#%%
-from mtj_configtest import mtj_mod
+from interface_funcs import mtj_sample
 import numpy as np
-from tqdm import tqdm
 
-def configuration_check(TMR, Ki, Rp, Ms):
+def get_m_vec_comps(dev):
+    mx = np.sin(dev.thetaHistory)*np.cos(dev.phiHistory)
+    my = np.sin(dev.thetaHistory)*np.sin(dev.phiHistory)
+    mz = np.cos(dev.thetaHistory)
+    return mx,my,mz
+
+def configuration_check(dev):
     steps = 1
-    t_step = 5e-11
-    v_pulse = 0
-    vhold = 0
-    t_pulse = 50e-9
-    t_relax = 50e-9
+    #FIXME: Happl not in fortran code, needs to removed/addressed
     Happl = np.linspace(0,0,steps)
     Hshe = 0 # 300Oe=2.4e4 200Oe=1.6e4 100Oe=8e3
     J_stt = np.linspace(0,0,steps)
     J_she = -4e11
     cycles = 100
     reps = 1
-    pulse_check_start = 10e-9 #10 ns into pulse
-    relax_check_start = 30e-9 #30 ns into relax
-    pulse_steps = int(np.floor(t_pulse/t_step))
-    relax_steps = int(np.floor(t_relax/t_step))
+    # FIXME 50e-9 was andrews value, not the same for model
+    pulse_check_start = (1/5) * dev.t_pulse
+    relax_check_start = (3/5) * dev.t_relax
+    pulse_steps = int(np.floor(dev.t_pulse/t_step))
+    relax_steps = int(np.floor(dev.t_relax/t_step))
     pulse_start = int(np.floor(pulse_check_start/t_step))
     relax_start = int(np.floor(relax_check_start/t_step))
     mz_avg = []
@@ -29,11 +30,11 @@ def configuration_check(TMR, Ki, Rp, Ms):
     for rep in range(reps):
         for id,j in enumerate(J_stt):
             print(f'J = {j} A/m^2, H = {Happl[id]} A/m^2, point {id+1}/{steps}, rep {rep+1}/{reps}')
-            theta = np.pi/2
-            phi = 0
+            dev.set_mag_vector(0, np.pi/2)
             mz_arr = []
-            for cy in tqdm(range(cycles),ncols=80,leave=False):
-                theta,phi,t,r,g,mx,my,mz,bitstr,_,energy = mtj_mod(theta,phi,t_step,v_pulse,t_pulse,t_relax,Happl[id],Hshe,j,J_she,vhold, TMR, Ki, Rp, Ms)
+            for cy in range(cycles):
+                theta,phi,bitstr,_,energy = mtj_sample(dev,J_stt,1,1,1,1)
+                mx,my,mz = get_m_vec_comps(dev)
                 mz_arr.append(mz)
                 mz_chk1_arr = mz_chk1_arr + np.absolute(mz[0:pulse_steps])
                 mz_chk2_arr = mz_chk2_arr + np.absolute(mz[pulse_steps:pulse_steps+relax_steps])
