@@ -43,12 +43,29 @@ def main():
 
   dev = SHE_MTJ_rng()
   dev.set_vals(0) # 1 uses default values with dev-to-dev variation on, 0, off
+
+
+  dev.set_vals(Ki = 0.9056364e-3, Rp = 8e3, TMR = 1.2, Ms = 1.2e6)
+
+
+
+
+  dev.set_vals(Ki = 1.0056364e-3, Rp = 5e3, TMR = 1.2, Ms = 1.2e6)
+
+
+
+  dev.set_vals(Ki = 0.00014759392802570008, Rp = 3861.20994613, TMR = 1.5, Ms = 0.4e6 )
+
+
+
+
+
   print(dev)      # can print device to list all parameters
 
   k       = 8
   lmda    = 0.01
   init_t  = 9*np.pi/10
-  samples = 8000
+  samples = 32000
   number_history = []
   bitstream  = []
   energy_avg = []

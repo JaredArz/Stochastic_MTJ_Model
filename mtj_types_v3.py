@@ -83,20 +83,10 @@ class SHE_MTJ_rng():
          elif ( default_flag == True or default_flag == False ) and params == {}:
              # MTJ Parameters- This is experimental values from real STT-SOT p-MTJ%
 
-             #self.Ki    = 0.9056364e-3 sam
-             #self.Ki    = 1.0056364e-3 jaesuk
-             self.Ki     = draw_norm(0.00014759392802570008, default_flag, 0.05)
-
-             #self.Rp    = 8e3 #sam value
-             #self.Rp    = 5e3 #jaesuk
-             self.Rp     = draw_norm(3861.20994613, default_flag, 0.05)      # Magenetoresistance at parallel state, 8000 Ohm
-
-             #self.TMR   = draw_norm(1.2, default_flag, 0.05)                # sam/jaseuk
+             self.Ki    = draw_norm(0.00014759392802570008, default_flag, 0.05)
+             self.Rp    = draw_norm(3861.20994613, default_flag, 0.05)      # Magenetoresistance at parallel state, 8000 Ohm
              self.TMR   = draw_norm(1.5, default_flag, 0.05)                # TMR ratio at V=0,120%  
-
-             #self.Ms    = 1.2e6 sam value
              self.Ms    = 0.4e6
-
              #=================
              self.J_she = 5e11
              self.a     = 50e-9              # Width of the MTJ in m

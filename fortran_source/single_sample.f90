@@ -94,10 +94,8 @@ module single_sample
             dtheta = gammap*(Ax*(alpha*cos(theta_i)*cos(phi_i)-sin(phi_i))+Ay*(alpha*cos(theta_i)*sin(phi_i)+cos(phi_i))-Az*&
                 alpha*sin(theta_i))-J_SHE*F*eta*(cos(phi_i)*cos(theta_i)+(alpha*sin(phi_i))/(1+alpha**2))+((F*P*J_STT)*&
                 sin(theta_i)/(1+alpha**2))
-
             R1     = real(dev_Rp,dp)*(1+(V/Vh)**2+real(dev_TMR,dp))/(1+(V/Vh)**2+real(dev_TMR,dp)*(1+(cos(theta_i)))/2)
-            ! FIXME: ERROR IN CALCULATION HERE
-            power_i= 0.5*cap_mgo*V**2+R2*(abs(J_SHE*A2))**2+R1*(J_STT*A1)**2
+            power_i = 0.5*cap_mgo*V**2+R2*(abs(J_SHE*A2))**2+R1*(J_STT*A1)**2
             phi_i   = phi_i+t_step*dphi 
             theta_i = theta_i+t_step*dtheta
             cumulative_pow(t_iter) = real(power_i)

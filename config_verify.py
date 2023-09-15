@@ -13,7 +13,8 @@ def configuration_check(dev):
     Happl = np.linspace(0,0,steps)
     Hshe = 0 # 300Oe=2.4e4 200Oe=1.6e4 100Oe=8e3
     J_stt = np.linspace(0,0,steps)
-    J_she = -4e11
+    J_she = 4e11 #-
+    dev.set_vals( J_she = J_she )
     cycles = 100
     reps = 1
     t_step = 5e-11
