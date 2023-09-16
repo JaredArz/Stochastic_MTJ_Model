@@ -18,13 +18,7 @@ make
 The fortran compiles into a cpython binary which can be imported as a module from python.
 This binary does the heavy lifting, computing the magnetization dynamics of a stochastic SOT-driven MTJ via a modified LLG equation.
 
-`interface_funcs.py` imports it as
-```
-import sys
-sys.path.append("./fortran_source")
-import single_sample as f90
-```
-and has a user function `mtj_sample(device, J_stt,...)` which will call this binary and handle the interface.
+`interface_funcs.py` has a user function `mtj_sample(device, J_stt,...)` which will call this binary and handle the language interface.
 
 `mtj_sample(device, J_stt,...)` simultes the pulsing and relaxing of
 a SHE_MTJ_rng device (class described below) passed in as the first argument.
