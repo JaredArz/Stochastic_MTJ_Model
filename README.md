@@ -16,7 +16,7 @@ cd ./fortran_source
 make
 ```
 The fortran compiles into a cpython binary which can be imported as a module from python.
-This binary does the heavy lifting, computing the magnetization dynamics of an SOT stochastic MTJ via a modified LLG equation
+This binary does the heavy lifting, computing the magnetization dynamics of a stochastic SOT-driven MTJ via a modified LLG equation.
 
 `interface_funcs.py` imports it as
 ```
