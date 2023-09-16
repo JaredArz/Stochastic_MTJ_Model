@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 
 # Private functions to inject noise if device-to-device variation requested
 def draw_norm(x,var,psig):
@@ -30,7 +29,7 @@ class SHE_MTJ_rng():
          self.phiHistory   = []
          self.thetaHistory = []
          self.sample_count = 0
-         # use None value to check for mag initialization 
+         # using None value to check for proper initialization 
          self.phi   = None
          self.theta = None
          self.params_set_flag = None
@@ -82,10 +81,10 @@ class SHE_MTJ_rng():
          #debug option with flag True: use known good device values
          elif ( default_flag == True or default_flag == False ) and params == {}:
              # MTJ Parameters- This is experimental values from real STT-SOT p-MTJ%
-             self.Ki    = draw_norm(0.00014759392802570008, default_flag, 0.05)
-             self.Rp    = draw_norm(3861.20994613, default_flag, 0.05)      # Magenetoresistance at parallel state, 8000 Ohm
-             self.TMR   = draw_norm(1.5, default_flag, 0.05)                # TMR ratio at V=0,120%  
-             self.Ms    = 0.4e6
+             self.Ki    = draw_norm(1.0056364e-3, default_flag, 0.05)
+             self.Rp    = draw_norm(5e3, default_flag, 0.05)      # Magenetoresistance at parallel state, 8000 Ohm
+             self.TMR   = draw_norm(1.2, default_flag, 0.05)                # TMR ratio at V=0,120%  
+             self.Ms    = 1.2e6
              #=================
              self.J_she = 5e11
              self.a     = 50e-9              # Width of the MTJ in m

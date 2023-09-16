@@ -5,9 +5,16 @@ import os
 import signal
 import numpy as np
 
-def mtj_sample(dev,Jstt,dump_mod,view_mag_flag,file_ID,config_check=0) -> (int,float):
+def print_init_error():
+     print("\n--------------------------------*--*-----------------------------------")
+     print("The initial magnetization vector OR one of the device parameters")
+     print("was not initialized before calling mtj_sample(...) --")
+     print("Exititng.")
+     print("--------------------------------*--*-----------------------------------\n")
+
+def mtj_sample(dev,Jstt,dump_mod,view_mag_flag,file_ID=1,config_check=0) -> (int,float):
         if dev.theta is None or dev.phi is None or dev.params_set_flag is None:
-            print("\nMag vector or device parameters not initialized, exititng.")
+            print_init_error()
             os.kill(os.getppid(), signal.SIGTERM)
         else:
             # fortran call here.
@@ -23,10 +30,8 @@ def mtj_sample(dev,Jstt,dump_mod,view_mag_flag,file_ID,config_check=0) -> (int,f
                 phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
                 theta_from_txt = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
                 os.remove("time_evol_mag_" + format_file_ID(file_ID) + ".txt")
-                #dev.thetaHistory.append(list(theta_from_txt))
-                #dev.phiHistory.append(list(phi_from_txt))
-                dev.thetaHistory = (list(theta_from_txt))
-                dev.phiHistory   = (list(phi_from_txt))
+                dev.thetaHistory = list(theta_from_txt)
+                dev.phiHistory   = list(phi_from_txt)
             if(view_mag_flag):
                 dev.sample_count+=1
             return bit,energy

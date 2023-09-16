@@ -5,17 +5,18 @@
 ### - [ ] VCMA MTJ
 ### - [ ] STT Stochastic Write MTJ
 
-## Working :
+## Working:
 ### - [X] Serial
 ### - [ ] Parallel
 
-## Fortran interface
-navigate into the fortran_source directory and compile with:
+## Usage:
+First, navigate into the fortran_source directory and compile with:
 ```
 cd ./fortran_source
 make
 ```
-The cpython binary this creates will compute the modified LLG code to pulse and relax an MTJ  
+The fortran compiles into a cpython binary which can be imported as a module from python.
+This binary does the heavy lifting, computing the magnetization dynamics of an SOT stochastic MTJ via a modified LLG equation
 
 `interface_funcs.py` imports it as
 ```
@@ -25,9 +26,45 @@ import single_sample as f90
 ```
 and has a user function `mtj_sample(device, J_stt,...)` which will call this binary and handle the interface.
 
+`mtj_sample(device, J_stt,...)` simultes the pulsing and relaxing of
+a SHE_MTJ_rng device (class described below) passed in as the first argument.
+This device class should be intialized with device parameters and an initial magnetization vector.
+
+The other arguments are as follows:
+- Jstt: spin-transfer torque current to apply.
+- dump_mod: save history of phi and theta every n samples if view_mag_flag enabled.
+- view_mag_flag: enables/disables history of phi and theta.
+Optional arguments (Used in the backend):
+- file_ID: to be used if parallelized as each concurrent sample must have a unique file ID.
+- config_check: to bet set if the device parameters are being verified. 
+
+Returns:
+- bit sampled
+- energy used
+
+Import `mtj_sample(...)` in python with `from interface_funcs import mtj_sample`
+
+
+## Device parameter verification
+`config_verify.py` is a code to check whether the device parameters assigned to an MTJ are:
+1. Is the device physical?
+2. Does the device go in-plane upon current application?
+3. Does the device return to +- 1 when current is removed?
+If yes to all three, then the configuration is good!
+
+Import `from config_verify import config_verify`
+and call `nerr, mz1, mz2, PI = config_verify(my_dev)` 
+
+For nerr, mz1, mz2, returned -1 is an error and 0 is a success. Positive integers are warnings.
+for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong
+
 
 ## Device class
-Note that the updated device class only has the following available parameters:
+Declare as `dev = SHE_MTJ_rng()`
+Set default device parameters with `dev.set_vals(0)`,
+Or add device-to-device variation with a 5% normally distributed TMR,Rp,Ki by using `dev.set_vals(1)`
+
+If setting the device parameters manually, the following must be set:
 - Ki
 - Ms
 - tf
@@ -39,14 +76,21 @@ Note that the updated device class only has the following available parameters:
 - alpha
 - Rp
 - TMR
+- t_pulse
+- t_relax
 
-The new device class also has updated usage with a flag to check if all parameters have been set.
+
+## Scripts
+`mtj_dist_gen.py` is an example script using the MTJ to random numbers from exponential distribution.
+`mtj_param_sweep.py` is an example script sweeping parameters.
+Note that the above two scripts are no longer maintained.
+
+## Slurm
+Neither the fortran or python code is paralleized with openMP or MPI.
+
+## Examples 
 ```
-# declaration takes in a dev-to-dev variation flag to assign noise if parameters have been made dev-to-dev dependent
-dev = SHE_MTJ_rng(dd_flag = True)
-
-# preset option available with set_vals(1), uses parameters manually defined in `mtj_types_v3.py`
-dev.set_vals(1)
+Misc.
 
 #set (phi,theta)
 dev.set_mag_vector(3.14/2, 3.14/2)
@@ -62,17 +106,7 @@ print(dev)
 # Assign individually
 dev.Ki=1
 dev.Ms=1
-dev.tf=1
-dev.J_she=1
-dev.a=1
-dev.b=1
-dev.d=1
-dev.eta=1
-dev.alpha=1
-dev.Rp=1
-dev.TMR=1
-
-/// parameter set flag is now true.
+...
 
 # or using set vals with as many parameters as needed
 dev.set_vals(Ki=1,Ms=1)

@@ -1,6 +1,7 @@
 # ===== handles fortran interface and batch parallelism =====
 from interface_funcs import mtj_sample
 # ===========================================================
+from config_verify import config_verify
 import os
 import csv
 import time
@@ -71,14 +72,27 @@ def check_output_paths() -> None:
     dir_check("./results/bitData")
 
 @profile
-def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=None):
+def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she,t_pulse,t_relax, run, writeFile=None):
   # if writeFile == None:
   #   csvFile = "MTJ_Results.csv"
   #   f = open(csvFile, "a")
   #   writeFile = csv.writer(f)
 
   dev = SHE_MTJ_rng()
-  dev.set_vals(1)
+  dev.set_vals(1) # only using default a and b, overwriting with below 
+  dev.set_vals(Ki=Ki,Ms=Ms,TMR=TMR,Rp=Rp,d=d,tf=tf,eta=eta,J_she=J_she,t_pulse=t_pulse,t_relax=t_relax)
+  print("verifying device paramters")
+  nerr, mz1, mz2, PI = config_verify(dev)
+  # ignoring warnings
+  if nerr == -1:
+    print('numerical error, do not use parameters!')
+  elif PI == -1:
+    print('PMA too strong')
+  elif PI == 1:
+    print('IMA too strong')
+  else:
+    print('parameters okay')
+  print("running application")
 
   k       = 8
   lmda    = 0.01
@@ -284,6 +298,8 @@ def main():
   tf_vals      = [1.1]                                    # free layer thickness
   eta_vals     = [0.1]                # spin hall angle
   J_she_vals   = [0.01e12] # current density
+  t_pulse      = [50e-9]
+  t_relax      = [50e-9]
 
   csvFile = "MTJ_Results.csv"
   f = open(csvFile, "w")
@@ -303,9 +319,11 @@ def main():
             for d in d_vals:
               for tf in tf_vals:
                 for eta in eta_vals:
-                    for J_she in J_she_vals:
-                      mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, run, writeFile=writeFile)
-                      run += 1
+                   for J_she in J_she_vals:
+                     for tp in t_pulse:
+                       for tr in t_relax:
+                         mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she,tp,tr, run, writeFile=writeFile)
+                         run += 1
   pbar.update(1)
 
   f.close()
