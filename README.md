@@ -25,10 +25,11 @@ a SHE_MTJ_rng device (class described below) passed in as the first argument.
 This device class should be intialized with device parameters and an initial magnetization vector.
 
 The other arguments are as follows:
-- Jstt: spin-transfer torque current to apply.
+- Jstt:     spin-transfer torque current to apply.
 - dump_mod: save history of phi and theta every n samples if view_mag_flag enabled.
 - view_mag_flag: enables/disables history of phi and theta.
-Optional arguments (Used in the backend):
+- 
+Optional arguments (Used in the backend!):
 - file_ID: to be used if parallelized as each concurrent sample must have a unique file ID.
 - config_check: to bet set if the device parameters are being verified. 
 
