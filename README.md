@@ -1,5 +1,5 @@
 # Stochastic MTJ device models using f2py
-### jared.arzate@utexas.edu
+### contact: jared.arzate@utexas.edu
 ##  Device models included:
 ### - [X] SOT  MTJ
 ### - [ ] VCMA MTJ
