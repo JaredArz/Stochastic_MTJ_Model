@@ -72,7 +72,7 @@ module single_sample
         phi_i   = real(phi_init,dp)
         if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
             theta_over_time(t_iter) = real(theta_i)
-            phi_over_time(t_iter) = real(phi_i)
+            phi_over_time(t_iter)   = real(phi_i)
         end if
         cumulative_pow(t_iter) = real(power_i)
 
@@ -99,9 +99,9 @@ module single_sample
             phi_i   = phi_i+t_step*dphi 
             theta_i = theta_i+t_step*dtheta
             cumulative_pow(t_iter) = real(power_i)
-            if(mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) then
+            if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
                 theta_over_time(t_iter) = real(theta_i)
-                phi_over_time(t_iter) =  real(phi_i)
+                phi_over_time(t_iter)   = real(phi_i)
             end if
 
         end do
@@ -129,9 +129,9 @@ module single_sample
             phi_i   = phi_i+t_step*dphi
             theta_i = theta_i+t_step*dtheta
             cumulative_pow(t_iter) = real(power_i)
-            if(mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) then
+            if((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
                 theta_over_time(t_iter) = real(theta_i)
-                phi_over_time(t_iter) = real(phi_i)
+                phi_over_time(t_iter)   = real(phi_i)
             end if
         end do
 

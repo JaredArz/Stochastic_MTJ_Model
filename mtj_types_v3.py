@@ -82,7 +82,6 @@ class SHE_MTJ_rng():
          #debug option with flag True: use known good device values
          elif ( default_flag == True or default_flag == False ) and params == {}:
              # MTJ Parameters- This is experimental values from real STT-SOT p-MTJ%
-
              self.Ki    = draw_norm(0.00014759392802570008, default_flag, 0.05)
              self.Rp    = draw_norm(3861.20994613, default_flag, 0.05)      # Magenetoresistance at parallel state, 8000 Ohm
              self.TMR   = draw_norm(1.5, default_flag, 0.05)                # TMR ratio at V=0,120%  

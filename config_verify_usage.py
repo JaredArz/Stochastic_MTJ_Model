@@ -12,10 +12,8 @@ from mtj_types_v3 import SHE_MTJ_rng
 
 dev = SHE_MTJ_rng()
 dev.set_vals(0)
-dev.set_vals(TMR=1.5, Ki=1e-1, Rp=3500, Ms=1.2e6, t_pulse=50e-9, t_relax = 50e-9)
-print(dev)
-
 nerr, mz1, mz2, PI = configuration_check(dev)
+print(dev)
 
 if nerr == -1:
     print('numerical error, do not use parameters!')
@@ -40,4 +38,3 @@ else:
         print('PMA too strong; try reducing ratio of Ki/Ms')
     else:
         print('IMA too strong; try increasing ratio of Ki/Ms')
-

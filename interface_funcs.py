@@ -20,16 +20,19 @@ def mtj_sample(dev,Jstt,dump_mod,view_mag_flag,file_ID,config_check=0) -> (int,f
             dev.set_mag_vector(phi_end,theta_end)
             if( (view_mag_flag and (dev.sample_count % dump_mod == 0)) or config_check):
                 # These file names are determined by fortran subroutine single_sample.
-                theta_from_txt = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
-                phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
+                phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
+                theta_from_txt = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
                 os.remove("time_evol_mag_" + format_file_ID(file_ID) + ".txt")
-                dev.thetaHistory.append(list(theta_from_txt))
-                dev.phiHistory.append(list(phi_from_txt))
+                #dev.thetaHistory.append(list(theta_from_txt))
+                #dev.phiHistory.append(list(phi_from_txt))
+                dev.thetaHistory = (list(theta_from_txt))
+                dev.phiHistory   = (list(phi_from_txt))
             if(view_mag_flag):
                 dev.sample_count+=1
             return bit,energy
 
-# do not change, format to length four with 0's to the left
+# Format must be consistent with fortrn, do not change
+# File ID of length seven with 0's to the left
 def format_file_ID(pid) -> str:
     str_pid = str(pid)
     while len(str_pid) < 7:
@@ -49,4 +52,3 @@ def run_in_parallel_batch(func,samples,\
   func_data = parallel_env(samples,batch_size,func,args).run()
   return func_data[0],func_data[1],func_data[2]
 """
-
