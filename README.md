@@ -29,6 +29,7 @@ The other arguments are as follows:
 - dump_mod: save history of phi and theta every n samples if view_mag_flag enabled.
 - view_mag_flag: enables/disables history of phi and theta.
 
+
 Optional arguments (Used in the backend!):
 - file_ID:      needed if parallelized as each concurrent sample must have a unique file ID.
 - config_check: to bet set if the device parameters are being verified. 
