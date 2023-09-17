@@ -45,7 +45,7 @@ Declare as `dev = SHE_MTJ_rng()`
 
 Set default device parameters with `dev.set_vals(0)`,
 
-Or add device-to-device variation with a 5% normally distributed TMR, Rp, Ki on the default parameters by using `dev.set_vals(1)`
+Or add device-to-device variation with a 5% normally distributed TMR, Rp, Ki following default parameters by using `dev.set_vals(1)`
 
 If setting the device parameters manually, the following must be set:
 - Ki
