@@ -83,6 +83,7 @@ If setting the device parameters manually, the following must be set:
 
 `mtj_param_sweep.py` is an example script sweeping parameters.
 
+
 Note that the above two scripts are no longer maintained.
 
 ## Slurm
