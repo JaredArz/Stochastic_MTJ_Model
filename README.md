@@ -40,21 +40,6 @@ Returns:
 
 Import `mtj_sample(...)` in python with `from interface_funcs import mtj_sample`
 
-## Device Parameter Verification
-`config_verify.py` is a code to check:
-1. Is the device physical?
-2. Does the device go in-plane upon current application?
-3. Does the device return to +- 1 when current is removed?
-
-If yes to all three, then the configuration is good!
-
-Import `from config_verify import config_verify`,
-
-and call `nerr, mz1, mz2, PI = config_verify(my_dev)` 
-
-For nerr, mz1, mz2, returned -1 is an error and 0 is a success. Positive integers are warnings.
-for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong
-
 ## Device class
 Declare as `dev = SHE_MTJ_rng()`
 
@@ -77,6 +62,21 @@ If setting the device parameters manually, the following must be set:
 - t_pulse
 - t_relax
 
+
+## Device Parameter Verification
+`config_verify.py` is a code to check:
+1. Is the device physical?
+2. Does the device go in-plane upon current application?
+3. Does the device return to +- 1 when current is removed?
+
+If yes to all three, then the configuration is good!
+
+Import `from config_verify import config_verify`,
+
+and call `nerr, mz1, mz2, PI = config_verify(my_dev)` 
+
+For nerr, mz1, mz2, returned -1 is an error and 0 is a success. Positive integers are warnings.
+for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong
 
 ## Scripts
 `mtj_dist_gen.py` is an example script using the MTJ to random numbers from exponential distribution.
