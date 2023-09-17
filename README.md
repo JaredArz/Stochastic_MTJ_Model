@@ -28,9 +28,9 @@ The other arguments are as follows:
 - Jstt:     spin-transfer torque current to apply.
 - dump_mod: save history of phi and theta every n samples if view_mag_flag enabled.
 - view_mag_flag: enables/disables history of phi and theta.
-- 
+
 Optional arguments (Used in the backend!):
-- file_ID: to be used if parallelized as each concurrent sample must have a unique file ID.
+- file_ID:      needed if parallelized as each concurrent sample must have a unique file ID.
 - config_check: to bet set if the device parameters are being verified. 
 
 Returns:
@@ -39,25 +39,27 @@ Returns:
 
 Import `mtj_sample(...)` in python with `from interface_funcs import mtj_sample`
 
-
-## Device parameter verification
-`config_verify.py` is a code to check whether the device parameters assigned to an MTJ are:
+## Device Parameter Verification
+`config_verify.py` is a code to check:
 1. Is the device physical?
 2. Does the device go in-plane upon current application?
 3. Does the device return to +- 1 when current is removed?
+
 If yes to all three, then the configuration is good!
 
-Import `from config_verify import config_verify`
+Import `from config_verify import config_verify`,
+
 and call `nerr, mz1, mz2, PI = config_verify(my_dev)` 
 
 For nerr, mz1, mz2, returned -1 is an error and 0 is a success. Positive integers are warnings.
 for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong
 
-
 ## Device class
 Declare as `dev = SHE_MTJ_rng()`
+
 Set default device parameters with `dev.set_vals(0)`,
-Or add device-to-device variation with a 5% normally distributed TMR,Rp,Ki by using `dev.set_vals(1)`
+
+Or add device-to-device variation with a 5% normally distributed TMR,Rp,Ki on the default parameters by using `dev.set_vals(1)`
 
 If setting the device parameters manually, the following must be set:
 - Ki
