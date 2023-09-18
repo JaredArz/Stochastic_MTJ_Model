@@ -48,16 +48,16 @@ Set default device parameters with `dev.set_vals(0)`,
 Or add device-to-device variation with a 5% normally distributed TMR, Rp, Ki following default parameters by using `dev.set_vals(1)`
 
 If setting the device parameters manually, the following must be set:
-- Ki [J/m^2]
-- Ms [A/m]
+- Ki [$`\frac{J}{m^2}`$]
+- Ms [$`\frac{A}{m}`$]
 - tf [m]
-- J_she  [A/m^2]
+- J_she  [$`\frac{A}{m^2}`$]
 - a  [m]
 - b  [m]
 - d  [m]
 - eta   [dimensionless]
 - alpha [dimensionless]
-- Rp   [$\`Ohm$\`]
+- Rp   [$`\Ohm`$]
 - TMR  [dimensionless]  
 - t_pulse  [t]
 - t_relax  [t]
