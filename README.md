@@ -51,7 +51,7 @@ If setting the device parameters manually, the following must be set:
 - Ki [J/m^2]
 - Ms [A/m]
 - tf [m]
-- J_she  [A/m^3]
+- J_she  [A/m^2]
 - a  [m]
 - b  [m]
 - d  [m]
