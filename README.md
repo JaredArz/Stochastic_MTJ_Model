@@ -76,7 +76,7 @@ Import `from config_verify import config_verify`,
 and call `nerr, mz1, mz2, PI = config_verify(my_dev)` 
 
 For nerr, mz1, mz2, returned -1 is an error and 0 is a success. Positive integers are warnings.
-for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong
+for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong. Note that if there was numerical error, a -1 will be returned for nerr and `None` for everything else. 
 
 ## Scripts
 `mtj_dist_gen.py` is an example script using the MTJ to random numbers from exponential distribution.
