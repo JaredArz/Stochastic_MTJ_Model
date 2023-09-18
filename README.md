@@ -55,7 +55,7 @@ If setting the device parameters manually, the following must be set:
 - a  [m]
 - b  [m]
 - d  [m]
-- eta   [radians]
+- eta   [dimensionless]
 - alpha [dimensionless]
 - Rp   [Ohm]
 - TMR  [dimensionless]  
