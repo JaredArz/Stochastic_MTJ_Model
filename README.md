@@ -57,7 +57,7 @@ If setting the device parameters manually, the following must be set:
 - d  [m]
 - eta   [dimensionless]
 - alpha [dimensionless]
-- Rp   [$`\Ohm`$]
+- Rp   [$`\Omega`$]
 - TMR  [dimensionless]  
 - t_pulse  [t]
 - t_relax  [t]
