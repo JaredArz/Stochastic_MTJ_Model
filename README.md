@@ -50,17 +50,17 @@ Or add device-to-device variation with a 5% normally distributed TMR, Rp, Ki fol
 If setting the device parameters manually, the following must be set:
 - Ki [$`\frac{J}{m^2}`$]
 - Ms [$`\frac{A}{m}`$]
-- tf [m]
+- tf [$`m`$]
 - J_she  [$`\frac{A}{m^2}`$]
-- a  [m]
-- b  [m]
-- d  [m]
+- a  [$`m`$]
+- b  [$`m`$]
+- d  [$`m`$]
 - eta   [dimensionless]
 - alpha [dimensionless]
 - Rp   [$`\Omega`$]
 - TMR  [dimensionless]  
-- t_pulse  [t]
-- t_relax  [t]
+- t_pulse  [$`t`$]
+- t_relax  [$`t`$]
 
 
 ## Device Parameter Verification
