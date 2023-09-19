@@ -12,10 +12,10 @@ def config_verify(dev):
     J_stt = np.linspace(0,0,steps)
     pulse_check_start = (1/5) * dev.t_pulse
     relax_check_start = (3/5) * dev.t_relax
-    pulse_steps = int(np.floor(dev.t_pulse/t_step))
-    relax_steps = int(np.floor(dev.t_relax/t_step))
-    pulse_start = int(np.floor(pulse_check_start/t_step))
-    relax_start = int(np.floor(relax_check_start/t_step))
+    pulse_steps = int(np.ceil(dev.t_pulse/t_step))-1
+    relax_steps = int(np.ceil(dev.t_relax/t_step))-1
+    pulse_start = int(pulse_check_start/t_step)
+    relax_start = int(relax_check_start/t_step)
     mz_avg = []
     mz_chk1_arr = np.zeros(pulse_steps)
     mz_chk2_arr = np.zeros(relax_steps)

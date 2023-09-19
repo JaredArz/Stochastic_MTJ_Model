@@ -44,6 +44,8 @@ def main():
 
   dev = SHE_MTJ_rng()
   dev.set_vals(0) # 1 uses default values with dev-to-dev variation on, 0, off
+  #dev.set_vals(t_pulse = 25e-9, t_relax = 25e-9) # 
+  dev.set_vals(t_pulse = 5e-10, t_relax = 5e-10) # 
   print(dev)      # can print device to list all parameters
   print("verifying device paramters")
   nerr, mz1, mz2, PI = config_verify(dev)
