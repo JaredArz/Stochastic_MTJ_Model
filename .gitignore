@@ -21,6 +21,8 @@
 
 # outputs
 **/results
+**/runs
+*.csv
 
 #cache
 **/__pycache__

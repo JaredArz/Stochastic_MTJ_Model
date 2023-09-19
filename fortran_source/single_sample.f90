@@ -14,38 +14,49 @@ module single_sample
         ! --------------------------------*------------*-----------------------------------
         subroutine pulse_then_relax(energy_usage,bit,theta_end,phi_end,&
                                     Jappl,Jshe,theta_init,phi_init,dev_Ki,dev_TMR,dev_Rp,&
-                                    a,b,tf,alpha,Ms,eta,d,view_mag_flag,dump_count,proc_ID) 
+                                    a,b,tf,alpha,Ms,eta,d,t_pulse,t_relax,dump_mod,view_mag_flag,sample_count,file_ID,config_check) 
         implicit none
         integer             :: i,t_iter
-        real,intent(in)     :: Jappl,Jshe,theta_init,phi_init !input
-        real,intent(in)     :: dev_Ki,dev_TMR,dev_Rp !device params
+        real,intent(in)     :: Jappl,Jshe,theta_init,phi_init
+        real,intent(in)     :: t_pulse,t_relax
+        ! Device parameters
+        real,intent(in)     :: dev_Ki,dev_TMR,dev_Rp 
         real,intent(in)     :: a,b,tf,alpha,Ms,eta,d
-        integer, intent(in) :: proc_ID, dump_count
+        ! =================
+        integer, intent(in) :: file_ID, sample_count,dump_mod,config_check
         logical, intent(in) :: view_mag_flag
         !return values
         real,intent(out) :: energy_usage,theta_end,phi_end
         integer,intent(out) :: bit
         !==================================================================
-        real,dimension(pulse_steps+relax_steps+1) :: theta_over_time,phi_over_time
-        real,dimension(pulse_steps+relax_steps+1) :: cumulative_pow
-        character(len=7) :: proc_string
+        ! dummy variables
+        integer :: pulse_steps
+        integer :: relax_steps
+        real,allocatable :: theta_over_time(:),phi_over_time(:),cumulative_pow(:)
+        character(len=7) :: file_string
         real(dp) :: V,J_SHE,J_STT,Hk,Ax,Ay,Az,dphi,dtheta,R1
-        real(dp) :: phi_i,theta_i,power_i,seed!,energy_i
+        real(dp) :: phi_i,theta_i,power_i,seed
         real(dp) :: Bsat,gammap,volume,A1,A2,cap_mgo,R2,Htherm,F
-        integer,parameter  :: mod_val = 8000 
         !==================================================================
         !//////////////////////////////////////////////////////////////////
 
         ! ==== computation of variables with sweepable dependencies ====
+        pulse_steps = int(t_pulse/t_step)
+        relax_steps = int(t_relax/t_step)
+        if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
+            allocate(theta_over_time(pulse_steps+relax_steps+1))
+            allocate(phi_over_time(pulse_steps+relax_steps+1))
+        end if
+        allocate(cumulative_pow(pulse_steps+relax_steps+1))
         Bsat    = real(Ms,dp)*u0
         gammap  = gammall/(1.0_dp+real(alpha,dp)*real(alpha,dp))
         volume  = real(tf,dp)*pi*real(b,dp)*real(a,dp)/4.0_dp
         A1      = real(a,dp)*real(b,dp)*pi/4.0_dp
         A2      = real(d,dp)*w
         cap_mgo = 8.854e-12_dp*eps_mgo*A1/tox 
-        R2 = rho*l/(w*real(d,dp))
-        Htherm = sqrt((2.0_dp*u0*real(alpha,dp)*kb*T)/(Bsat*gammab*t_step*volume))/u0
-        F  = (gammall*h_bar)/(2.0_dp*u0*e*real(tf,dp)*real(Ms,dp))
+        R2      = rho*l/(w*real(d,dp))
+        Htherm  = sqrt((2.0_dp*u0*real(alpha,dp)*kb*T)/(Bsat*gammab*t_step*volume))/u0
+        F       = (gammall*h_bar)/(2.0_dp*u0*e*real(tf,dp)*real(Ms,dp))
         ! =================================================================
 
         !  static variables do not persist back in python so zigset (rng init function) is called each time this code runs
@@ -59,9 +70,9 @@ module single_sample
         power_i = 0.0
         theta_i = real(theta_init,dp)
         phi_i   = real(phi_init,dp)
-        if(mod(dump_count,mod_val) .eq. 0 .and. view_mag_flag) then
+        if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
             theta_over_time(t_iter) = real(theta_i)
-            phi_over_time(t_iter) = real(phi_i)
+            phi_over_time(t_iter)   = real(phi_i)
         end if
         cumulative_pow(t_iter) = real(power_i)
 
@@ -83,15 +94,14 @@ module single_sample
             dtheta = gammap*(Ax*(alpha*cos(theta_i)*cos(phi_i)-sin(phi_i))+Ay*(alpha*cos(theta_i)*sin(phi_i)+cos(phi_i))-Az*&
                 alpha*sin(theta_i))-J_SHE*F*eta*(cos(phi_i)*cos(theta_i)+(alpha*sin(phi_i))/(1+alpha**2))+((F*P*J_STT)*&
                 sin(theta_i)/(1+alpha**2))
-
             R1     = real(dev_Rp,dp)*(1+(V/Vh)**2+real(dev_TMR,dp))/(1+(V/Vh)**2+real(dev_TMR,dp)*(1+(cos(theta_i)))/2)
-            power_i= 0.5*cap_mgo*V**2+R2*(abs(J_SHE*A2))**2+R2*(abs(J_SHE*A2))**2+R1*(J_STT*A1)**2
+            power_i = 0.5*cap_mgo*V**2+R2*(abs(J_SHE*A2))**2+R1*(J_STT*A1)**2
             phi_i   = phi_i+t_step*dphi 
             theta_i = theta_i+t_step*dtheta
             cumulative_pow(t_iter) = real(power_i)
-            if(mod(dump_count,mod_val) .eq. 0 .and. view_mag_flag) then
+            if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
                 theta_over_time(t_iter) = real(theta_i)
-                phi_over_time(t_iter) =  real(phi_i)
+                phi_over_time(t_iter)   = real(phi_i)
             end if
 
         end do
@@ -115,28 +125,27 @@ module single_sample
                 sin(theta_i)/(1+alpha**2))
 
             R1 = real(dev_Rp,dp)*(1+(V/Vh)**2+real(dev_TMR,dp))/(1+(V/Vh)**2+real(dev_TMR,dp)*(1+(cos(theta_i)))/2)
-            power_i = 0.5*cap_mgo*V**2+R2*(abs(J_SHE*A2))**2+R2*(abs(J_SHE*A2))**2+R1*(J_STT*A1)**2
+            power_i = 0.5*cap_mgo*V**2+R2*(abs(J_SHE*A2))**2+R1*(J_STT*A1)**2
             phi_i   = phi_i+t_step*dphi
             theta_i = theta_i+t_step*dtheta
             cumulative_pow(t_iter) = real(power_i)
-            if(mod(dump_count,mod_val) .eq. 0 .and. view_mag_flag) then
+            if((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
                 theta_over_time(t_iter) = real(theta_i)
-                phi_over_time(t_iter) = real(phi_i)
+                phi_over_time(t_iter)   = real(phi_i)
             end if
         end do
 
         ! ===== array dump to file of theta/phi time evolution  ====
-        if(mod(dump_count,mod_val) .eq. 0 .and. view_mag_flag) then
-            write (proc_string,'(I7.7)') proc_ID
-            open(unit = proc_ID, file = "time_evol_mag_"//proc_string//".txt", action = "write", status = "replace", &
+        if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
+            write (file_string,'(I7.7)') file_ID
+            open(unit = file_ID, file = "time_evol_mag_"//file_string//".txt", action = "write", status = "replace", &
                     form = 'formatted')
-            write(proc_ID,*) phi_over_time
-            write(proc_ID,*) theta_over_time
+            write(file_ID,*) phi_over_time
+            write(file_ID,*) theta_over_time
 
-            close(proc_ID)
+            close(file_ID)
         end if
         ! ========================================================== 
-
 
         ! ===== return final solve values: energy,bit,theta,phi ====
         theta_end = real(theta_i)

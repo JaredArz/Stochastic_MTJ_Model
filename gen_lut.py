@@ -19,9 +19,8 @@ devnum = 20
 theta = np.pi/100
 phi = 0
 for idev in range(devnum):
-    #FIXME: using default parameters
-    dev = SHE_MTJ_rng(dd_flag = True)
-    dev.set_vals(1)
+    dev = SHE_MTJ_rng()
+    dev.set_vals(0)
     dev.set_mag_vector(phi,theta)
     bitstr_avg = []
     energy_avg = []
@@ -33,8 +32,8 @@ for idev in range(devnum):
             #m_arr = []
             bitstr_arr = []
             energy_arr = []
-            for cy in tqdm(range(cycles),ncols=80,leave=False):
-                bitstr,energy = mtj_sample(dev,j,False,1)
+            for i in tqdm(range(cycles),ncols=80,leave=False):
+                bitstr,energy = mtj_sample(dev,j,1,False,i)
                 bitstr_arr.append(bitstr)
                 energy_arr.append(energy)
             bitstr_avg.append(np.mean(bitstr_arr))

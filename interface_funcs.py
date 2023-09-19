@@ -4,83 +4,56 @@ import single_sample as f90
 import os
 import signal
 import numpy as np
-import multiprocessing as mp
 
-def mtj_sample(dev,Jstt,view_mag_flag,proc_ID) -> (int,float):
+def print_init_error():
+     print("\n--------------------------------*--*-----------------------------------")
+     print("The initial magnetization vector OR one of the device parameters")
+     print("was not initialized before calling mtj_sample(...) --")
+     print("Exititng.")
+     print("--------------------------------*--*-----------------------------------\n")
+
+def mtj_sample(dev,Jstt,dump_mod,view_mag_flag,file_ID=1,config_check=0) -> (int,float):
         if dev.theta is None or dev.phi is None or dev.params_set_flag is None:
-            print("\nMag vector or device parameters not initialized, exititng.")
+            print_init_error()
             os.kill(os.getppid(), signal.SIGTERM)
         else:
             # fortran call here.
             energy, bit, theta_end, phi_end = f90.single_sample.pulse_then_relax(Jstt,\
                     dev.J_she,dev.theta,dev.phi,dev.Ki,dev.TMR,dev.Rp,\
                     dev.a,dev.b,dev.tf,dev.alpha,dev.Ms,dev.eta,dev.d,\
-                    view_mag_flag,dev.dump_count,proc_ID)
+                    dev.t_pulse,dev.t_relax,\
+                    dump_mod,view_mag_flag,dev.sample_count,file_ID,config_check)
             # Need to update device objects and put together time evolution data after return.
             dev.set_mag_vector(phi_end,theta_end)
-            # condition hardcoded in fortran as well, change in both places
-            if(view_mag_flag and (dev.dump_count % 8000 == 0)):
+            if( (view_mag_flag and (dev.sample_count % dump_mod == 0)) or config_check):
                 # These file names are determined by fortran subroutine single_sample.
-                theta_from_txt = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
-                phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_proc_ID(proc_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
-                os.remove("time_evol_mag_" + format_proc_ID(proc_ID) + ".txt")
-                dev.thetaHistory.append(list(theta_from_txt))
-                dev.phiHistory.append(list(phi_from_txt))
+                phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
+                theta_from_txt = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
+                os.remove("time_evol_mag_" + format_file_ID(file_ID) + ".txt")
+                dev.thetaHistory = list(theta_from_txt)
+                dev.phiHistory   = list(phi_from_txt)
             if(view_mag_flag):
-                dev.dump_count+=1
+                dev.sample_count+=1
             return bit,energy
 
-def run_in_parallel_batch(func,samples,\
-                            dev,k,init,lmda,hist,bitstream,energy_avg,\
-                            mag_view_flag,batch_size=None) -> (list,list,list):
-  if batch_size is None:
-      batch_size = 2*os.cpu_count() 
-  else:
-      #FIXME: add better parallelization and error handling
-      pass
-  samples_to_run = samples
-  while samples_to_run >= 1:        
-      if samples_to_run < batch_size:
-          batch_size = samples_to_run
-      hist_queue       = mp.Queue()  # parallel-safe queue
-      bitstream_queue  = mp.Queue()  # parallel-safe queue
-      energy_avg_queue = mp.Queue()  # parallel-safe queue
-      processes = []
-      #   create processes and start them
-      proc_IDs = generate_proc_IDs(batch_size)
-      for _ in range(batch_size):
-          sim = mp.Process(target=func, args=(dev,k,init,lmda,hist_queue,bitstream_queue,energy_avg_queue,\
-                                                        mag_view_flag,proc_IDs[_]))
-          processes.append(sim)
-          sim.start()
-      #   waits for solution to be available
-      for sim in processes:
-          single_hist      = hist_queue.get() 
-          single_bitstream = bitstream_queue.get()  
-          single_energy    = energy_avg_queue.get() 
-          hist.append(single_hist)
-          bitstream.append(single_bitstream)
-          energy_avg.append(single_energy)
-      #   wait for all processes to wrap-up before continuing
-      for sim in processes:
-          sim.join()
-      samples_to_run -= batch_size
-  return hist,bitstream,energy_avg
-
-
-# generate random number string and check to ensure all are unique
-def generate_proc_IDs(batch_size) -> list:
-    # important for prod ID to not be 6 for fortran interoperability
-    proc_IDs = (np.random.uniform(7,9999999,size=(1,batch_size)))[0]
-    set_of_IDs = set(proc_IDs)
-    if(len(set_of_IDs) < batch_size):  
-        return generate_proc_IDs(batch_size)
-    else:
-        return [int(ID) for ID in proc_IDs]
-
-# format to length four with 0's to the left
-def format_proc_ID(pid) -> str:
+# Format must be consistent with fortrn, do not change
+# File ID of length seven with 0's to the left
+def format_file_ID(pid) -> str:
     str_pid = str(pid)
     while len(str_pid) < 7:
         str_pid = '0' + str_pid
     return str_pid
+
+""" ### FIXME: currently not working.
+def run_in_parallel_batch(func,samples,\
+                            dev,k,init,lmda,\
+                            dump_mod,mag_view_flag,batch_size=None) -> (list,list,list):
+  if batch_size is None:
+      batch_size = 2*os.cpu_count()
+  else:
+      #FIXME: add better parallelization and error handling
+      pass
+  args = (dev,k,init,lmda,dump_mod,mag_view_flag)
+  func_data = parallel_env(samples,batch_size,func,args).run()
+  return func_data[0],func_data[1],func_data[2]
+"""
