@@ -8,6 +8,7 @@ from gym import Env
 from gym.spaces import Discrete, Box, Dict, Tuple, MultiBinary, MultiDiscrete 
 
 from stable_baselines3.ppo.ppo import PPO
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
@@ -98,55 +99,122 @@ class MTJ_Env(Env):
     self.episode_length = EPISODE_LENGTH
   
 
+  # def apply_action(self, action):
+  #   if action == 0:
+  #     temp = self.alpha + self.alpha_step
+  #     self.alpha = min(temp, self.alpha_range[1])
+  #   elif action == 1:
+  #     temp = self.alpha - self.alpha_step
+  #     self.alpha = max(temp, self.alpha_range[0])
+
+  #   elif action == 2:
+  #     temp = self.Ki + self.Ki_step
+  #     self.Ki = min(temp, self.Ki_range[1])
+  #   elif action == 3:
+  #     temp = self.Ki - self.Ki_step
+  #     self.Ki = max(temp, self.Ki_range[0])
+    
+  #   elif action == 4:
+  #     temp = self.Ms + self.Ms_step
+  #     self.Ms = min(temp, self.Ms_range[1])
+  #   elif action == 5:
+  #     temp = self.Ms - self.Ms_step
+  #     self.Ms = max(temp, self.Ms_range[0])
+    
+  #   elif action == 6:
+  #     temp = self.Rp + self.Rp_step
+  #     self.Rp = min(temp, self.Rp_range[1])
+  #   elif action == 7:
+  #     temp = self.Rp - self.Rp_step
+  #     self.Rp = max(temp, self.Rp_range[0])
+    
+  #   elif action == 8:
+  #     temp = self.TMR + self.TMR_step
+  #     self.TMR = min(temp, self.TMR_range[1])
+  #   elif action == 9:
+  #     temp = self.TMR - self.TMR_step
+  #     self.TMR = max(temp, self.TMR_range[0])
+    
+  #   elif action == 10:
+  #     temp = self.eta + self.eta_step
+  #     self.eta = min(temp, self.eta_range[1])
+  #   elif action == 11:
+  #     temp = self.eta - self.eta_step
+  #     self.eta = max(temp, self.eta_range[0])
+    
+  #   elif action == 12:
+  #     temp = self.J_she + self.J_she_step
+  #     self.J_she = min(temp, self.J_she_range[1])
+  #   elif action == 13:
+  #     temp = self.J_she - self.J_she_step
+  #     self.J_she = max(temp, self.J_she_range[0])
+
   def apply_action(self, action):
     if action == 0:
-      temp = self.alpha + self.alpha_step
-      self.alpha = min(temp, self.alpha_range[1])
+      self.alpha = self.alpha + self.alpha_step
     elif action == 1:
-      temp = self.alpha - self.alpha_step
-      self.alpha = max(temp, self.alpha_range[0])
+      self.alpha = self.alpha - self.alpha_step
 
     elif action == 2:
-      temp = self.Ki + self.Ki_step
-      self.Ki = min(temp, self.Ki_range[1])
+      self.Ki = self.Ki + self.Ki_step
     elif action == 3:
-      temp = self.Ki - self.Ki_step
-      self.Ki = max(temp, self.Ki_range[0])
+      self.Ki = self.Ki - self.Ki_step
     
     elif action == 4:
-      temp = self.Ms + self.Ms_step
-      self.Ms = min(temp, self.Ms_range[1])
+      self.Ms = self.Ms + self.Ms_step
     elif action == 5:
-      temp = self.Ms - self.Ms_step
-      self.Ms = max(temp, self.Ms_range[0])
+      self.Ms = self.Ms - self.Ms_step
     
     elif action == 6:
-      temp = self.Rp + self.Rp_step
-      self.Rp = min(temp, self.Rp_range[1])
+      self.Rp = self.Rp + self.Rp_step
     elif action == 7:
-      temp = self.Rp - self.Rp_step
-      self.Rp = max(temp, self.Rp_range[0])
+      self.Rp = self.Rp - self.Rp_step
     
     elif action == 8:
-      temp = self.TMR + self.TMR_step
-      self.TMR = min(temp, self.TMR_range[1])
+      self.TMR = self.TMR + self.TMR_step
     elif action == 9:
-      temp = self.TMR - self.TMR_step
-      self.TMR = max(temp, self.TMR_range[0])
+      self.TMR = self.TMR - self.TMR_step
     
     elif action == 10:
-      temp = self.eta + self.eta_step
-      self.eta = min(temp, self.eta_range[1])
+      self.eta = self.eta + self.eta_step
     elif action == 11:
-      temp = self.eta - self.eta_step
-      self.eta = max(temp, self.eta_range[0])
+      self.eta = self.eta - self.eta_step
     
     elif action == 12:
-      temp = self.J_she + self.J_she_step
-      self.J_she = min(temp, self.J_she_range[1])
+      self.J_she = self.J_she + self.J_she_step
     elif action == 13:
-      temp = self.J_she - self.J_she_step
-      self.J_she = max(temp, self.J_she_range[0])
+      self.J_she = self.J_she - self.J_she_step
+
+  def set_limit(self, current, lower, upper):
+    x = abs(current-lower)
+    y = abs(current-upper)
+    rv = lower if x < y else upper
+    return rv
+  
+  def is_out_of_bounds(self):
+    if self.alpha < self.alpha_range[0] or self.alpha > self.alpha_range[1]:
+      self.alpha = self.set_limit(self.alpha, self.alpha_range[0], self.alpha_range[1])
+      return True
+    elif self.Ki < self.Ki_range[0] or self.Ki > self.Ki_range[1]:
+      self.Ki = self.set_limit(self.Ki, self.Ki_range[0], self.Ki_range[1])
+      return True
+    elif self.Ms < self.Ms_range[0] or self.Ms > self.Ms_range[1]:
+      self.Ms = self.set_limit(self.Ms, self.Ms_range[0], self.Ms_range[1])
+      return True
+    elif self.Rp < self.Rp_range[0] or self.Rp > self.Rp_range[1]:
+      self.Rp = self.set_limit(self.Rp, self.Rp_range[0], self.Rp_range[1])
+      return True
+    elif self.TMR < self.TMR_range[0] or self.TMR > self.TMR_range[1]:
+      self.TMR = self.set_limit(self.TMR, self.TMR_range[0], self.TMR_range[1])
+      return True
+    elif self.eta < self.eta_range[0] or self.eta > self.eta_range[1]:
+      self.eta = self.set_limit(self.eta, self.eta_range[0], self.eta_range[1])
+      return True
+    elif self.J_she < self.J_she_range[0] or self.J_she > self.J_she_range[1]:
+      self.J_she = self.set_limit(self.J_she, self.J_she_range[0], self.J_she_range[1])
+      return True
+    else:
+      return False
 
 
   def get_config_score(self, chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi):
@@ -155,12 +223,15 @@ class MTJ_Env(Env):
 
 
   def reward_function(self):
+    if self.is_out_of_bounds():
+      reward = -1
     if self.current_config_score < self.min_config_score:
       self.min_config_score = self.current_config_score
       self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "d":self.d, "tf":self.tf}
       reward = 1 
     else: 
       reward = 0 
+    
     return reward
 
 
@@ -333,15 +404,15 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   if (args.activity == "TrainModel"):
-    model_name = "mtj_model_energyTest"
+    model_name = "mtj_model_energyTest3"
     training_timesteps = 500000
     eval = True
     Train_Model(model_name, training_timesteps, eval)
 
 
   if (args.activity == "TestModel"):
-    model_path = "Training/Saved_Models/mtj_model_energyTest"
-    Test_Model(model_path, episodes=20)
+    model_path = "Training/Saved_Models/mtj_model_energyTest2"
+    Test_Model(model_path, episodes=150)
 
 
   if (args.activity == "TestEnv"):
