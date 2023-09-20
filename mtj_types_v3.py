@@ -18,7 +18,7 @@ def print_key_error():
 
 # this list, along with __slots__ dictate what the class is expecting
 # changes to the parameter list should go in here, __slots__ and to the debug option in set_vals
-all_params = ('Ms','Ki','TMR','Rp','J_she','a','b','tf','alpha','eta','d','t_pulse','t_relax')
+all_params = ('alpha', 'Ki', 'Ms', 'Rp', 'TMR', 'd', 'tf', 'eta', 'J_she', 't_pulse', 't_relax', 'a', 'b')
 
 class SHE_MTJ_rng():
      #   adds immutability to class. Only these values can be modified/created.

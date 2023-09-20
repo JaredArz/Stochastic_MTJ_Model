@@ -32,6 +32,10 @@ class MTJ_Env(Env):
     # d_vals       = [50]                                     # free layer diameter
     # tf_vals      = [1.1]                                    # free layer thickness
 
+    self.dev_samples = DEV_SAMPLES
+    self.invalid_config = 0
+    # self.current_config_score = np.inf
+
     # Initial parameter values
     self.alpha = 0.05
     self.Ki = 0.6e-3
@@ -40,10 +44,10 @@ class MTJ_Env(Env):
     self.TMR = 2
     self.eta = 0.4
     self.J_she = 0.25e12
+    self.t_pulse = 10e-9
+    self.t_relax = 10e-9
     self.d = 50
     self.tf = 1.1
-
-    self.dev_samples = DEV_SAMPLES
 
     # Parameter ranges
     self.alpha_range = [0.01, 0.1]
@@ -53,6 +57,8 @@ class MTJ_Env(Env):
     self.TMR_range = [0.3, 6]
     self.eta_range = [0.1, 0.8]
     self.J_she_range = [0.01e12, 1e12]
+    self.t_pulse_range = [0.5e-9, 75e-9]
+    self.t_relax_range = [0.5e-9, 75e-9]
 
     # Parameter step sizes
     self.alpha_step = 0.01
@@ -62,15 +68,17 @@ class MTJ_Env(Env):
     self.TMR_step = 0.5
     self.eta_step = 0.4
     self.J_she_step = 0.25e12
+    self.t_pulse_step = 5e-9
+    self.t_relax_step = 5e-9
 
     # Get initial config score
-    chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, run=0, samples=self.dev_samples)
+    chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi)
     self.min_config_score = self.current_config_score
-    self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "d":self.d, "tf":self.tf}
+    self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
 
     # Actions: increase/decrease the 7 parameters
-    self.action_space = Discrete(14)
+    self.action_space = Discrete(16)
 
     # Observations: current parameter values, current config score, minimum config score discovered
     self.observation_space = Dict({"alpha":Box(low=self.alpha_range[0], high=self.alpha_range[1], shape=(1,), dtype=np.float32),
@@ -80,6 +88,8 @@ class MTJ_Env(Env):
                                    "TMR":Box(low=self.TMR_range[0], high=self.TMR_range[1], shape=(1,), dtype=np.float32),
                                    "eta":Box(low=self.eta_range[0], high=self.eta_range[1], shape=(1,), dtype=np.float32),
                                    "J_she":Box(low=self.J_she_range[0], high=self.J_she_range[1], shape=(1,), dtype=np.float32),
+                                   "t_pulse":Box(low=self.t_pulse_range[0], high=self.t_pulse_range[1], shape=(1,), dtype=np.float32),
+                                   "t_relax":Box(low=self.t_relax_range[0], high=self.t_relax_range[1], shape=(1,), dtype=np.float32),
                                    "current_config_score":Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
                                    "min_config_score":Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32)})
     
@@ -92,6 +102,8 @@ class MTJ_Env(Env):
     self.obs["TMR"] = np.array([self.TMR], dtype=np.float32)
     self.obs["eta"] = np.array([self.eta], dtype=np.float32)
     self.obs["J_she"] = np.array([self.J_she], dtype=np.float32)
+    self.obs["t_pulse"] = np.array([self.t_pulse], dtype=np.float32)
+    self.obs["t_relax"] = np.array([self.t_relax], dtype=np.float32)
     self.obs["current_config_score"] = np.array([self.current_config_score], dtype=np.float32)
     self.obs["min_config_score"] = np.array([self.min_config_score], dtype=np.float32)
     
@@ -184,6 +196,14 @@ class MTJ_Env(Env):
       self.J_she = self.J_she + self.J_she_step
     elif action == 13:
       self.J_she = self.J_she - self.J_she_step
+    
+    elif action == 14:
+      self.t_pulse = self.t_pulse + self.t_pulse_step
+      self.t_relax = self.t_relax + self.t_relax_step
+    elif action == 15:
+      self.t_pulse = self.t_pulse - self.t_pulse
+      self.t_relax = self.t_relax - self.t_relax
+
 
   def set_limit(self, current, lower, upper):
     x = abs(current-lower)
@@ -191,6 +211,7 @@ class MTJ_Env(Env):
     rv = lower if x < y else upper
     return rv
   
+
   def is_out_of_bounds(self):
     if self.alpha < self.alpha_range[0] or self.alpha > self.alpha_range[1]:
       self.alpha = self.set_limit(self.alpha, self.alpha_range[0], self.alpha_range[1])
@@ -213,21 +234,33 @@ class MTJ_Env(Env):
     elif self.J_she < self.J_she_range[0] or self.J_she > self.J_she_range[1]:
       self.J_she = self.set_limit(self.J_she, self.J_she_range[0], self.J_she_range[1])
       return True
+    elif self.t_pulse < self.t_pulse_range[0] or self.t_pulse > self.t_pulse_range[1]:
+      self.t_pulse = self.set_limit(self.t_pulse, self.t_pulse_range[0], self.t_pulse_range[1])
+      return True
+    elif self.t_relax < self.t_relax_range[0] or self.t_relax > self.t_relax_range[1]:
+      self.t_relax = self.set_limit(self.t_relax, self.t_relax_range[0], self.t_relax_range[1])
+      return True
     else:
       return False
 
 
   def get_config_score(self, chi2, bitstream, energy_avg, countData, bitData, magTheta, magPhi):
+    if chi2 == None:
+      self.invalid_config = 1
+      return self.current_config_score
     score = np.mean(energy_avg)
     return score
 
 
   def reward_function(self):
-    if self.is_out_of_bounds():
+    if self.invalid_config == 1:
       reward = -1
-    if self.current_config_score < self.min_config_score:
+      self.invalid_config = 0
+    elif self.is_out_of_bounds():
+      reward = -1
+    elif self.current_config_score < self.min_config_score:
       self.min_config_score = self.current_config_score
-      self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "d":self.d, "tf":self.tf}
+      self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
       reward = 1 
     else: 
       reward = 0 
@@ -259,13 +292,17 @@ class MTJ_Env(Env):
     reward = self.reward_function()
     
     # Set placeholder for info
-    self.info = {'alpha': self.alpha,
-                'Ki'    : self.Ki,
-                'Ms'    : self.Ms,
-                'Rp'    : self.Rp,
-                'TMR'   : self.TMR,
-                'eta'   : self.eta,
-                'J_she' : self.J_she}
+    self.info = {'alpha'  : self.alpha,
+                'Ki'      : self.Ki,
+                'Ms'      : self.Ms,
+                'Rp'      : self.Rp,
+                'TMR'     : self.TMR,
+                'eta'     : self.eta,
+                'J_she'   : self.J_she,
+                't_pulse' : self.t_pulse,
+                't_relax' : self.t_relax,
+                "d"       : self.d,
+                "tf"      : self.tf}
 
     # Check if episode is done
     if self.episode_length <= 0: 
@@ -316,6 +353,7 @@ class MTJ_Env(Env):
 
     # Reset episode length
     self.episode_length = EPISODE_LENGTH
+    self.invalid_config = 0
     
     return self.obs
   
