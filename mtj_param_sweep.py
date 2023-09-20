@@ -80,21 +80,21 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, run, wr
 
   dev = SHE_MTJ_rng()
   dev.set_vals(1) # only using default a and b, overwriting with below 
-  dev.alpha = alpha
-  dev.Ki = Ki
-  dev.Ms = Ms
-  dev.Rp = Rp
-  dev.TMR = TMR
-  dev.d = d
-  dev.tf = tf
-  dev.eta = eta
-  dev.J_she = J_she
-  dev.t_pulse = t_pulse
-  dev.t_relax = t_relax
+  # dev.alpha = alpha
+  # dev.Ki = Ki
+  # dev.Ms = Ms
+  # dev.Rp = Rp
+  # dev.TMR = TMR
+  # dev.d = d
+  # dev.tf = tf
+  # dev.eta = eta
+  # dev.J_she = J_she
+  # dev.t_pulse = t_pulse
+  # dev.t_relax = t_relax
   print(dev)
 
-  print("verifying device paramters")
-  nerr, mz1, mz2, PI = config_verify(dev)
+  print("verifying device parameters")
+  nerr, mz1, mz2, PI = config_verify(dev, run)
   if nerr == -1:
     print('numerical error, do not use parameters!')
     return
@@ -119,7 +119,8 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, run, wr
   dump_mod_val  = 8000
 
   for j in range(samples):
-    number_j,bits_j,energies_j = dist_rng(dev,k,init_t,lmda,dump_mod_val,mag_view_flag,j+7)
+    # number_j,bits_j,energies_j = dist_rng(dev,k,init_t,lmda,dump_mod_val,mag_view_flag,j+7)
+    number_j,bits_j,energies_j = dist_rng(dev,k,init_t,lmda,dump_mod_val,mag_view_flag,run+7)
     number_history.append(number_j)
     bitstream.append(''.join(str(i) for i in bits_j))
     energy_avg.append(np.average(energies_j))

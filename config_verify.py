@@ -1,7 +1,7 @@
 from interface_funcs import mtj_sample
 import numpy as np
 
-def config_verify(dev):
+def config_verify(dev, runID):
     # Assuming no H field, v_pulse
     # J_she as set in device parameters
     cycles = 100
@@ -26,7 +26,8 @@ def config_verify(dev):
             mz_arr = []
             for i in range(cycles):
                 # Only tracking magnetization vector stored in *History
-                _,_ = mtj_sample(dev,J_stt,1,1,i,1)
+                # _,_ = mtj_sample(dev,J_stt,1,1,i,1)
+                _,_ = mtj_sample(dev,J_stt,1,1,runID,1)
                 mz = np.cos(dev.thetaHistory)
                 mz_arr.append(mz)
                 mz_chk1_arr = mz_chk1_arr + np.absolute(mz[0:pulse_steps])
