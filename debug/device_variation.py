@@ -1,18 +1,15 @@
 import sys
 # import functions to test directly
 sys.path.append('../')
-from mtj_types_v3 import SHE_MTJ_rng
+from mtj_types_v3 import MTJ, SHE_MTJ_rng, SWrite_MTJ_rng
 
 # declaration
-dev = SHE_MTJ_rng()
+dev1 = SWrite_MTJ_rng()
+dev2 = SHE_MTJ_rng()
+dev1.set_vals(Ki = 10)
+print(dev1)
 
-# print device parameters
-print(dev)
-print(dev.params_set_flag)
+dev2.set_vals(1)
+print(dev2)
 
-dev.set_vals(0)
-print(dev)
-
-dev.set_vals(1)
-print(dev)
-
+print(dev1)

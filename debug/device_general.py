@@ -4,7 +4,7 @@ sys.path.append('../')
 from mtj_types_v3 import SHE_MTJ_rng
 
 # declaration
-dev = SHE_MTJ_rng(dd_flag = True)
+dev = SHE_MTJ_rng()
 
 # set (phi,theta)
 dev.set_mag_vector(3.14/2, 3.14/2)

@@ -21,7 +21,7 @@ def mtj_sample(dev,Jstt,dump_mod,view_mag_flag,file_ID=1,config_check=0) -> (int
             energy, bit, theta_end, phi_end = f90.single_sample.pulse_then_relax(Jstt,\
                     dev.J_she,dev.theta,dev.phi,dev.Ki,dev.TMR,dev.Rp,\
                     dev.a,dev.b,dev.tf,dev.alpha,dev.Ms,dev.eta,dev.d,\
-                    dev.t_pulse,dev.t_relax,\
+                    dev.t_pulse,dev.t_relax,dev.mtj_type,\
                     dump_mod,view_mag_flag,dev.sample_count,file_ID,config_check)
             # Need to update device objects and put together time evolution data after return.
             dev.set_mag_vector(phi_end,theta_end)

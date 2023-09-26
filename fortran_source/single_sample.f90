@@ -13,8 +13,9 @@ module single_sample
         !
         ! --------------------------------*------------*-----------------------------------
         subroutine pulse_then_relax(energy_usage,bit,theta_end,phi_end,&
-                                    Jappl,Jshe,theta_init,phi_init,dev_Ki,dev_TMR,dev_Rp,&
-                                    a,b,tf,alpha,Ms,eta,d,t_pulse,t_relax,dump_mod,view_mag_flag,sample_count,file_ID,config_check) 
+                                    Jappl,Jshe,theta_init,phi_init,dev_Ki,dev_TMR,&
+                                    dev_Rp,a,b,tf,alpha,Ms,eta,d,t_pulse,t_relax,mtj_type,&
+                                    dump_mod,view_mag_flag,sample_count,file_ID,config_check) 
         implicit none
         integer             :: i,t_iter
         real,intent(in)     :: Jappl,Jshe,theta_init,phi_init
@@ -22,6 +23,7 @@ module single_sample
         ! Device parameters
         real,intent(in)     :: dev_Ki,dev_TMR,dev_Rp 
         real,intent(in)     :: a,b,tf,alpha,Ms,eta,d
+        real,intent(in)     :: mtj_type
         ! =================
         integer, intent(in) :: file_ID, sample_count,dump_mod,config_check
         logical, intent(in) :: view_mag_flag
