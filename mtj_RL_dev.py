@@ -89,16 +89,16 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   # print(dev)
   
   # Verifying device paramters
-  nerr, mz1, mz2, PI = config_verify(dev)
+  nerr, mz1, mz2, PI = config_verify(dev, runID=0)
   if nerr == -1:
     # print('numerical error, do not use parameters!')
-    return None, None, None, None, None, None, None
+    return None, None, None, None, None
   elif PI == -1:
     # print('PMA too strong')
-    return None, None, None, None, None, None, None
+    return None, None, None, None, None
   elif PI == 1:
     # print('IMA too strong')
-    return None, None, None, None, None, None, None
+    return None, None, None, None, None
   else:
     pass
 
@@ -174,7 +174,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   except IndexError:
     pass
 
-  return chi2, bitstream, energy_avg, counts[0:256], number_history[0:samples], dev.thetaHistory[0][0:500], dev.phiHistory[0][0:500]
+  return chi2, bitstream, energy_avg, counts[0:256], number_history[0:samples]
 
 
 def main():
@@ -199,7 +199,8 @@ def main():
   t_pulse = f[run][9]
   t_relax = f[run][10]
 
-  mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, run, writeFile=None)
+  mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=1000)
+
 
 if __name__ == "__main__":
   start_time = time.time()

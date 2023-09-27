@@ -80,15 +80,15 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, run, wr
 
   dev = SHE_MTJ_rng()
   dev.set_vals(1) # only using default a and b, overwriting with below 
-  # dev.alpha = alpha
-  # dev.Ki = Ki
-  # dev.Ms = Ms
-  # dev.Rp = Rp
-  # dev.TMR = TMR
-  # dev.d = d
-  # dev.tf = tf
-  # dev.eta = eta
-  # dev.J_she = J_she
+  dev.alpha = alpha
+  dev.Ki = Ki
+  dev.Ms = Ms
+  dev.Rp = Rp
+  dev.TMR = TMR
+  dev.d = d
+  dev.tf = tf
+  dev.eta = eta
+  dev.J_she = J_she
   # dev.t_pulse = t_pulse
   # dev.t_relax = t_relax
   print(dev)
@@ -278,6 +278,8 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, run, wr
       f.write("tf: {}\n".format(str(tf)))
       f.write("eta: {}\n".format(str(eta)))
       f.write("J_she: {}\n".format(str(J_she)))
+      f.write("t_pulse: {}\n".format(str(t_pulse)))
+      f.write("t_relax: {}\n".format(str(t_relax)))
       f.write("distribution_plot_path: {}\n".format(distribution_plot_path))
       f.write("magnetization_plot_path: {}\n".format(magnetization_plot_path))
       f.write("bitstream_path: {}\n".format(bitstream_path))
