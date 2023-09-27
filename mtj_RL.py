@@ -1,7 +1,8 @@
 import os
 import random
-import numpy as np
 import argparse
+import numpy as np
+from scipy import stats
 
 import gym
 from gym import Env
@@ -257,7 +258,12 @@ class MTJ_Env(Env):
       self.invalid_config = 1
       return self.current_config_score
     
-    score = np.mean(energy_avg)
+    w1 = 1
+    w2 = 1
+    p_value = 1 - stats.chi2.cdf(chi2, 1)
+    energy = np.mean(energy_avg) 
+    
+    score = w1*p_value + w2*(1-energy)  # (1-energy) attempts to maximize a minimization parameter
     return score
 
 
@@ -267,7 +273,8 @@ class MTJ_Env(Env):
       self.invalid_config = 0
     elif self.is_out_of_bounds():
       reward = -1
-    elif self.current_config_score < self.best_config_score:
+    # elif self.current_config_score < self.best_config_score:  # Minimization reward scheme
+    elif self.current_config_score > self.best_config_score:  # Maximization reward scheme
       self.best_config_score = self.current_config_score
       self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
       reward = 1 
