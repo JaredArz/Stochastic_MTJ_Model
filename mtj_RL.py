@@ -260,7 +260,7 @@ class MTJ_Env(Env):
     
     w1 = 1
     w2 = 1
-    p_value = 1 - stats.chi2.cdf(chi2, 1)
+    p_value = 1 - stats.chi2.cdf(chi2, 256)
     energy = np.mean(energy_avg) 
     
     score = w1*p_value + w2*(1-energy)  # (1-energy) attempts to maximize a minimization parameter
