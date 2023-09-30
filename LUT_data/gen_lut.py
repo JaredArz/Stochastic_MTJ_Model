@@ -1,5 +1,6 @@
 import sys
-sys.path.append("./fortran_source")
+sys.path.append("../")
+sys.path.append("../fortran_source")
 from interface_funcs import mtj_sample
 #============================================================
 import numpy as np
@@ -32,8 +33,8 @@ elif mtj_type == 'swrite':
     from mtj_types_v3 import SWrite_MTJ_rng as MTJ_rng
     Happl = np.linspace(0,150e4,steps)
     Jappl = np.linspace(-300e9,0,steps)
-    #theta = np.pi/100
-    #phi = 0
+    theta = 99*np.pi/100
+    phi = 0
 else:
     print("no mtj type of that kind")
     raise(NotImplementedError)
@@ -55,7 +56,7 @@ for idev in range(devnum):
             bitstr_arr = []
             energy_arr = []
             for _ in tqdm(range(cycles),ncols=80,leave=False):
-                bitstr,energy = mtj_sample(dev,j)
+                bitstr,energy = mtj_sample(dev,j, 100, 1)
                 bitstr_arr.append(bitstr)
                 energy_arr.append(energy)
             bitstr_avg.append(np.mean(bitstr_arr))

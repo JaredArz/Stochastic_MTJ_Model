@@ -26,11 +26,11 @@ module MTJ_RNG_vars
     real(kind(0.0d0)),parameter :: eps_mgo = 4.0
     real(kind(0.0d0)),parameter :: Hx = 0.0
     real(kind(0.0d0)),parameter :: Hy = 0.0
-    real(kind(0.0d0)),parameter :: Hz = 0.0
     ! NOTE: Nx,Ny,Nz are experimental values dependent on device geometry. 
     real(kind(0.0d0)),parameter :: Nx = 0.010613177892974
     real(kind(0.0d0)),parameter :: Ny = 0.010613177892974
     real(kind(0.0d0)),parameter :: Nz = 0.978773644214052
+    real(kind(0.0d0)) :: Hz = 0.0
     real(kind(0.0d0)) :: Ki, TMR, Rp, Ms, a, b, d, tf, alpha, eta,&
                          Bsat, gammap, volume, A1, A2, cap_mgo, R2, Htherm, F
 

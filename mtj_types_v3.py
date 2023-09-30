@@ -45,8 +45,12 @@ class MTJ():
 
      #================================================================================
      def set_mag_vector(self,phi,theta):
-         self.phi   = phi
-         self.theta = theta
+         if phi == None and theta == None:
+             self.phi = dflt_m["phi"]
+             self.theta = dflt_m["theta"]
+         else:
+             self.phi   = phi
+             self.theta = theta
 
      #================================================================================
      # A list of valid parameters determined by the subclass is used to check whether the arguments
@@ -110,8 +114,8 @@ class MTJ():
 class SHE_MTJ_rng(MTJ):
     def __init__(self):
         # MTJ Parameters- This is experimental values from real STT-SOT p-MTJ%
-        dflt_m = {"Theta" : np.pi/100,
-                  "Phi"   : np.random.rand()*2*np.pi}
+        dflt_m = {"theta" : np.pi/100,
+                  "phi"   : np.random.rand()*2*np.pi}
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,
                       "TMR" : 0.05,}
@@ -126,8 +130,8 @@ class SHE_MTJ_rng(MTJ):
 
 class SWrite_MTJ_rng(MTJ):
     def __init__(self):
-        dflt_m =   {"Theta"  : 1,
-                      "Phi"    : 1}
+        dflt_m = {"theta"  : 99*np.pi/100,
+                  "phi"    : np.random.rand()*2*np.pi}
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,
                       "TMR" : 0.05,}
@@ -137,18 +141,18 @@ class SWrite_MTJ_rng(MTJ):
                        "H_appl":0,         "a"  : 50e-9,
                        "b"  : 50e-9,       "tf" : 1.1e-9,
                        "alpha" :0.03,      "eta" : 0.3,
-                       "d"  : 3e-9,        "t_pulse" : 10e-9,
-                       "t_relax" : 15e-9,  "t_reset" : 10e-9 }
+                       "d"  : 3e-9,        "t_pulse" : 1e-9,
+                       "t_relax" : 10e-9,  "t_reset" : 10e-9 }
         super().__init__(SWrite,dflt_params,dflt_noise,dflt_m)
 
 class VCMA_MTJ_rng(MTJ):
     def __init__(self):
-        dflt_m = {"Theta" : np.pi/100,
-                  "Phi"   : np.random.rand()*2*np.pi}
+        dflt_m = {"theta" : np.pi/100,
+                  "phi"   : np.random.rand()*2*np.pi}
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,
                       "TMR" : 0.05,}
-        dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 8e3, #Rp differs from she
+        dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
                        "TMR" : 1.2,    "Ms" : 1.2e6,
                        "v_pulse" : 1.5, "a"  : 50e-9,
                        "b"  : 50e-9,   "tf" : 1.1e-9,
