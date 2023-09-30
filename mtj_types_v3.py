@@ -148,7 +148,7 @@ class VCMA_MTJ_rng(MTJ):
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,
                       "TMR" : 0.05,}
-        dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
+        dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 8e3, #Rp differs from she
                        "TMR" : 1.2,    "Ms" : 1.2e6,
                        "v_pulse" : 1.5, "a"  : 50e-9,
                        "b"  : 50e-9,   "tf" : 1.1e-9,

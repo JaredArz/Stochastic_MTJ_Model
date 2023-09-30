@@ -27,7 +27,8 @@ def dist_rng(dev,k,init,lmda,\
     for i in range(k):
       pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
       # ===================== entry point to fortran interface ==========================
-      out,energy = mtj_sample(dev,jz_lut_she(pright),dump_mod,mag_view_flag,file_ID)
+      #out,energy = mtj_sample(dev,jz_lut_she(pright),dump_mod,mag_view_flag,file_ID)
+      out,energy = mtj_sample(dev,jz_lut_vcma(pright),dump_mod,mag_view_flag,file_ID)
       # ==============================================================================================
       bits.append(out)
       energies.append(energy)

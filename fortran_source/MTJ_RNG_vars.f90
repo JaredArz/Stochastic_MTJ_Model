@@ -14,14 +14,12 @@ module MTJ_RNG_vars
     real(kind(0.0d0)),parameter :: kb    = 1.38e-23   
     real(kind(0.0d0)),parameter :: gammall = 2.0*u0*uB/h_bar 
     real(kind(0.0d0)),parameter :: gammab  = gammall/u0
-    !FIXME: tpulse may need to be changed as well
     real(kind(0.0d0)),parameter :: t_step  = 5e-11
-    !FIXME: v_pulse needs to be changed
     real(kind(0.0d0)),parameter :: tox = 1.5e-9
     real(kind(0.0d0)),parameter :: P   = 0.6
-    real(kind(0.0d0)),parameter :: T     = 300.0
-    real(kind(0.0d0)),parameter :: ksi   = 75e-15
-    real(kind(0.0d0)),parameter :: Vh    = 0.5
+    real(kind(0.0d0)),parameter :: T   = 300.0
+    real(kind(0.0d0)),parameter :: ksi = 75e-15
+    real(kind(0.0d0)),parameter :: Vh  = 0.5
     real(kind(0.0d0)),parameter :: w = 100e-9
     real(kind(0.0d0)),parameter :: l = 100e-9
     real(kind(0.0d0)),parameter :: rho = 200e-8
@@ -33,7 +31,7 @@ module MTJ_RNG_vars
     real(kind(0.0d0)),parameter :: Nx = 0.010613177892974
     real(kind(0.0d0)),parameter :: Ny = 0.010613177892974
     real(kind(0.0d0)),parameter :: Nz = 0.978773644214052
-    real(kind(0.0d0)) :: Ki, TMR, Rp, Ms,a, b, d, tf, alpha, eta,&
+    real(kind(0.0d0)) :: Ki, TMR, Rp, Ms, a, b, d, tf, alpha, eta,&
                          Bsat, gammap, volume, A1, A2, cap_mgo, R2, Htherm, F
 
     ! ==== Not used in current model ===

@@ -30,7 +30,7 @@ module sampling
             integer, intent(out) :: bit
             !==================================================================
             real(dp), dimension(:), allocatable :: theta_evol, phi_evol, cuml_pow
-            real(dp) :: phi_i, theta_i, Hk, V
+            real(dp) :: phi_i, theta_i
             real :: seed
             integer :: t_i, pulse_steps, relax_steps, arr_size
             !==================================================================
@@ -64,15 +64,11 @@ module sampling
             !================================
 
             !=========== Pulse current and set device to be in-plane =========
-            V = 0.0_dp
-            Hk = (2.0_dp*Ki)/(tf*Ms*u0)-(2.0_dp*ksi*V)/(u0*tox*tf)
-            call drive(V, real(Jshe,dp), real(Jappl,dp), Hk, pulse_steps,&
+            call drive(0.0_dp, real(Jshe,dp), real(Jappl,dp), pulse_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
             !=================  Relax into one of two low-energy states out-of-plane  ===================
-            V = 0.0_dp
-            Hk = (2.0_dp*Ki)/(tf*Ms*u0)-(2.0_dp*ksi*V)/(u0*Ms*tox*tf)
-            call drive(V, 0.0_dp, real(Jappl,dp), Hk, relax_steps,&
+            call drive(0.0_dp, 0.0_dp, real(Jappl,dp), relax_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
             if(fwrite_enabled) then
@@ -110,7 +106,7 @@ module sampling
             integer, intent(out) :: bit
             !==================================================================
             real(dp), dimension(:), allocatable :: theta_evol, phi_evol, cuml_pow
-            real(dp) :: phi_i, theta_i, Hk, V
+            real(dp) :: phi_i, theta_i
             real :: seed
             integer :: t_i, pulse_steps, relax_steps, arr_size
             !==================================================================
@@ -143,14 +139,10 @@ module sampling
             call zigset(int(1+floor((1000001)*seed)))
             !================================
 
-            V = real(v_pulse,dp)
-            Hk = (2.0_dp*Ki)/(tf*Ms*u0)-(2.0_dp*ksi*V)/(u0*tox*tf)
-            call drive(V, 0.0_dp, real(Jappl,dp), Hk, pulse_steps,&
+            call drive(real(v_pulse,dp), 0.0_dp, real(Jappl,dp), pulse_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
-            V = 0.0_dp
-            Hk = (2.0_dp*Ki)/(tf*Ms*u0)-(2.0_dp*ksi*V)/(u0*Ms*tox*tf)
-            call drive(V, 0.0_dp, real(Jappl,dp), Hk, relax_steps,&
+            call drive(0.0_dp, 0.0_dp, real(Jappl,dp), relax_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
             if(fwrite_enabled) then
@@ -169,34 +161,35 @@ module sampling
             energy_usage = real(sum(cuml_pow)*t_step)
         end subroutine sample_VCMA
 
-        subroutine drive(V, J_SHE, J_STT, Hk, steps, t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
+        subroutine drive(V, J_SHE, J_STT, steps, t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
            implicit none
            integer,  parameter :: dp = kind(0.0d0)
-           real(dp), intent(in) :: V, J_SHE, J_STT, Hk
+           real(dp), intent(in) :: V, J_SHE, J_STT
            integer,  intent(in)  :: steps
            real(dp), dimension(:), intent(inout) :: phi_evol, theta_evol, cuml_pow
            real(dp), intent(inout) :: phi_i, theta_i
            integer,  intent(inout) :: t_i
-           real(dp) :: Ax, Ay, Az, dphi, dtheta, R1, pow
+           real(dp) :: Hk, Ax, Ay, Az, dphi, dtheta, R1, pow
            integer  :: i
 
+           Hk = (2.0_dp*Ki)/(tf*Ms*u0)-(2.0_dp*ksi*V)/(u0*Ms*tox*tf)
            do i = 1, steps
                t_i = t_i+1
                Ax = Hx-Nx*Ms*sin(theta_i)*cos(phi_i)     +rnor()*Htherm
                Ay = Hy-Ny*Ms*sin(theta_i)*sin(phi_i)     +rnor()*Htherm
                Az = Hz-Nz*Ms*cos(theta_i)+Hk*cos(theta_i)+rnor()*Htherm
 
-               dphi   = gammap*(Ax*(-cos(theta_i)*cos(phi_i)-alpha*sin(phi_i))+Ay*(-cos(theta_i)*sin(phi_i)+alpha*cos(phi_i))+&
-                   Az*sin(theta_i))/(sin(theta_i))+J_SHE*F*eta*(sin(phi_i)-alpha*cos(phi_i)*cos(theta_i))/(sin(theta_i)*&
-                   (1_dp+alpha*alpha))-((alpha*F*P*J_STT)/(1_dp+alpha**2))
-               dtheta = gammap*(Ax*(alpha*cos(theta_i)*cos(phi_i)-sin(phi_i))+Ay*(alpha*cos(theta_i)*sin(phi_i)+cos(phi_i))-Az*&
-                   alpha*sin(theta_i))-J_SHE*F*eta*(cos(phi_i)*cos(theta_i)+(alpha*sin(phi_i))/(1_dp+alpha**2))+((F*P*J_STT)*&
-                   sin(theta_i)/(1_dp+alpha**2))
-               R1 = Rp*(1_dp+(V/Vh)**2+TMR)/(1_dp+(V/Vh)**2+TMR*(1_dp+(cos(theta_i)))/2_dp)
+               dphi = gammap*(Ax*(-cos(theta_i)*cos(phi_i) - alpha*sin(phi_i)) + Ay*(-cos(theta_i)*sin(phi_i) + alpha*cos(phi_i))&
+                      + Az*sin(theta_i))/(sin(theta_i))+J_SHE*F*eta*(sin(phi_i)-alpha*cos(phi_i)*cos(theta_i))/(sin(theta_i)&
+                      * (1_dp+alpha*alpha)) - ((alpha*F*P*J_STT)/(1_dp+alpha**2))
+               dtheta = gammap*(Ax*(alpha*cos(theta_i)*cos(phi_i) - sin(phi_i)) + Ay*(alpha*cos(theta_i)*sin(phi_i)+cos(phi_i))&
+                      - Az*alpha*sin(theta_i)) - J_SHE*F*eta*(cos(phi_i)*cos(theta_i) + (alpha*sin(phi_i))/(1_dp+alpha**2))&
+                      + ((F*P*J_STT)*sin(theta_i)/(1_dp+alpha**2))
+               R1 = Rp*(1_dp+(V/Vh)**2+TMR)/(1_dp+(V/Vh)**2 + TMR*(1_dp+(cos(theta_i)))/2_dp)
 
-               pow = 0.5_dp*cap_mgo*V**2+R2*(J_SHE*A2)**2+R1*(J_STT*A1)**2
-               phi_i   = phi_i+t_step*dphi 
-               theta_i = theta_i+t_step*dtheta
+               pow = (0.5_dp*cap_mgo*V**2) + (R2*(J_SHE*A2)**2) + (R1*(J_STT*A1)**2)
+               phi_i   = phi_i   + t_step*dphi 
+               theta_i = theta_i + t_step*dtheta
                cuml_pow(t_i) = pow
                if(fwrite_enabled) then
                    theta_evol(t_i) = theta_i

@@ -5,7 +5,7 @@ import os
 import signal
 import numpy as np
 
-def mtj_sample(dev,Jstt,dump_mod,view_mag_flag,file_ID=1,config_check=0) -> (int,float):
+def mtj_sample(dev,Jstt,dump_mod=1,view_mag_flag=0,file_ID=1,config_check=0) -> (int,float):
     try:
         # fortran call here.
         if (dev.mtj_type == 0):
