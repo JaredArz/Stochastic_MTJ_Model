@@ -1,9 +1,8 @@
 import sys
 sys.path.append("./fortran_source")
 from interface_funcs import mtj_sample
-from mtj_types_v3 import SHE_MTJ_rng
+from mtj_types_v3 import SHE_MTJ_rng, VCMA_MTJ_rng
 #============================================================
-#from original_mtj_types_Ki_sweep_optimized import SHE_MTJ_rng
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -19,7 +18,8 @@ devnum = 20
 theta = np.pi/100
 phi = 0
 for idev in range(devnum):
-    dev = SHE_MTJ_rng()
+    #dev = SHE_MTJ_rng()
+    dev = VCMA_MTJ_rng()
     dev.set_vals(0)
     dev.set_mag_vector(phi,theta)
     bitstr_avg = []

@@ -13,41 +13,42 @@ module single_sample
         !
         ! --------------------------------*------------*-----------------------------------
         subroutine pulse_then_relax(energy_usage,bit,theta_end,phi_end,&
-                                    Jappl,Jshe,theta_init,phi_init,dev_Ki,dev_TMR,&
-                                    dev_Rp,a,b,tf,alpha,Ms,eta,d,t_pulse,t_relax,mtj_type,&
+                                    Jappl,Jshe,theta_init,phi_init,Ki,TMR,&
+                                    Rp,a,b,tf,alpha,Ms,eta,d,t_pulse,t_relax,mtj_type,&
                                     dump_mod,view_mag_flag,sample_count,file_ID,config_check) 
         implicit none
         integer             :: i,t_iter
-        real,intent(in)     :: Jappl,Jshe,theta_init,phi_init
-        real,intent(in)     :: t_pulse,t_relax
+        ! Dynamical parameters
+        real,intent(in)     :: Jappl,Jshe,theta_init,phi_init,t_pulse,t_relax
         ! Device parameters
-        real,intent(in)     :: dev_Ki,dev_TMR,dev_Rp 
-        real,intent(in)     :: a,b,tf,alpha,Ms,eta,d
-        real,intent(in)     :: mtj_type
+        real,intent(in)     :: Ki,TMR,Rp,a,b,tf,alpha,Ms,eta,d
         ! =================
-        integer, intent(in) :: file_ID, sample_count,dump_mod,config_check
+        integer, intent(in) :: file_ID, sample_count,dump_mod,config_check,mtj_type
         logical, intent(in) :: view_mag_flag
         !return values
         real,intent(out) :: energy_usage,theta_end,phi_end
         integer,intent(out) :: bit
         !==================================================================
         ! dummy variables
-        integer :: pulse_steps
-        integer :: relax_steps
-        real,allocatable :: theta_over_time(:),phi_over_time(:),cumulative_pow(:)
-        character(len=7) :: file_string
+        integer :: pulse_steps,relax_steps
+        real,allocatable,target   :: theta_over_time(:),phi_over_time(:),cumulative_pow(:)
+        real,dimension(:),pointer :: th_ptr, phi_ptr, pow_ptr
+        logical          :: w_enabled
         real(dp) :: V,J_SHE,J_STT,Hk,Ax,Ay,Az,dphi,dtheta,R1
         real(dp) :: phi_i,theta_i,power_i,seed
         real(dp) :: Bsat,gammap,volume,A1,A2,cap_mgo,R2,Htherm,F
         !==================================================================
         !//////////////////////////////////////////////////////////////////
 
+        w_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1)
         ! ==== computation of variables with sweepable dependencies ====
         pulse_steps = int(t_pulse/t_step)
         relax_steps = int(t_relax/t_step)
-        if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
+        if( w_enabled ) then
             allocate(theta_over_time(pulse_steps+relax_steps+1))
             allocate(phi_over_time(pulse_steps+relax_steps+1))
+            phi_ptr => phi_over_time
+            th_ptr  => theta_over_time
         end if
         allocate(cumulative_pow(pulse_steps+relax_steps+1))
         Bsat    = real(Ms,dp)*u0
@@ -72,7 +73,7 @@ module single_sample
         power_i = 0.0
         theta_i = real(theta_init,dp)
         phi_i   = real(phi_init,dp)
-        if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
+        if( w_enabled ) then
             theta_over_time(t_iter) = real(theta_i)
             phi_over_time(t_iter)   = real(phi_i)
         end if
@@ -82,7 +83,7 @@ module single_sample
         V     = v_pulse
         J_SHE = real(Jshe,dp)
         J_STT = real(Jappl,dp)
-        Hk    = (2.0*real(dev_Ki,dp))/(real(tf,dp)*real(Ms,dp)*u0)-(2.0_dp*ksi*V)/(u0*tox*real(tf,dp))
+        Hk    = (2.0*real(Ki,dp))/(real(tf,dp)*real(Ms,dp)*u0)-(2.0_dp*ksi*V)/(u0*tox*real(tf,dp))
         do i = 1, pulse_steps
             !keep track of time steps for array navigation
             t_iter=i+1
@@ -96,7 +97,7 @@ module single_sample
             dtheta = gammap*(Ax*(alpha*cos(theta_i)*cos(phi_i)-sin(phi_i))+Ay*(alpha*cos(theta_i)*sin(phi_i)+cos(phi_i))-Az*&
                 alpha*sin(theta_i))-J_SHE*F*eta*(cos(phi_i)*cos(theta_i)+(alpha*sin(phi_i))/(1+alpha**2))+((F*P*J_STT)*&
                 sin(theta_i)/(1+alpha**2))
-            R1     = real(dev_Rp,dp)*(1+(V/Vh)**2+real(dev_TMR,dp))/(1+(V/Vh)**2+real(dev_TMR,dp)*(1+(cos(theta_i)))/2)
+            R1     = real(Rp,dp)*(1+(V/Vh)**2+real(TMR,dp))/(1+(V/Vh)**2+real(TMR,dp)*(1+(cos(theta_i)))/2)
             power_i = 0.5*cap_mgo*V**2+R2*(abs(J_SHE*A2))**2+R1*(J_STT*A1)**2
             phi_i   = phi_i+t_step*dphi 
             theta_i = theta_i+t_step*dtheta
@@ -109,10 +110,16 @@ module single_sample
         end do
 
         !=================  Relax into a one of two low-energy states out-of-plane  ===================
+        !FIXME make 4 different paramters that can be passed in, (these intial values)
+        !make sure none of the loops actually differ in the pyhon code.
+        !otherwise, these loops are good to be functions and then there can be a simple function call
+        !to a VCMA, SHE, STT depending on the MTJ type, that will then call the appropriate routines with the intial conditions
+
+        !on the to do list first, start modulartizing code (the if statements are atrocious) and doing verification (checking for differences)
         V=0
         J_SHE = 0.0
         J_STT = real(Jappl,dp)
-        Hk = (2.0*real(dev_Ki,dp))/(real(tf,dp)*real(Ms,dp)*u0)-(2.0_dp*ksi*V)/(u0*real(Ms,dp)*tox*real(tf,dp))
+        Hk = (2.0*real(Ki,dp))/(real(tf,dp)*real(Ms,dp)*u0)-(2.0_dp*ksi*V)/(u0*real(Ms,dp)*tox*real(tf,dp))
         do i = 1, relax_steps
             t_iter=t_iter+1
             Ax = Hx-Nx*Ms*sin(theta_i)*cos(phi_i)     +rnor()*Htherm
@@ -126,7 +133,7 @@ module single_sample
                 Az*alpha*sin(theta_i))-J_SHE*F*eta*(cos(phi_i)*cos(theta_i)+(alpha*sin(phi_i))/(1+alpha**2))+((F*P*J_STT)*&
                 sin(theta_i)/(1+alpha**2))
 
-            R1 = real(dev_Rp,dp)*(1+(V/Vh)**2+real(dev_TMR,dp))/(1+(V/Vh)**2+real(dev_TMR,dp)*(1+(cos(theta_i)))/2)
+            R1 = real(Rp,dp)*(1+(V/Vh)**2+real(TMR,dp))/(1+(V/Vh)**2+real(TMR,dp)*(1+(cos(theta_i)))/2)
             power_i = 0.5*cap_mgo*V**2+R2*(abs(J_SHE*A2))**2+R1*(J_STT*A1)**2
             phi_i   = phi_i+t_step*dphi
             theta_i = theta_i+t_step*dtheta
@@ -138,14 +145,8 @@ module single_sample
         end do
 
         ! ===== array dump to file of theta/phi time evolution  ====
-        if( (mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1) then
-            write (file_string,'(I7.7)') file_ID
-            open(unit = file_ID, file = "time_evol_mag_"//file_string//".txt", action = "write", status = "replace", &
-                    form = 'formatted')
-            write(file_ID,*) phi_over_time
-            write(file_ID,*) theta_over_time
-
-            close(file_ID)
+        if( w_enabled ) then
+            call file_dump(file_ID, phi_ptr, th_ptr)
         end if
         ! ========================================================== 
 
@@ -159,5 +160,17 @@ module single_sample
         end if
         energy_usage = real(sum(cumulative_pow))*real(t_step)
 
+        contains
+            subroutine file_dump(file_ID, phi_ptr, th_ptr) !use pointers for the two arrays
+                integer,intent(IN) :: file_ID
+                real,dimension(:),pointer :: phi_ptr, th_ptr
+                character(len=7)   :: file_string
+                write (file_string,'(I7.7)') file_ID
+                open(unit = file_ID, file = "time_evol_mag_"//file_string//".txt", action = "write", status = "replace", &
+                        form = 'formatted')
+                write(file_ID,*) phi_ptr
+                write(file_ID,*) th_ptr
+                close(file_ID)
+            end subroutine
         end subroutine pulse_then_relax
 end module single_sample

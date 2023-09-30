@@ -11,7 +11,6 @@ dev.set_mag_vector(3.14/2, 3.14/2)
 
 # print device parameters
 print(dev)
-print(dev.params_set_flag)
 input()
 
 dev.Ki=1
@@ -26,25 +25,21 @@ dev.alpha=1
 dev.Rp=1
 dev.TMR=1
 print(dev)
-print(dev.params_set_flag)
 input()
 
 # set device parameters, a few at a time
 dev.set_vals(Ki=1,Ms=1)
 print(dev)
-print(dev.params_set_flag)
 input()
 
 # all at once
 dev.set_vals(Ki=1,Ms=1,tf=1,J_she=1,a=1,b=1,d=1,eta=1,alpha=1,Rp=1,TMR=1)
 print(dev)
-print(dev.params_set_flag)
 input()
 
 # debug option available, uses a known good device
 dev.set_vals(True)
 print(dev)
-print(dev.params_set_flag)
 input()
 
 

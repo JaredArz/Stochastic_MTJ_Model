@@ -6,8 +6,8 @@ import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from mtj_types_v3 import SHE_MTJ_rng
-from jz_lut import jz_lut_she
+from mtj_types_v3 import SHE_MTJ_rng, VCMA_MTJ_rng
+from jz_lut import jz_lut_she, jz_lut_vcma
 
 cdf      = lambda x, lmda: 1-np.exp(-lmda*x)
 make_dir = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
@@ -41,7 +41,7 @@ def dist_rng(dev,k,init,lmda,\
     return number,bits,energies
 
 def main():
-  dev = SHE_MTJ_rng()
+  dev = VCMA_MTJ_rng()
   dev.set_vals(0) # 1 uses default values with dev-to-dev variation on, 0, off
   print(dev)      # can print device to list all parameters
   print("verifying device paramters")
