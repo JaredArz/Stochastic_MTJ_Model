@@ -1,4 +1,5 @@
 from interface_funcs import mtj_sample
+import matplotlib.pyplot as plt
 import numpy as np
 
 def config_verify(dev):
@@ -26,12 +27,14 @@ def config_verify(dev):
             mz_arr = []
             for i in range(cycles):
                 # Only tracking magnetization vector stored in *History
-                _,_ = mtj_sample(dev,J_stt,1,1,i,1)
+                _,_ = mtj_sample(dev,J_stt,1,1)
                 mz = np.cos(dev.thetaHistory)
                 mz_arr.append(mz)
                 mz_chk1_arr = mz_chk1_arr + np.absolute(mz[0:pulse_steps])
                 mz_chk2_arr = mz_chk2_arr + np.absolute(mz[pulse_steps:pulse_steps+relax_steps])
                 point2point_variation = point2point_variation + np.sum(np.absolute(mz[1::] - mz[0:-1]))/(mz.size - 1)
+                if i == 0 and id == 0 and rep == 0:
+                    plot_mag(dev)
             mz_avg.append(np.mean(mz_arr))
     mz_chk1_arr = mz_chk1_arr/cycles
     mz_chk2_arr = mz_chk2_arr/cycles
@@ -70,3 +73,14 @@ def config_verify(dev):
             PMAIMA = 0 #if both checks are just warnings or better, balance is good enough
 
     return numerical_err,mz_chk1_res,mz_chk2_res,PMAIMA
+
+
+def plot_mag(dev):
+    plt.figure(2)
+    plt.plot(dev.phiHistory)
+    plt.savefig("./results/phi.png")
+    plt.close()
+    plt.figure(3)
+    plt.plot(dev.thetaHistory)
+    plt.savefig("./results/theta.png")
+    plt.close()

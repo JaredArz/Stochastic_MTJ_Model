@@ -108,7 +108,8 @@ module sampling
             real(dp), dimension(:), allocatable :: theta_evol, phi_evol
             real(dp) :: phi_i, theta_i, cuml_pow
             real :: seed
-            integer :: t_i, pulse_steps, relax_steps, reset_steps, total_steps
+            integer :: t_i, pulse_steps, relax_steps, reset_steps,&
+                       sample_steps, total_reset_steps
             !==================================================================
             !//////////////////////////////////////////////////////////////////
 
@@ -120,14 +121,15 @@ module sampling
             pulse_steps = int(t_pulse/t_step)
             relax_steps = int(t_relax/t_step)
             reset_steps = int(t_reset/t_step)
-            total_steps = pulse_steps+relax_steps+reset_steps+1
+            sample_steps = pulse_steps+relax_steps+1
+            total_reset_steps = reset_steps+relax_steps
 
             cuml_pow = 0.0_dp
             theta_i = real(theta_init, dp)
             phi_i   = real(phi_init, dp)
             if(fwrite_enabled) then
-                allocate(theta_evol(total_steps))
-                allocate(phi_evol(total_steps))
+                allocate(theta_evol(sample_steps))
+                allocate(phi_evol(sample_steps))
                 theta_evol(t_i) = theta_i
                 phi_evol(t_i)   = phi_i
             end if
@@ -150,6 +152,16 @@ module sampling
                 bit = 1
             else
                 bit = 0
+            end if
+
+            ! avoiding stack overflow by having two write operations since f2py forcefully copies arrays
+            if(fwrite_enabled) then
+                call file_dump(file_ID, phi_evol, theta_evol)
+                deallocate(phi_evol)
+                deallocate(theta_evol)
+                t_i = 0
+                allocate(phi_evol(total_reset_steps))
+                allocate(theta_evol(total_reset_steps))
             end if
 
             Hz = Hreset
@@ -299,9 +311,14 @@ module sampling
 
             ! ===== array dump to file of theta/phi time evolution  ====
             write (file_string,'(I7.7)') file_ID
-            open(unit = file_ID, file = "time_evol_mag_"//file_string//".txt", action = "write", status = "replace", &
+            open(unit = file_ID, file = "phi_time_evol_"//file_string//".txt", action = "write", status = "replace", &
                     form = 'formatted')
             write(file_ID,*) phi_evol
+            close(file_ID)
+
+            write (file_string,'(I7.7)') file_ID
+            open(unit = file_ID, file = "theta_time_evol_"//file_string//".txt", action = "write", status = "replace", &
+                    form = 'formatted')
             write(file_ID,*) theta_evol
             close(file_ID)
         end subroutine file_dump

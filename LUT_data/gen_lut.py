@@ -56,7 +56,7 @@ for idev in range(devnum):
             bitstr_arr = []
             energy_arr = []
             for _ in tqdm(range(cycles),ncols=80,leave=False):
-                bitstr,energy = mtj_sample(dev,j, 100, 1)
+                bitstr,energy = mtj_sample(dev,j)
                 bitstr_arr.append(bitstr)
                 energy_arr.append(energy)
             bitstr_avg.append(np.mean(bitstr_arr))

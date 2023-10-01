@@ -33,9 +33,10 @@ def mtj_sample(dev,Jstt,dump_mod=1,view_mag_flag=0,file_ID=1,config_check=0) -> 
         dev.set_mag_vector(phi_end,theta_end)
         if( (view_mag_flag and (dev.sample_count % dump_mod == 0)) or config_check):
             # These file names are determined by fortran subroutine single_sample.
-            phi_from_txt   = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
-            theta_from_txt = np.loadtxt("time_evol_mag_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=1, max_rows=1)
-            os.remove("time_evol_mag_" + format_file_ID(file_ID) + ".txt")
+            phi_from_txt   = np.loadtxt("phi_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
+            theta_from_txt = np.loadtxt("theta_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
+            os.remove("phi_time_evol_"   + format_file_ID(file_ID) + ".txt")
+            os.remove("theta_time_evol_" + format_file_ID(file_ID) + ".txt")
             dev.thetaHistory = list(theta_from_txt)
             dev.phiHistory   = list(phi_from_txt)
         if(view_mag_flag):
@@ -52,17 +53,3 @@ def format_file_ID(pid) -> str:
     while len(str_pid) < 7:
         str_pid = '0' + str_pid
     return str_pid
-
-""" ### FIXME: currently not working.
-def run_in_parallel_batch(func,samples,\
-                            dev,k,init,lmda,\
-                            dump_mod,mag_view_flag,batch_size=None) -> (list,list,list):
-  if batch_size is None:
-      batch_size = 2*os.cpu_count()
-  else:
-      #FIXME: add better parallelization and error handling
-      pass
-  args = (dev,k,init,lmda,dump_mod,mag_view_flag)
-  func_data = parallel_env(samples,batch_size,func,args).run()
-  return func_data[0],func_data[1],func_data[2]
-"""

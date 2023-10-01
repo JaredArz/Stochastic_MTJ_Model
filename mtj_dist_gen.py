@@ -6,14 +6,14 @@ import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from mtj_types_v3 import SHE_MTJ_rng, VCMA_MTJ_rng
-from jz_lut import jz_lut_she, jz_lut_vcma
+from mtj_types_v3 import SHE_MTJ_rng, VCMA_MTJ_rng, SWrite_MTJ_rng
+from jz_lut import jz_lut_she, jz_lut_vcma, jz_lut_write
 
 cdf      = lambda x, lmda: 1-np.exp(-lmda*x)
 make_dir = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
 
 def dist_rng(dev,k,init,lmda,\
-             dump_mod,mag_view_flag,file_ID):
+             dump_mod,mag_view_flag):
     x2 = 2**k
     x0 = 1
     x1 = (x2+x0)/2
@@ -27,8 +27,9 @@ def dist_rng(dev,k,init,lmda,\
     for i in range(k):
       pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
       # ===================== entry point to fortran interface ==========================
-      #out,energy = mtj_sample(dev,jz_lut_she(pright),dump_mod,mag_view_flag,file_ID)
-      out,energy = mtj_sample(dev,jz_lut_vcma(pright),dump_mod,mag_view_flag,file_ID)
+      out,energy = mtj_sample(dev,jz_lut_she(pright),dump_mod,mag_view_flag)
+      #out,energy = mtj_sample(dev,jz_lut_vcma(pright),dump_mod,mag_view_flag)
+      #out,energy = mtj_sample(dev,jz_lut_write(pright),dump_mod,mag_view_flag)
       # ==============================================================================================
       bits.append(out)
       energies.append(energy)
@@ -42,7 +43,7 @@ def dist_rng(dev,k,init,lmda,\
     return number,bits,energies
 
 def main():
-  dev = VCMA_MTJ_rng()
+  dev = SHE_MTJ_rng()
   dev.set_vals(0) # 1 uses default values with dev-to-dev variation on, 0, off
   print(dev)      # can print device to list all parameters
   print("verifying device paramters")
@@ -57,19 +58,20 @@ def main():
   else:
     print('parameters okay')
   print("running application")
+  exit()
 
   k       = 8
   lmda    = 0.01
   init_t  = 9*np.pi/10
-  samples = 16384
+  samples = 8000
   number_history = []
   bitstream  = []
   energy_avg = []
-  mag_view_flag = False
-  dump_mod      = 8000 # dump phi and theta history every value (only applicable if mag_view_flag is true)
+  mag_view_flag = 1
+  dump_mod      = 100 # dump phi and theta history every value (only applicable if mag_view_flag is true)
 
   for j in range(samples):
-      number_j,bits_j,energies_j = dist_rng(dev,k,init_t,lmda,dump_mod,mag_view_flag,j+7)
+      number_j,bits_j,energies_j = dist_rng(dev,k,init_t,lmda,dump_mod,mag_view_flag)
       number_history.append(number_j)
       bitstream.append(''.join(str(i) for i in bits_j))
       energy_avg.append(np.average(energies_j))
