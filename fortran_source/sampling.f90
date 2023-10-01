@@ -71,7 +71,7 @@ module sampling
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
             if(fwrite_enabled) then
-                call file_dump(file_ID, phi_evol, theta_evol)
+                call file_dump(file_ID, phi_evol, theta_evol, 1)
             end if
 
             ! ===== return final solve values: energy,bit,theta,phi ====
@@ -156,7 +156,7 @@ module sampling
 
             ! avoiding stack overflow by having two write operations since f2py forcefully copies arrays
             if(fwrite_enabled) then
-                call file_dump(file_ID, phi_evol, theta_evol)
+                call file_dump(file_ID, phi_evol, theta_evol, 1)
                 deallocate(phi_evol)
                 deallocate(theta_evol)
                 t_i = 0
@@ -173,7 +173,7 @@ module sampling
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
             if(fwrite_enabled) then
-                call file_dump(file_ID, phi_evol, theta_evol)
+                call file_dump(file_ID, phi_evol, theta_evol, 0)
             end if
 
             ! ===== return final solve values: energy,bit,theta,phi ====
@@ -241,7 +241,7 @@ module sampling
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
             if(fwrite_enabled) then
-                call file_dump(file_ID, phi_evol, theta_evol)
+                call file_dump(file_ID, phi_evol, theta_evol, 1)
             end if
 
             ! ===== return final solve values: energy,bit,theta,phi ====
@@ -302,24 +302,34 @@ module sampling
            end do
         end subroutine drive
 
-        subroutine file_dump(file_ID, phi_evol, theta_evol)
+        subroutine file_dump(file_ID, phi_evol, theta_evol, overwrite_flag)
             implicit none
             integer,  parameter :: dp = kind(0.0d0)
             real(dp), dimension(:), intent(in) :: phi_evol, theta_evol
-            integer,  intent(in) :: file_ID
+            integer,  intent(in) :: file_ID, overwrite_flag
             character(len=7) :: file_string
 
             ! ===== array dump to file of theta/phi time evolution  ====
             write (file_string,'(I7.7)') file_ID
-            open(unit = file_ID, file = "phi_time_evol_"//file_string//".txt", action = "write", status = "replace", &
-                    form = 'formatted')
-            write(file_ID,*) phi_evol
+            if( overwrite_flag .eq. 1) then
+                open(unit = file_ID, file = "phi_time_evol_"//file_string//".txt", action = "write", status = "replace", &
+                        form = 'formatted')
+            else
+                open(unit = file_ID, file = "phi_time_evol_"//file_string//".txt", action = "write", status = "old",&
+                        position="append",form = 'formatted')
+            end if
+            write(file_ID,'(ES24.17)',advance="no") phi_evol
             close(file_ID)
 
             write (file_string,'(I7.7)') file_ID
-            open(unit = file_ID, file = "theta_time_evol_"//file_string//".txt", action = "write", status = "replace", &
-                    form = 'formatted')
-            write(file_ID,*) theta_evol
+            if( overwrite_flag .eq. 1) then
+                open(unit = file_ID, file = "theta_time_evol_"//file_string//".txt", action = "write", status = "replace", &
+                        form = 'formatted')
+            else
+                open(unit = file_ID, file = "theta_time_evol_"//file_string//".txt", action = "write", status = "old",&
+                        position="append",form = 'formatted')
+            end if
+            write(file_ID,'(ES24.17)',advance="no") theta_evol
             close(file_ID)
         end subroutine file_dump
 end module sampling

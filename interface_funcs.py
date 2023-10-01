@@ -33,8 +33,8 @@ def mtj_sample(dev,Jstt,dump_mod=1,view_mag_flag=0,file_ID=1,config_check=0) -> 
         dev.set_mag_vector(phi_end,theta_end)
         if( (view_mag_flag and (dev.sample_count % dump_mod == 0)) or config_check):
             # These file names are determined by fortran subroutine single_sample.
-            phi_from_txt   = np.loadtxt("phi_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
-            theta_from_txt = np.loadtxt("theta_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, delimiter=None, skiprows=0, max_rows=1)
+            phi_from_txt   = np.loadtxt("phi_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, usecols=0, delimiter=None)
+            theta_from_txt = np.loadtxt("theta_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, usecols=0, delimiter=None)
             os.remove("phi_time_evol_"   + format_file_ID(file_ID) + ".txt")
             os.remove("theta_time_evol_" + format_file_ID(file_ID) + ".txt")
             dev.thetaHistory = list(theta_from_txt)

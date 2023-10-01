@@ -43,7 +43,7 @@ def dist_rng(dev,k,init,lmda,\
     return number,bits,energies
 
 def main():
-  dev = SHE_MTJ_rng()
+  dev = SWrite_MTJ_rng()
   dev.set_vals(0) # 1 uses default values with dev-to-dev variation on, 0, off
   print(dev)      # can print device to list all parameters
   print("verifying device paramters")
