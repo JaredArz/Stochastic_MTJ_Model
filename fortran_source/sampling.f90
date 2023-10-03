@@ -12,7 +12,7 @@ module sampling
         !   intended to mimic the python function call: out,energy = dev.sample_*(Jappl,Jshe_in, self.theta, self.phi, self.Ki....)
         ! --------------------------------*------------*-----------------------------------
         subroutine sample_SHE(energy_usage, bit, theta_end, phi_end,&
-                                 Jappl, Jshe, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
+                                 Jappl, Jshe, Hy_in, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                                  a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, t_pulse, t_relax,&
                                  dump_mod, view_mag_flag, sample_count, file_ID, config_check) 
             implicit none
@@ -20,7 +20,7 @@ module sampling
             ! Dynamical parameters
             real, intent(in) :: Jappl, Jshe, theta_init, phi_init, t_pulse, t_relax
             ! Device input parameters
-            real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in,&
+            real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, Hy_in,&
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in
             ! Functional parameters
             integer, intent(in) :: file_ID, sample_count, dump_mod, config_check
@@ -62,10 +62,13 @@ module sampling
             !================================
 
             Hz = 0
+            !FIXME: testing for plots
+            Hy = real(Hy_in,dp)
             !=========== Pulse current and set device to be in-plane =========
             call drive(0.0_dp, real(Jshe,dp), real(Jappl,dp), pulse_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
+            Hy = 0
             !=================  Relax into one of two low-energy states out-of-plane  ===================
             call drive(0.0_dp, 0.0_dp, real(Jappl,dp), relax_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)

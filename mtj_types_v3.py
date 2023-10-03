@@ -103,7 +103,7 @@ class MTJ():
          print("Ms, Ki, TMR, Rp,a, b, tf, alpha, eta, d, t_pulse, t_relax,")
          print("and for ",end="")
          if self.mtj_type == SHE:
-             print("SHE: J_she")
+             print("SHE: J_she, Hy")
          elif self.mtj_type == SWrite:
              print("SWrite: J_reset, H_reset, H_appl, t_reset")
          elif self.mtj_type == VCMA:
@@ -125,7 +125,7 @@ class SHE_MTJ_rng(MTJ):
                        "b"  : 50e-9,   "tf" : 1.1e-9,
                        "alpha" :0.03,  "eta" : 0.3,
                        "d"  : 3e-9,    "t_pulse" : 10e-9,
-                       "t_relax" : 15e-9}
+                       "t_relax" : 15e-9, "Hy": 0}
         super().__init__(SHE,dflt_params,dflt_noise,dflt_m)
 
 class SWrite_MTJ_rng(MTJ):
@@ -137,7 +137,7 @@ class SWrite_MTJ_rng(MTJ):
                       "TMR" : 0.05,}
         dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
                        "TMR": 1.2,         "Ms" : 1.2e6,
-                       "J_reset": 5e10,    "H_reset": 0,
+                       "J_reset": 5e11,    "H_reset": 0,
                        "H_appl":0,         "a"  : 50e-9,
                        "b"  : 50e-9,       "tf" : 1.1e-9,
                        "alpha" :0.03,      "eta" : 0.3,
