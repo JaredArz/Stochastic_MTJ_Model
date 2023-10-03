@@ -43,7 +43,7 @@ def dist_rng(dev,k,init,lmda,\
     return number,bits,energies
 
 def main():
-  dev = SWrite_MTJ_rng()
+  dev = SHE_MTJ_rng()
   dev.set_vals(0) # 1 uses default values with dev-to-dev variation on, 0, off
   print(dev)      # can print device to list all parameters
   print("verifying device paramters")
@@ -58,7 +58,6 @@ def main():
   else:
     print('parameters okay')
   print("running application")
-  exit()
 
   k       = 8
   lmda    = 0.01
@@ -67,7 +66,7 @@ def main():
   number_history = []
   bitstream  = []
   energy_avg = []
-  mag_view_flag = 1
+  mag_view_flag = 0
   dump_mod      = 100 # dump phi and theta history every value (only applicable if mag_view_flag is true)
 
   for j in range(samples):
