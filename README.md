@@ -2,8 +2,8 @@
 ### contact: jared.arzate@utexas.edu
 ##  Device models included:
 ### - [X] SOT  MTJ
-### - [ ] VCMA MTJ
-### - [ ] STT Stochastic Write MTJ
+### - [X] VCMA MTJ
+### - [X] STT Stochastic Write MTJ
 
 ## Working:
 ### - [X] Serial
@@ -41,7 +41,10 @@ Returns:
 Import `mtj_sample(...)` in python with `from interface_funcs import mtj_sample`
 
 ## Device class
-Declare as `dev = SHE_MTJ_rng()`
+Declare as one of:
+`dev = SHE_MTJ_rng()`
+`dev = VCMA_MTJ_rng()`
+`dev = SWrite_MTJ_rng()`
 
 Set default device parameters with `dev.set_vals(0)`,
 
@@ -51,16 +54,29 @@ If setting the device parameters manually, the following must be set:
 - Ki [$`\frac{J}{m^2}`$]
 - Ms [$`\frac{A}{m}`$]
 - tf [$`m`$]
-- J_she  [$`\frac{A}{m^2}`$]
 - a  [$`m`$]
 - b  [$`m`$]
 - d  [$`m`$]
 - eta   [dimensionless]
 - alpha [dimensionless]
 - Rp   [$`\Omega`$]
-- TMR  [dimensionless]  
+- TMR  [dimensionless]
 - t_pulse  [$`t`$]
 - t_relax  [$`t`$]
+
+SHE only:
+- J_she  [$`\frac{A}{m^2}`$]
+- Hy (optional)
+
+VCMA only:
+- v_pulse [volts]
+
+Stochastic Write only:
+- J_reset
+- H_reset
+- t_reset
+
+
 
 
 ## Device Parameter Verification

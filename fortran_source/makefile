@@ -13,7 +13,6 @@ all: ${OBJS}
 	${F2PYC} -c ${F2PYFLAGS} ${OBJS} -m ${F2PY_TARGET} ${F2PY_TARGET}.f90
 
 %.o: %.f90
-	# $ < evaluates to successive .f90
 	${FC} -shared ${FCLAGS} -fPIC -c $< -o $@
 
 # Clean target

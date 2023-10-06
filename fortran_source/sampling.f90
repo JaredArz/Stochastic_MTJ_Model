@@ -61,8 +61,6 @@ module sampling
             call zigset(int(1+floor((1000001)*seed)))
             !================================
 
-            Hz = 0
-            !FIXME: testing for plots
             Hy = real(Hy_in,dp)
             !=========== Pulse current and set device to be in-plane =========
             call drive(0.0_dp, real(Jshe,dp), real(Jappl,dp), pulse_steps,&
@@ -90,13 +88,13 @@ module sampling
         end subroutine sample_SHE
 
         subroutine sample_SWrite(energy_usage, bit, theta_end, phi_end,&
-                                 Jappl, Jreset, Happl, Hreset, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
+                                 Jappl, Jreset, Hreset, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                                  a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, t_pulse, t_relax, t_reset,&
                                  dump_mod, view_mag_flag, sample_count, file_ID, config_check) 
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
-            real, intent(in) :: Jappl, Jreset, Happl, Hreset, theta_init, phi_init,&
+            real, intent(in) :: Jappl, Jreset, Hreset, theta_init, phi_init,&
                                 t_pulse, t_relax, t_reset
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in,&
@@ -143,11 +141,10 @@ module sampling
             call zigset(int(1+floor((1000001)*seed)))
             !================================
 
-            Hz = Happl
+            Hz = 0.0_dp
             call drive(0.0_dp, 0.0_dp, real(Jappl,dp), pulse_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
-            Hz = 0.0_dp
             call drive(0.0_dp, 0.0_dp, 0.0_dp, relax_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 
@@ -236,7 +233,6 @@ module sampling
             call zigset(int(1+floor((1000001)*seed)))
             !================================
 
-            Hz = 0
             call drive(real(v_pulse,dp), 0.0_dp, real(Jappl,dp), pulse_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, cuml_pow)
 

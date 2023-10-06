@@ -21,16 +21,9 @@ module ziggurat
    integer, save        :: kn(0:127), ke(0:255)
    real(dpz), save  :: wn(0:127), fn(0:127), we(0:255), fe(0:255)
 
-   PUBLIC  :: zigset, shr3, uni, rnor,get_init_status!, cleanZig
+   PUBLIC  :: zigset, shr3, uni, rnor!, cleanZig
 
 contains
-    function get_init_status( ) result(init_status)
-        implicit none
-        logical :: init_status
-        init_status = initialized
-        return
-    end function get_init_status
-
     subroutine zigset( jsrseed )
        integer, intent(in)  :: jsrseed
        integer  :: i

@@ -76,7 +76,7 @@ def plot(arr,fig,color):
 
 def save(fig):
     plt.figure(fig)
-    plt.savefig(f"./results/{mtj_type}_mz_cycs.png", dpi=1200, format='png')
+    plt.savefig(f"{mtj_type}_mz_cycs.png", dpi=1200, format='png')
     plt.close()
 
 if __name__ == "__main__":

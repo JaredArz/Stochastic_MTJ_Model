@@ -44,10 +44,10 @@ class MTJ():
          return out_string
 
      #================================================================================
-     def set_mag_vector(self,phi,theta):
+     def set_mag_vector(self,phi=None,theta=None):
          if phi == None and theta == None:
-             self.phi = dflt_m["phi"]
-             self.theta = dflt_m["theta"]
+             self.phi = self.dflt_m["phi"]
+             self.theta = self.dflt_m["theta"]
          else:
              self.phi   = phi
              self.theta = theta
@@ -103,9 +103,9 @@ class MTJ():
          print("Ms, Ki, TMR, Rp,a, b, tf, alpha, eta, d, t_pulse, t_relax,")
          print("and for ",end="")
          if self.mtj_type == SHE:
-             print("SHE: J_she, Hy")
+             print("SHE: J_she, Hy ( optional )")
          elif self.mtj_type == SWrite:
-             print("SWrite: J_reset, H_reset, H_appl, t_reset")
+             print("SWrite: J_reset, H_reset, t_reset")
          elif self.mtj_type == VCMA:
              print("VCMA: v_pulse")
 #================================================================================
@@ -118,7 +118,7 @@ class SHE_MTJ_rng(MTJ):
                   "phi"   : np.random.rand()*2*np.pi}
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,
-                      "TMR" : 0.05,}
+                      "TMR" : 0.05}
         dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
                        "TMR" : 1.2,    "Ms" : 1.2e6,
                        "J_she" : 5e11, "a"  : 50e-9,
@@ -134,15 +134,15 @@ class SWrite_MTJ_rng(MTJ):
                   "phi"    : np.random.rand()*2*np.pi}
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,
-                      "TMR" : 0.05,}
+                      "TMR" : 0.05}
         dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
                        "TMR": 1.2,         "Ms" : 1.2e6,
                        "J_reset": 5e11,    "H_reset": 0,
-                       "H_appl":0,         "a"  : 50e-9,
-                       "b"  : 50e-9,       "tf" : 1.1e-9,
-                       "alpha" :0.03,      "eta" : 0.3,
-                       "d"  : 3e-9,        "t_pulse" : 1e-9,
-                       "t_relax" : 10e-9,  "t_reset" : 10e-9 }
+                       "a"  : 50e-9,        "b"  : 50e-9,
+                       "tf" : 1.1e-9,       "alpha" :0.03,
+                       "eta" : 0.3,         "d"  : 3e-9,
+                       "t_pulse" : 1e-9,
+                       "t_relax" : 10e-9,  "t_reset" : 10e-9}
         super().__init__(SWrite,dflt_params,dflt_noise,dflt_m)
 
 class VCMA_MTJ_rng(MTJ):
@@ -151,12 +151,12 @@ class VCMA_MTJ_rng(MTJ):
                   "phi"   : np.random.rand()*2*np.pi}
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,
-                      "TMR" : 0.05,}
+                      "TMR" : 0.05}
         dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
                        "TMR" : 1.2,    "Ms" : 1.2e6,
                        "v_pulse" : 1.5, "a"  : 50e-9,
                        "b"  : 50e-9,   "tf" : 1.1e-9,
                        "alpha" :0.03,  "eta" : 0.3,
-                       "d"  : 3e-9,    "t_pulse" : 50e-9,
-                       "t_relax" : 15e-9}
+                       "d"  : 3e-9,    "t_pulse" : 30e-9,
+                       "t_relax" : 30e-9}
         super().__init__(VCMA,dflt_params,dflt_noise,dflt_m)
