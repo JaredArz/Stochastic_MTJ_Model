@@ -92,13 +92,13 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   nerr, mz1, mz2, PI = config_verify(dev, runID=0)
   if nerr == -1:
     # print('numerical error, do not use parameters!')
-    return None, None, None, None, None
+    return None, None, None, None, None, None, None
   elif PI == -1:
     # print('PMA too strong')
-    return None, None, None, None, None
+    return None, None, None, None, None, None, None
   elif PI == 1:
     # print('IMA too strong')
-    return None, None, None, None, None
+    return None, None, None, None, None, None, None
   else:
     pass
 
@@ -123,11 +123,12 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   # Build an analytical exponential probability density function (PDF)
   xxis = []
   exp_pdf = []
-  exp_count, _ = np.histogram(number_history,bins=256)
+  # exp_count, _ = np.histogram(number_history,bins=256)
   for j in range(256):
     if (j == 0):
       xxis.append(j)
-      exp_pdf.append(exp_count[0])
+      temp = 1
+      exp_pdf.append(temp)
 
     if (j > 0):
       number = lmda*np.exp(-lmda*j)
@@ -140,6 +141,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   for j in range(256):
     expsum += exp_pdf[j]
 
+  print("expsum:", expsum)
   exp_pdf = exp_pdf/expsum
   exp_pdf = exp_pdf*samples
   counts, _ = np.histogram(number_history,bins=256)
@@ -174,7 +176,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   except IndexError:
     pass
 
-  return chi2, bitstream, energy_avg, counts[0:256], number_history[0:samples]
+  return chi2, bitstream, energy_avg, counts[0:256], number_history[0:samples], xxis, exp_pdf
 
 
 def main():

@@ -130,11 +130,12 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, run, wr
   # Build an analytical exponential probability density function (PDF)
   xxis = []
   exp_pdf = []
-  exp_count, _ = np.histogram(number_history,bins=256)
+  # exp_count, _ = np.histogram(number_history,bins=256)
   for j in range(256):
     if (j == 0):
       xxis.append(j)
-      exp_pdf.append(exp_count[0])
+      temp = 1
+      exp_pdf.append(temp)
 
     if (j > 0):
       number = lmda*np.exp(-lmda*j)
@@ -355,6 +356,19 @@ def main():
   t_pulse = f[run][9]
   t_relax = f[run][10]
 
+  # Default parameters
+  # alpha = 0.03
+  # Ki = 0.0009725695027196851
+  # Ms = 1200000.0
+  # Rp = 4602.402954025149
+  # TMR = 1.1829030593531298
+  # d = 3e-09
+  # tf = 1.1e-09
+  # eta = 0.3
+  # J_she = 500000000000.0
+  # t_pulse = 1e-08
+  # t_relax = 1.5e-08
+  
   mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, run, writeFile=None)
 
 if __name__ == "__main__":

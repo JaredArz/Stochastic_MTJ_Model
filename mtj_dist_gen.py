@@ -77,11 +77,12 @@ def main():
   # Build an analytical exponential probability density function (PDF)
   xxis = []
   exp_pdf = []
-  exp_count, _ = np.histogram(number_history,bins=256)
+  # exp_count, _ = np.histogram(number_history,bins=256)
   for j in range(256):
     if (j == 0):
       xxis.append(j)
-      exp_pdf.append(exp_count[0])
+      temp = 1
+      exp_pdf.append(temp)
 
     if (j > 0):
       number = lmda*np.exp(-lmda*j)

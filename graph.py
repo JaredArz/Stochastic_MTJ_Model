@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy import stats
+from collections import Counter
 
 
 df = pd.read_csv("MTJ_Param_Results.csv")
@@ -16,32 +17,14 @@ for chi2_path in chi2_df:
     chi2 = float(f.read())
     p_values.append(1 - stats.chi2.cdf(chi2, 256))
 
-plt.bar(config_nums, p_values)
+unique_pval = list(Counter(p_values).keys())
+pval_counts = list(Counter(p_values).values())
+
+# plt.bar(unique_pval, pval_counts)
+bins = np.linspace(0, 1, num=100)
+plt.hist(p_values, bins=bins)
+plt.xticks(rotation=90)
+plt.xlabel("P-Value")
+plt.ylabel("Counts")
+plt.title("Cluster Runs: P-Value")
 plt.show()
-
-# plt.subplot(1,2,1)
-# b1 = plt.bar(x_axis-0.2, wine_training, 0.4, label='Training')
-# b2 = plt.bar(x_axis+0.2, wine_testing, 0.4, label='Testing')
-# plt.title('Wine', fontweight='bold', size=10)
-# plt.xlabel('Version', fontweight='bold', size=10)
-# plt.ylabel('Accuracy', fontweight='bold', size=10)
-# plt.xticks(x_axis, versions)
-# for bars in [b1, b2]:
-#   for bar in bars:
-#     yval = bar.get_height()
-#     plt.text(bar.get_x() + bar.get_width() / 2.0, yval + 0.005, "{:.2f}".format(yval), ha="center")
-
-# plt.subplot(1,2,2)
-# b3 = plt.bar(x_axis-0.2, iris_training, 0.4)
-# b4 = plt.bar(x_axis+0.2, iris_testing, 0.4)
-# plt.title('Iris', fontweight='bold', size=10)
-# plt.xlabel('Version', fontweight='bold', size=10)
-# plt.ylabel('Accuracy', fontweight='bold', size=10)
-# plt.xticks(x_axis, versions)
-# for bars in [b3, b4]:
-#   for bar in bars:
-#     yval = bar.get_height()
-#     plt.text(bar.get_x() + bar.get_width() / 2.0, yval + 0.005, "{:.2f}".format(yval), ha="center")
-
-# plt.figlegend(loc="upper right")
-# plt.show()

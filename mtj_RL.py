@@ -3,6 +3,7 @@ import random
 import argparse
 import numpy as np
 from scipy import stats
+from scipy.special import rel_entr
 
 import gym
 from gym import Env
@@ -17,15 +18,15 @@ from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewar
 from mtj_RL_dev import mtj_run
 
 # Hyperparameters
-EPISODE_LENGTH = 150
-DEV_SAMPLES = 250
+EPISODE_LENGTH = 250
+DEV_SAMPLES = 2500
 
 
 class MTJ_Env(Env):
   def __init__(self):
     self.dev_samples = DEV_SAMPLES
     self.invalid_config = 0
-    self.current_config_score = np.inf
+    # self.current_config_score = np.inf
 
     # Initial parameter values
     self.alpha = 0.03
@@ -65,8 +66,8 @@ class MTJ_Env(Env):
     self.t_relax_step = 5e-9
 
     # Get initial config score
-    chi2, bitstream, energy_avg, countData, bitData = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
-    self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData)
+    chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
+    self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf)
     self.best_config_score = self.current_config_score
     self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
 
@@ -253,17 +254,19 @@ class MTJ_Env(Env):
     self.t_relax = unnormalize(actions[7], self.t_relax_range[0], self.t_relax_range[1]) # potentially change
 
 
-  def get_config_score(self, chi2, bitstream, energy_avg, countData, bitData):
+  def get_config_score(self, chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf):
     if chi2 == None:
       self.invalid_config = 1
       return self.current_config_score
     
-    w1 = 1
-    w2 = 1
+    w1 = 0.5
+    w2 = 0.5
     p_value = 1 - stats.chi2.cdf(chi2, 256)
+    kl_div_score = sum(rel_entr(countData, exp_pdf))
     energy = np.mean(energy_avg) 
     
-    score = w1*p_value + w2*(1-energy)  # (1-energy) attempts to maximize a minimization parameter
+    # score = w1*p_value + w2*(1-energy)  # (1-energy) attempts to maximize a minimization parameter
+    score = w1*kl_div_score + w2*energy
     return score
 
 
@@ -273,8 +276,8 @@ class MTJ_Env(Env):
       self.invalid_config = 0
     elif self.is_out_of_bounds():
       reward = -1
-    # elif self.current_config_score < self.best_config_score:  # Minimization reward scheme
-    elif self.current_config_score > self.best_config_score:  # Maximization reward scheme
+    elif self.current_config_score < self.best_config_score:  # Minimization reward scheme
+    # elif self.current_config_score > self.best_config_score:  # Maximization reward scheme
       self.best_config_score = self.current_config_score
       self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
       reward = 1 
@@ -290,8 +293,8 @@ class MTJ_Env(Env):
     self.apply_continuous_action(action)
     
     # Sample new configuration
-    chi2, bitstream, energy_avg, countData, bitData = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
-    self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData)
+    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
+    self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf)
     
     # Calculate reward
     reward = self.reward_function()
@@ -358,8 +361,8 @@ class MTJ_Env(Env):
     self.tf = 1.1e-09
     
     # Get initial config score
-    chi2, bitstream, energy_avg, countData, bitData = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
-    self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData)
+    chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
+    self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf)
     # self.best_config_score = self.current_config_score
 
     # Gather observations
