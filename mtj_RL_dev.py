@@ -141,7 +141,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   for j in range(256):
     expsum += exp_pdf[j]
 
-  print("expsum:", expsum)
+  # print("expsum:", expsum)
   exp_pdf = exp_pdf/expsum
   exp_pdf = exp_pdf*samples
   counts, _ = np.histogram(number_history,bins=256)

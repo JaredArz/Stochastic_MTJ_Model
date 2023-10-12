@@ -13,20 +13,37 @@ from stable_baselines3.ppo.ppo import PPO
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
+from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, StopTrainingOnRewardThreshold
 
 from mtj_RL_dev import mtj_run
 
 # Hyperparameters
-EPISODE_LENGTH = 250
+EPISODE_LENGTH = 150
 DEV_SAMPLES = 2500
+
+# Custom callback for plotting additional values in tensorboard.
+class TensorboardCallback(BaseCallback):
+  def __init__(self, env, verbose=0):
+    super().__init__(verbose)
+    self.env = env
+    self.score = 0
+
+  def _on_step(self) -> bool:
+    self.score += self.env.reward
+    self.logger.record("score", self.score)
+    self.logger.record("kl_div_score", self.env.kl_div_score)
+    self.logger.record("energy", self.env.energy)
+    self.logger.record("current_config_score", self.env.current_config_score)
+    self.logger.record("best_config_score", self.env.best_config_score)
+    if (self.num_timesteps % 500 == 0):
+      self.logger.dump(self.num_timesteps)
+    return True
 
 
 class MTJ_Env(Env):
   def __init__(self):
     self.dev_samples = DEV_SAMPLES
     self.invalid_config = 0
-    # self.current_config_score = np.inf
 
     # Initial parameter values
     self.alpha = 0.03
@@ -38,8 +55,6 @@ class MTJ_Env(Env):
     self.J_she = 500000000000.0
     self.t_pulse = 1e-08
     self.t_relax = 1.5e-08
-    # self.t_pulse = 1e-08
-    # self.t_relax = 1e-08
     self.d = 3e-09
     self.tf = 1.1e-09
     
@@ -261,12 +276,12 @@ class MTJ_Env(Env):
     
     w1 = 0.5
     w2 = 0.5
-    p_value = 1 - stats.chi2.cdf(chi2, 256)
-    kl_div_score = sum(rel_entr(countData, exp_pdf))
-    energy = np.mean(energy_avg) 
+    # p_value = 1 - stats.chi2.cdf(chi2, 256)
+    self.kl_div_score = sum(rel_entr(countData, exp_pdf))
+    self.energy = np.mean(energy_avg) 
     
     # score = w1*p_value + w2*(1-energy)  # (1-energy) attempts to maximize a minimization parameter
-    score = w1*kl_div_score + w2*energy
+    score = w1*self.kl_div_score + w2*self.energy
     return score
 
 
@@ -297,7 +312,7 @@ class MTJ_Env(Env):
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf)
     
     # Calculate reward
-    reward = self.reward_function()
+    self.reward = self.reward_function()
 
     # Gather observations
     self.obs = self.observation_space.sample()
@@ -336,7 +351,7 @@ class MTJ_Env(Env):
     self.episode_length -= 1 
 
     # Return step information
-    return self.obs, reward, done, self.info
+    return self.obs, self.reward, done, self.info
 
 
   def render(self):
@@ -355,8 +370,6 @@ class MTJ_Env(Env):
     self.J_she = 500000000000.0
     self.t_pulse = 1e-08
     self.t_relax = 1.5e-08
-    # self.t_pulse = 1e-08
-    # self.t_relax = 1e-08
     self.d = 3e-09
     self.tf = 1.1e-09
     
@@ -398,17 +411,18 @@ def unnormalize(n, min, max):
   return n*(max-min) + min
 
 
-def Train_Model(model_name, training_timesteps:int, eval:bool=True):
+def Train_Model(model_dir, log_dir, training_timesteps:int=1000, log_window:int=100, eval:bool=False):
   env = MTJ_Env()
-  log_path = os.path.join('Training', 'Logs')
-  # model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_path)
-  model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log=log_path)
-  model.learn(total_timesteps=training_timesteps)
+  model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log=log_dir)
 
-  # Save model
-  model_path = os.path.join('Training', 'Saved_Models', model_name)
-  model.save(model_path)
+  for i in range(1, training_timesteps//log_window):
+    # Train model for given time window
+    model.learn(total_timesteps=log_window, reset_num_timesteps=False, callback=TensorboardCallback(env))
 
+    # Save model for given time window
+    model_path = f"{model_dir}/timestep-{log_window*i}"
+    model.save(model_path)
+  
   if eval == True:
     evaluation = evaluate_policy(model, env, n_eval_episodes=10, render=False)
     print(evaluation)
@@ -479,15 +493,20 @@ if __name__ == "__main__":
   parser.add_argument("--activity", "-a", required=True, type=str, choices=["TrainModel", "TestModel", "TestEnv"], help="activity to perform")
   args = parser.parse_args()
 
+
   if (args.activity == "TrainModel"):
-    model_name = "mtj_model_energyTest3"
+    model_name = "mtj_model_1"
+    model_dir = os.path.join('Training', 'Saved_Models', model_name)
+    log_dir = os.path.join('Training', 'Logs', model_name)
     training_timesteps = 500000
+    log_window = training_timesteps//1000
     eval = True
-    Train_Model(model_name, training_timesteps, eval)
+
+    Train_Model(model_dir, log_dir, training_timesteps, log_window, eval)
 
 
   if (args.activity == "TestModel"):
-    model_path = "Training/Saved_Models/mtj_model_energyTest2"
+    model_path = "Training/Saved_Models/mtj_model_1"
     Test_Model(model_path, episodes=150)
 
 
