@@ -9,15 +9,15 @@ import time
 
 
 
-num_bits = 1e4
-J_stt = -1.863635e11
+num_bits = 1e5
+J_stt = -1.31818e11
 room_temp = 300
-vary_temp_bool = True
+vary_temp_bool = False
 
 def main():
     dev  = SWrite_MTJ_rng()
     # create single device with a slight variation on default parameter values
-    dev.set_vals(1)
+    dev.set_vals(0)
     dev.set_mag_vector()
     print(dev)
     print("Generating bits")
@@ -26,7 +26,7 @@ def main():
     for _ in range(int(num_bits)):
         T = draw_norm(room_temp,vary_temp_bool,0.01)
         # need to set upon each sample
-        dev.set_mag_vector()
+        #dev.set_mag_vector()
         bit,energy = mtj_sample(dev,J_stt,T=T)
         bits.append(bit)
     end_time = time.time()
@@ -34,7 +34,6 @@ def main():
     np.savetxt('./bits.txt', bits, fmt='%i', delimiter=' ', newline='\n',)
 
     print(f"--- %s seconds per {num_bits} bits --- {end_time-start_time}")
-
 
 if __name__ == "__main__":
     main()

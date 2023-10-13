@@ -177,6 +177,8 @@ module sampling
 
             if(fwrite_enabled) then
                 call file_dump(file_ID, phi_evol, theta_evol, 0)
+                deallocate(phi_evol)
+                deallocate(theta_evol)
             end if
 
             ! ===== return final solve values: energy,bit,theta,phi ====

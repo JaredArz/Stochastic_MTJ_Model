@@ -35,7 +35,7 @@ elif mtj_type == 'vcma':
 elif mtj_type == 'swrite':
     dev = SWrite_MTJ_rng()
     dev.set_vals(0)
-    J_stt = -1.863635e11
+    J_stt = -1.31818e11
 else:
     print("no mtj type of that kind")
     raise(NotImplementedError)

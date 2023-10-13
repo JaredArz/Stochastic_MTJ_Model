@@ -19,7 +19,7 @@ num_to_avg = 10000
 dev_variations = 10
 
 room_temp = 300
-vary_temp_bool = True
+vary_temp_bool = False
 
 def gen():
   start_time = time.time()
@@ -29,6 +29,7 @@ def gen():
   for _ in range(dev_variations):
     dev = SWrite_MTJ_rng()
     dev.set_vals(0)
+    dev.set_mag_vector()
     devices.append(dev)
 
   pbar = tqdm(total=len(devices))
@@ -38,7 +39,6 @@ def gen():
       avg_wght = 0
       for _ in range(num_to_avg):
         T = draw_norm(room_temp,vary_temp_bool,0.01)
-        dev.set_mag_vector()
         out,energy = mtj_sample(dev,J_lut[j],T=T)
         avg_wght = avg_wght + out
       avg_wght = avg_wght/num_to_avg

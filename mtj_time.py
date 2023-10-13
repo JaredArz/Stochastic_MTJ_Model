@@ -10,7 +10,7 @@ import time
 cycles = 1000000
 reps = 10
 t_step = 5e-11
-J_stt = -2.5e11
+J_stt = -1.31818e11
 
 def main():
     dev  = SWrite_MTJ_rng()
