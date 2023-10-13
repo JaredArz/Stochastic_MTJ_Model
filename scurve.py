@@ -10,28 +10,34 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from mtj_types_v3 import SWrite_MTJ_rng, SHE_MTJ_rng, draw_norm
 import re
+from tqdm import tqdm
+
+j_steps = 100
+J_lut = np.linspace(-300e9,0,j_steps)
+
+num_to_avg = 1000
+dev_variations = 10
+
+room_temp = 300
+vary_temp_bool = False
 
 def gen():
   start_time = time.time()
   out_path = get_out_path()
   devices = []
-  dev_variations = 10
-  num_to_avg = 100
-  room_temp = 300
-  j_steps = 150
-  J_lut = np.linspace(-300e9,0,j_steps)
 
   for _ in range(dev_variations):
     dev = SWrite_MTJ_rng()
-    dev.set_vals(1)
+    dev.set_vals(0)
     devices.append(dev)
 
+  pbar = tqdm(total=len(devices))
   for dev_num,dev in enumerate(devices):
     weights = []
     for j in range(j_steps):
       avg_wght = 0
       for _ in range(num_to_avg):
-        T = draw_norm(room_temp,1,0.01)
+        T = draw_norm(room_temp,vary_temp_bool,0.01)
         dev.set_mag_vector()
         out,energy = mtj_sample(dev,J_lut[j],T=T)
         avg_wght = avg_wght + out
@@ -43,13 +49,15 @@ def gen():
       f.write(str(weights[i]))
       f.write('\n')
     f.close
+    pbar.update(1)
+  pbar.close()
   print("--- %s seconds ---" % (time.time() - start_time))
 
-make_dir = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
 def get_out_path():
+  make_dir = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
   #create dir and write path
   date = datetime.now().strftime("%H:%M:%S")
-  out_path = (f"./results/scurves_data_{date}")
+  out_path = (f"./results/weight_dataset_{date}")
   make_dir("./results")
   make_dir(f"{out_path}")
   return out_path
@@ -63,15 +71,18 @@ def plot(path):
     files = glob.glob(f"{path}/*")
   colormap = plt.cm.get_cmap('viridis', len(files))
   for i,f in enumerate(files):
-    print(f)
     weights = np.loadtxt(f, usecols=0);
-    plt.plot(weights,color=colormap(i), alpha=0.7)
+    plt.plot(J_lut,weights,color=colormap(i), alpha=0.7)
+  plt.xlabel('J [A/m^2]')
+  plt.ylabel('weight')
+  plt.title('Coin Bias')
   plt.show()
   print("save figure? (y/n)")
   user_bool = input()
   if user_bool == 'y' or user_bool == 'Y':
     date = re.search(date_re, path).group(0)
-    plt.savefig(f"./results/scurve_{date}.png",format='png',dpi=1200)
+    plt.savefig(f"./results/weight_dataset_{date}/scurve_{date}.png",format='png',dpi=1200)
+
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:

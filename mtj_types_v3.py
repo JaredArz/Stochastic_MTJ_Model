@@ -136,7 +136,7 @@ class SWrite_MTJ_rng(MTJ):
                       "Rp"  : 0.05,
                       "TMR" : 0.05}
         dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
-                       "TMR": 1.2,         "Ms" : 1.2e6,
+                       "TMR": 1.5,         "Ms" : 1.2e6,
                        "J_reset": 5e11,    "H_reset": 0,
                        "a"  : 50e-9,        "b"  : 50e-9,
                        "tf" : 1.1e-9,       "alpha" :0.03,
