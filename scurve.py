@@ -15,7 +15,7 @@ from tqdm import tqdm
 j_steps = 100
 J_lut = np.linspace(-300e9,0,j_steps)
 
-num_to_avg = 1000
+num_to_avg = 10000
 dev_variations = 10
 
 room_temp = 300
@@ -66,9 +66,9 @@ def plot(path):
   slash_re = r'\/$'
   date_re = r'\d{2}:\d{2}:\d{2}'
   if re.search(slash_re, path):
-    files = glob.glob(f"{path}*")
+    files = glob.glob(f"{path}*.txt")
   else:
-    files = glob.glob(f"{path}/*")
+    files = glob.glob(f"{path}/*.txt")
   colormap = plt.cm.get_cmap('viridis', len(files))
   for i,f in enumerate(files):
     weights = np.loadtxt(f, usecols=0);
@@ -76,12 +76,12 @@ def plot(path):
   plt.xlabel('J [A/m^2]')
   plt.ylabel('weight')
   plt.title('Coin Bias')
-  plt.show()
   print("save figure? (y/n)")
   user_bool = input()
   if user_bool == 'y' or user_bool == 'Y':
     date = re.search(date_re, path).group(0)
-    plt.savefig(f"./results/weight_dataset_{date}/scurve_{date}.png",format='png',dpi=1200)
+    plt.savefig(f"./results/weight_dataset_{date}/scurve.png",format='png',dpi=1200)
+  plt.show()
 
 
 if __name__ == "__main__":
