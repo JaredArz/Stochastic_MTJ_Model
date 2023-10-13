@@ -17,7 +17,6 @@ module MTJ_RNG_vars
     real(kind(0.0d0)),parameter :: t_step  = 5e-11
     real(kind(0.0d0)),parameter :: tox = 1.5e-9
     real(kind(0.0d0)),parameter :: P   = 0.6
-    real(kind(0.0d0)),parameter :: T   = 300.0
     real(kind(0.0d0)),parameter :: ksi = 75e-15
     real(kind(0.0d0)),parameter :: Vh  = 0.5
     real(kind(0.0d0)),parameter :: w = 100e-9
@@ -31,6 +30,7 @@ module MTJ_RNG_vars
     real(kind(0.0d0)) :: Hx = 0.0
     real(kind(0.0d0)) :: Hy = 0.0
     real(kind(0.0d0)) :: Hz = 0.0
+    real(kind(0.0d0)) :: T  = 300.0
     real(kind(0.0d0)) :: Ki, TMR, Rp, Ms, a, b, d, tf, alpha, eta,&
                          Bsat, gammap, volume, A1, A2, cap_mgo, R2, Htherm, F
 
