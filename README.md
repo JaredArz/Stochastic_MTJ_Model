@@ -26,6 +26,7 @@ This device class should be intialized with device parameters and an initial mag
 
 The other arguments are as follows:
 - Jstt:     spin-transfer torque current to apply.
+(enter the following as named arguments)
 - T:        Temperature in kelvin
 - dump_mod: save history of phi and theta every n samples if view_mag_flag enabled.
 - view_mag_flag: enables/disables history of phi and theta.

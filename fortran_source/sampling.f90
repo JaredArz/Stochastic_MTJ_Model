@@ -14,11 +14,11 @@ module sampling
         subroutine sample_SHE(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, Jshe, Hy_in, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                                  a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, t_pulse, t_relax,&
-                                 dump_mod, view_mag_flag, sample_count, file_ID, config_check) 
+                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, config_check) 
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
-            real, intent(in) :: Jappl, Jshe, theta_init, phi_init, t_pulse, t_relax
+            real, intent(in) :: Jappl, Jshe, theta_init, phi_init, t_pulse, t_relax, T_in
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, Hy_in,&
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in
@@ -55,6 +55,7 @@ module sampling
                 phi_evol(t_i)   = phi_i
             end if
 
+            T = real(T_in,dp) !set before setting other params
             call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in)
 
             call random_number(seed)
@@ -135,8 +136,9 @@ module sampling
                 phi_evol(t_i)   = phi_i
             end if
 
-            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in)
+            !set before setting other params
             T = real(T_in,dp)
+            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -187,11 +189,11 @@ module sampling
         subroutine sample_VCMA(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, v_pulse, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                                  a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, t_pulse, t_relax,&
-                                 dump_mod, view_mag_flag, sample_count, file_ID, config_check) 
+                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, config_check) 
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
-            real, intent(in) :: Jappl, v_pulse, theta_init, phi_init, t_pulse, t_relax
+            real, intent(in) :: Jappl, v_pulse, theta_init, phi_init, t_pulse, t_relax, T_in
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in,&
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in
@@ -228,6 +230,8 @@ module sampling
                 phi_evol(t_i)   = phi_i
             end if
 
+            !set before setting other params
+            T = real(T_in,dp)
             call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in)
 
             call random_number(seed)

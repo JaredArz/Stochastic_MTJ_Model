@@ -19,7 +19,7 @@ num_to_avg = 10000
 dev_variations = 10
 
 room_temp = 300
-vary_temp_bool = False
+vary_temp_bool = True
 
 def gen():
   start_time = time.time()
@@ -79,8 +79,14 @@ def plot(path):
   print("save figure? (y/n)")
   user_bool = input()
   if user_bool == 'y' or user_bool == 'Y':
-    date = re.search(date_re, path).group(0)
-    plt.savefig(f"./results/weight_dataset_{date}/scurve.png",format='png',dpi=1200)
+    match = re.search(date_re, path)
+    if match:
+      date=match.group(0)
+      plt.savefig(f"./results/weight_dataset_{date}/scurve.png",format='png',dpi=1200)
+    else:
+      print("No date associated with dataset, enter a string to save ./results/scurve_<your input>.png")
+      user_tag = input()
+      plt.savefig(f"./results/scurve_{user_tag}.png",format='png',dpi=1200)
   plt.show()
 
 

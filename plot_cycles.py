@@ -1,15 +1,16 @@
 # ===== handles fortran interface =====
 from interface_funcs import mtj_sample
 # ===========================================================
-from mtj_types_v3 import SHE_MTJ_rng, VCMA_MTJ_rng, SWrite_MTJ_rng
+from mtj_types_v3 import SHE_MTJ_rng, VCMA_MTJ_rng, SWrite_MTJ_rng, draw_norm
 import sys
 import matplotlib.ticker as ticker
 import math as m
 import matplotlib.pyplot as plt
 import numpy as np
-import scienceplots
 
-#plt.style.use(['science','ieee','no-latex'])
+room_temp = 300
+vary_temp_bool = True
+
 colors = [
           '#FFC20A',
           '#0C7BDC',
@@ -34,8 +35,7 @@ elif mtj_type == 'vcma':
 elif mtj_type == 'swrite':
     dev = SWrite_MTJ_rng()
     dev.set_vals(0)
-    #J_stt = -150e9
-    J_stt = -2.5e11
+    J_stt = -1.863635e11
 else:
     print("no mtj type of that kind")
     raise(NotImplementedError)
@@ -50,8 +50,9 @@ def main():
     for rep in range(reps):
         dev.set_mag_vector(0, np.pi/2)
         for _ in range(cycles):
+            T = draw_norm(room_temp,vary_temp_bool,0.01)
             # Only tracking magnetization vector stored in *History
-            _,_ = mtj_sample(dev,J_stt,1,1)
+            _,_ = mtj_sample(dev,J_stt,view_mag_flag=1,dump_mod=1,T=T)
             mz = np.cos(dev.thetaHistory)
             for val in mz:
                 mz_cyc.append(val)
