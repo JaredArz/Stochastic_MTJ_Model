@@ -16,10 +16,16 @@ vary_temp_bool = False
 
 def main():
     np.random.seed(None)
+
+    # create device
     dev  = SWrite_MTJ_rng()
-    # create single device with a slight variation on default parameter values
-    dev.set_vals(1) # calls np random
-    dev.set_mag_vector() # calls np random
+
+    # set ideal, default parameter values
+    # calls np random
+    dev.set_vals(0)
+
+    # calls np random
+    dev.set_mag_vector()
     print(dev)
 
     print("Generating bits")
