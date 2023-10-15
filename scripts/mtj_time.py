@@ -1,15 +1,17 @@
+import sys
+sys.path.append('./')
+sys.path.append('../')
+sys.path.append('../fortran_source')
 # ===== handles fortran interface =====
 from interface_funcs import mtj_sample
 # ===========================================================
 from mtj_types_v3 import SWrite_MTJ_rng
-import sys
 import math as m
 import numpy as np
 import time
 
 cycles = 1000000
 reps = 10
-t_step = 5e-11
 J_stt = -1.31818e11
 
 def main():

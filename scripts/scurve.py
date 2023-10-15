@@ -1,8 +1,11 @@
+import sys
+sys.path.append('./')
+sys.path.append('../')
+sys.path.append('../fortran_source')
 # ===== handles fortran interface and batch parallelism =====
 from interface_funcs import mtj_sample
 # ===========================================================
 import os
-import sys
 import time
 import numpy as np
 import glob
@@ -19,7 +22,7 @@ num_to_avg = 10000
 dev_variations = 10
 
 room_temp = 300
-vary_temp_bool = False
+vary_temp_bool = True
 
 def gen():
   start_time = time.time()
@@ -38,7 +41,7 @@ def gen():
     for j in range(j_steps):
       avg_wght = 0
       for _ in range(num_to_avg):
-        T = draw_norm(room_temp,vary_temp_bool,0.01)
+        T = draw_norm(room_temp,vary_temp_bool,0.04)
         out,energy = mtj_sample(dev,J_lut[j],T=T)
         avg_wght = avg_wght + out
       avg_wght = avg_wght/num_to_avg

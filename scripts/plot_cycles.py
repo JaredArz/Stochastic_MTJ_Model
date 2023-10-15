@@ -1,15 +1,18 @@
+import sys
+sys.path.append('./')
+sys.path.append('../')
+sys.path.append('../fortran_source')
 # ===== handles fortran interface =====
 from interface_funcs import mtj_sample
 # ===========================================================
 from mtj_types_v3 import SHE_MTJ_rng, VCMA_MTJ_rng, SWrite_MTJ_rng, draw_norm
-import sys
 import matplotlib.ticker as ticker
 import math as m
 import matplotlib.pyplot as plt
 import numpy as np
 
 room_temp = 300
-vary_temp_bool = True
+vary_temp_bool = False
 
 colors = [
           '#FFC20A',
@@ -48,7 +51,7 @@ def main():
     print("cycling")
     # J_she, v_pulse as set in device parameters
     for rep in range(reps):
-        dev.set_mag_vector(0, np.pi/2)
+        dev.set_mag_vector()
         for _ in range(cycles):
             T = draw_norm(room_temp,vary_temp_bool,0.01)
             # Only tracking magnetization vector stored in *History
