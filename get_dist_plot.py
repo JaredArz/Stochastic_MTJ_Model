@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from scipy.special import rel_entr
 from mtj_RL_dev import mtj_run
 
-SAMPLES = 1000
+SAMPLES = 100000
 
 
 if __name__ == "__main__":
