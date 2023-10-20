@@ -30,5 +30,6 @@
 runs/*
 results/*
 Training/Logs/*
+Training_Suma/
 pid.txt
 junk.txt

@@ -2,69 +2,155 @@ import pickle
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.special import rel_entr
+from mtj_RL_dev import mtj_run
 
+SAMPLES = 100000
 
-with open("curve_testing_pdf.pkl", "rb") as file: 
-  pdf_info = pickle.load(file) 
+def get_params(version):
+  if version == "NoNorm_Episode1":
+    # No Norm; Episode 1
+    alpha = 0.01
+    Ki = 0.0002
+    Ms = 300000.0
+    Rp = 500.0
+    TMR = 0.3
+    eta = 0.26508163213729863
+    J_she = 1000000000000.0
+    t_pulse = 3.790034800767898e-08
+    t_relax = 3.790034800767898e-08
+    d = 3e-09
+    tf = 1.1e-09
 
-countData_path = "results/countData/countData_0.txt"
-with open(countData_path, "rb") as file: 
-  counts_goodfit = []
-  for line in file:
-    counts_goodfit.append(float(line.strip()))
+  elif version == "NoNorm_Episode4":
+    # No Norm; Episode 4
+    alpha = 0.035038104653358465
+    Ki = 0.0002
+    Ms = 300000.0
+    Rp = 500.0
+    TMR = 0.3
+    eta = 0.1
+    J_she = 1000000000000.0
+    t_pulse = 7.5e-08
+    t_relax = 7.5e-08
+    d = 3e-09
+    tf = 1.1e-09
+
+  elif version == "NoNorm_Episode14":
+    # No Norm; Episode 14
+    alpha = 0.022418085932731632
+    Ki = 0.0002
+    Ms =  300000.0
+    Rp = 50000.0
+    TMR = 0.3
+    eta = 0.1
+    J_she = 1000000000000.0
+    t_pulse = 5.169894516468048e-08
+    t_relax = 5.169894516468048e-08
+    d = 3e-09
+    tf = 1.1e-09
+
+  elif version == "NoNorm_Episode56":
+    # No Norm; Episode 56
+    alpha = 0.058964042067527776
+    Ki = 0.0002
+    Ms = 570791.1014556885
+    Rp = 500.0
+    TMR = 0.3
+    eta = 0.1
+    J_she = 1000000000000.0
+    t_pulse = 7.5e-08
+    t_relax = 7.5e-08
+    d = 3e-09
+    tf = 1.1e-09
+
+  elif version == "Norm_Episode43":
+    # Norm; Episode 43
+    alpha = 0.01
+    Ki = 0.0002
+    Ms = 300000.0
+    Rp = 50000.0
+    TMR = 0.3
+    eta = 0.589673674106598
+    J_she = 456989129185.6766
+    t_pulse = 4.097234883904457e-08
+    t_relax = 4.097234883904457e-08
+    d = 3e-09
+    tf = 1.1e-09
   
-countData_path = "results/countData/countData_6.txt"
-with open(countData_path, "rb") as file: 
-  counts_badfit = []
-  for line in file:
-    counts_badfit.append(float(line.strip()))
+  elif version == "Norm_Episode87":
+    # Norm; Episode 87
+    alpha = 0.01
+    Ki = 0.0002
+    Ms = 300000.0
+    Rp = 500.0
+    TMR = 0.3
+    eta = 0.8
+    J_she = 10000000000.0
+    t_pulse = 1.840546451508999e-09
+    t_relax = 1.840546451508999e-09
+    d = 3e-09
+    tf = 1.1e-09
 
-xxis = pdf_info["xxis"]
-exp_pdf = pdf_info["exp_pdf"]
+  elif version == "Norm_Episode89":
+    # Norm; Episode 89
+    alpha = 0.01
+    Ki = 0.0006466779708862305
+    Ms = 300000.0
+    Rp = 500.0
+    TMR = 2.476738339662552
+    eta = 0.1
+    J_she = 10000000000.0
+    t_pulse = 5e-10
+    t_relax = 5e-10
+    d = 3e-09
+    tf = 1.1e-09
+  
+  return alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax
 
-# RMSE test
-rmse_goodfit = np.sqrt(((counts_goodfit - exp_pdf) ** 2).mean())
-rmse_badfit = np.sqrt(((counts_badfit - exp_pdf) ** 2).mean())
-print("RMSE (good fit):", rmse_goodfit)
-print("RMSE (bad fit) :", rmse_badfit)
 
-# Chi2 test
-chi2_goodfit = 0
-chi2_badfit = 0
-for i in range(len(exp_pdf)):
-  chi2_goodfit += ((counts_goodfit[i]-exp_pdf[i])**2)/exp_pdf[i]
-  chi2_badfit += ((counts_badfit[i]-exp_pdf[i])**2)/exp_pdf[i]
-print("\nChi2 (good fit):", chi2_goodfit)
-print("Chi2 (bad fit) :", chi2_badfit)
+if __name__ == "__main__":
+  # versions = ["NoNorm_Episode1", "NoNorm_Episode4", "NoNorm_Episode14", "NoNorm_Episode56", 
+  #             "Norm_Episode43", "Norm_Episode87", "Norm_Episode89"]
+  versions = ["NoNorm_Episode1", "Norm_Episode43"]
+  
+  for version in versions:
+    print(version)
+    alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax = get_params(version)
+    _, _, _, countData, _, xxis, exp_pdf = mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=SAMPLES)
 
-# KL-Divergence test
-kl_div_goodfit = sum(rel_entr(counts_goodfit, exp_pdf))
-kl_div_badfit = sum(rel_entr(counts_badfit, exp_pdf))
-print("\nKL-Divergence (good fit):", kl_div_goodfit)
-print("KL-Divergence (bad fit) :", kl_div_badfit)
+    # RMSE test
+    rmse = np.sqrt(((countData - exp_pdf) ** 2).mean())
+    print("RMSE:", rmse)
 
-# CDF_MSE test
-exp_cdf = np.cumsum(exp_pdf)
-goodfit_cdf = np.cumsum(counts_goodfit)
-badfit_cdf = np.cumsum(counts_badfit)
-cdf_mse_goodfit = ((goodfit_cdf - exp_cdf) ** 2).mean()
-cdf_mse_badfit = ((badfit_cdf - exp_cdf) ** 2).mean()
-print("\nCDF MSE (good fit):", cdf_mse_goodfit)
-print("CDF MSE (bad fit) :", cdf_mse_badfit)
+    # Chi2 test
+    chi2 = 0
+    for i in range(len(exp_pdf)):
+      chi2 += ((countData[i]-exp_pdf[i])**2)/exp_pdf[i]
+    print("Chi2:", chi2)
 
-plt.subplot(1,2,1)
-plt.plot(xxis, counts_goodfit, color="green", label="Good Fit")
-plt.plot(xxis, counts_badfit, color="red", label="Bad Fit")
-plt.plot(xxis, exp_pdf,'k--')
-plt.xlabel("Generated Number")
-plt.ylabel("Normalized")
-plt.title("PDF Comparison")
-plt.legend()
+    # KL-Divergence test
+    kl_div = sum(rel_entr(countData, exp_pdf))
+    print("KL-Div:", kl_div)
 
-plt.subplot(1,2,2)
-plt.plot(xxis, goodfit_cdf, color="green", label="Good Fit")
-plt.plot(xxis, badfit_cdf, color="red", label="Bad Fit")
-plt.plot(xxis, exp_cdf,'k--')
-plt.title("CDF Comparison")
-plt.legend()
-plt.show()
+    # CDF_MSE test
+    exp_cdf = np.cumsum(exp_pdf)
+    countData_cdf = np.cumsum(countData)
+    cdf_mse = ((countData_cdf - exp_cdf) ** 2).mean()
+    print("CDF MSE:", cdf_mse)
+
+
+    plt.plot(xxis, countData, color="red", label="Actual PDF")
+    plt.plot(xxis, exp_pdf,'k--', label="Expected PDF")
+    plt.xlabel("Generated Number")
+    plt.ylabel("Normalized")
+    if version == "NoNorm_Episode1":
+      title = "PDF Comparison (w/o Normalization)"
+    elif version == "Norm_Episode43":
+      title = "PDF Comparison (w/ Normalization)"
+    plt.title(title)
+    plt.legend()
+    plot_path = f"graphs/{version}.png"
+    plt.savefig(plot_path)
+    plt.clf()
+    plt.close()
+    # plt.show()
