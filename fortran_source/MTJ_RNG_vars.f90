@@ -15,7 +15,8 @@ module MTJ_RNG_vars
     real(kind(0.0d0)),parameter :: gammall = 2.0*u0*uB/h_bar 
     real(kind(0.0d0)),parameter :: gammab  = gammall/u0
     real(kind(0.0d0)),parameter :: t_step  = 5e-11
-    real(kind(0.0d0)),parameter :: tox = 1e-9 ! new
+    !real(kind(0.0d0)),parameter :: tox = 1e-9 ! new
+    real(kind(0.0d0)),parameter :: tox = 1.5e-9 ! old
     real(kind(0.0d0)),parameter :: P   = 0.6
     real(kind(0.0d0)),parameter :: ksi = 75e-15
     real(kind(0.0d0)),parameter :: Vh  = 0.5

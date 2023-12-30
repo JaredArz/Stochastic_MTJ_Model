@@ -51,7 +51,7 @@ def gen():
     for i in range(j_steps):
       f.write(str(weights[i]))
       f.write('\n')
-    f.close
+    f.close()
     pbar.update(1)
   pbar.close()
   print("--- %s seconds ---" % (time.time() - start_time))
