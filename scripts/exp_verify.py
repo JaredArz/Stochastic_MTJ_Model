@@ -54,14 +54,14 @@ def gen_fig1_data():
     dev.set_mag_vector()
 
     V_50 = -0.3940 # FIXME: paper value is 0.715v
-    gen_pulse_duration_scurve(dev, pulse_durations, V_50, 300, out_path)
+    save_pulse_duration_scurve(dev, pulse_durations, V_50, 300, out_path)
     np.savez(f"{out_path}/metadata_pulse_duration.npz",
              pulse_durations=pulse_durations, V_50=V_50, T=300)
 
     Temps = [200, 300, 400]
     pulse_duration = 1e-9
     for T in Temps:
-        gen_voltage_scurve(dev, voltages, pulse_duration, T, out_path)
+        save_voltage_scurve(dev, voltages, pulse_duration, T, out_path)
     np.savez(f"{out_path}/metadata_voltage.npz",
              voltages=voltages, pulse_duration=pulse_duration, Temps=Temps)
 
@@ -80,24 +80,25 @@ def gen_fig2_data():
 
     start_time = time.time()
     out_path = get_out_path()
-    #FIXME long times take quite a bit
-    #pulse_durations = [1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
-    pulse_durations = [1e-10, 1e-9, 1e-8]
-    voltages = np.linspace(-0.9,0,250)
-    V_50 = -0.3940
+    pulse_durations = np.linspace(5e-10, 1e-9, 10)
+    voltages = np.linspace(-0.9,0,500)
     dev = SWrite_MTJ_rng()
     dev.set_vals(0)
     dev.set_mag_vector()
 
-    num_iters = 3
-    Temps = [250, 350]
-    for i in range(num_iters):
-        for pulse_duration in pulse_durations:
+    num_iters = 5
+    T_delta = 100
+    Temps = (300-T_delta,300,300+T_delta) # two to calculate dT and 300K to calculate 0.5 probability voltage
+
+    V_50s = []
+    for pulse_duration in pulse_durations:
+        for i in range(num_iters):
             for T in Temps:
-              gen_voltage_scurve(dev, voltages, pulse_duration, T, out_path, i)
+                V_50 = save_voltage_scurve(dev, voltages, pulse_duration, T, out_path, i)
+                if T == 300: V_50s.append(V_50)
 
     np.savez(f"{out_path}/metadata_fig2.npz",
-             voltages=voltages, V_50=V_50, Temps=Temps, num_iters=num_iters, pulse_durations=pulse_durations)
+             voltages=voltages, V_50s=V_50s, Temps=Temps, num_iters=num_iters, pulse_durations=pulse_durations)
     print("--- %s seconds ---" % (time.time() - start_time))
 
 def make_and_plot_fig1():
@@ -136,8 +137,8 @@ def make_and_plot_fig1():
     pf.prompt_save_svg(fig_v,f"../results/scurve_dataset_{date_match.group(0)}/voltage_scurve.svg")
     pf.prompt_save_svg(fig_t,f"../results/scurve_dataset_{date_match.group(0)}/pulse_duration_scurve.svg")
 
-def match_file(strings,T,i):
-    file_pattern = re.compile(fr'_T{T}_i{i}\.npz')
+def match_file(strings,t,T,i):
+    file_pattern = re.compile((fr't{t:.2e}_T{T}_i{i}.npz').replace('.',"\."))
     for s in strings:
         match = file_pattern.search(s)
         if match:
@@ -145,38 +146,36 @@ def match_file(strings,T,i):
 
 def make_and_plot_fig2():
     fig, ax = pf.plot_init()
+    fig_v, ax_v = pf.plot_init()
     dir_path = sys.argv[1]
-    colormap = plt.cm.get_cmap('viridis', 1)
-    color = colormap(0)
 
-    metadata_file = glob.glob(dir_path + "/*metadata*")[0]
-    metadata = np.load(metadata_file)
+    colormap = plt.cm.get_cmap('viridis', len(pulse_durations)+1)
+    metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
     num_iters = metadata["num_iters"]
-    voltages = metadata["voltages"]
-    V_50 = metadata["V_50"]
     pulse_durations = metadata["pulse_durations"]
     Temps = metadata["Temps"]
-    V_50_idx = find_idx_of_nearest(voltages, V_50)
-    print(voltages)
-
+    voltages = metadata["voltages"]
+    V_50s = metadata["V_50s"]
     files = glob.glob(dir_path + "/*voltage_sweep*")
 
-    dT = Temps[1] - Temps[0]
-    avg_dpdT = []
-    for pulse_duration in pulse_durations:
+    dT = Temps[-1] - Temps[0]
+    dpdT = []
+    for i, pulse_duration in enumerate(pulse_durations):
         dp_sum = 0.0
-        for i in range(num_iters):
-            p = []
-            for T in Temps:
-                f = match_file(files, T, i)
-                f_data = np.load(f)
-                print(f_data["weights"])
-                p.append((f_data["weights"])[V_50_idx])
-            dp_sum += p[1] - p[0]
-        avg_dpdT.append(dp_sum/(dT*num_iters))
+        for j in range(num_iters):
+            V_50_idx = find_idx_of_nearest(voltages, V_50s[i])
+            dp = 0.0
+            for sign, T in zip((-1,1), (Temps[0], Temps[-1])):
+                f_data = np.load( match_file(files, pulse_duration, T, j) )
+                p = ((f_data["weights"])[V_50_idx])
+                dp += sign*p
+                ax_v.plot(voltages, f_data["weights"], color=colormap(i), alpha=0.7)
+            dp_sum += dp
+        dpdT.append(dp_sum/(dT*num_iters))
 
-    print(p)
-    ax.plot(pulse_durations, avg_dpdT, color=color, alpha=0.7)
+    ax.stem(pulse_durations, dpdT)
+    ax.axhline(np.log(2)/2*300)
+    ax.set_yscale('log')
 
     ax.set_xlabel('Pulse Duration [s]')
     ax.set_ylabel('dp/dT [K-1]')
@@ -184,6 +183,7 @@ def make_and_plot_fig2():
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
+    pf.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig2_curves.svg")
     pf.prompt_save_svg(fig, f"../results/scurve_dataset_{date_match.group(0)}/fig2.svg")
 
 # ================================================================
@@ -195,12 +195,13 @@ def make_and_plot_fig2():
 
 # ================ helper functions for generating data =======================
 def avg_weight_across_samples(dev,V,T):
-    return np.sum([(mtj_sample(dev,V_to_J(V),T=T))[0] for _ in range(samples_to_avg)])/samples_to_avg
+    sum_of_samples = np.sum([(mtj_sample(dev,V_to_J(V),T=T))[0] for _ in range(samples_to_avg)])
+    return sum_of_samples/samples_to_avg
 
 def find_idx_of_nearest(arr, val):
     return (np.abs(np.asarray(arr)-val)).argmin()
 
-def gen_pulse_duration_scurve(dev, durations, V, T, out_path, i=0):
+def save_pulse_duration_scurve(dev, durations, V, T, out_path, i=0):
   weights = []
   print(f"Generating pulse duration scurve with V: {V}v, T: {T}K, iteration: {i}")
   for t in durations:
@@ -209,14 +210,15 @@ def gen_pulse_duration_scurve(dev, durations, V, T, out_path, i=0):
   np.savez(f"{out_path}/pulse_duration_sweep_weights_v{V}_T{T}_i{i}.npz", weights=weights, T=T)
   return
 
-def gen_voltage_scurve(dev, voltages, t, T, out_path, i=0):
+def save_voltage_scurve(dev, voltages, t, T, out_path, i=0):
   dev.set_vals(t_pulse = t)
   weights = []
-  print(f"Generating voltage scurve with t: {t}s, T: {T}K, iteration: {i}")
+  print(f"Generating voltage scurve with t: {t:.2e}s, T: {T}K, iteration: {i}")
   for V in voltages:
     weights.append(avg_weight_across_samples(dev, V, T))
-  np.savez(f"{out_path}/voltage_sweep_scurve_data_T{T}_i{i}.npz", weights=weights, T=T)
-  return
+  np.savez(f"{out_path}/voltage_sweep_scurve_data_t{t:.2e}_T{T}_i{i}.npz", weights=weights, T=T)
+  V_50 = voltages[find_idx_of_nearest(weights, 0.5)]
+  return V_50
 
 def get_out_path():
   make_dir = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
