@@ -6,7 +6,7 @@ def plot_init():
     fig, ax = plt.subplots()
     plt.rc('text', usetex=True)
     plt.style.use(['science','ieee'])
-    fig.tight_layout()
+    #fig.tight_layout()
     return fig,ax
 
 def prompt_show():
@@ -28,7 +28,7 @@ def prompt_save_svg(fig,path):
         print("Save figure? y/n")
         user_input = input()
         if user_input == 'y' or user_input == 'Y':
-            fig.savefig(path,format='svg',dpi=1200)
+            fig.savefig(path, format='svg', dpi=1200)
             valid_user_input = True
         elif user_input == 'n' or user_input == 'N':
             valid_user_input = True
