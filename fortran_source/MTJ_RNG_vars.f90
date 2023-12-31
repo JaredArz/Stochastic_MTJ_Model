@@ -31,9 +31,8 @@ module MTJ_RNG_vars
     real(kind(0.0d0)) :: Hx = 0.0
     real(kind(0.0d0)) :: Hy = 0.0
     real(kind(0.0d0)) :: Hz = 0.0
-    real(kind(0.0d0)) :: T  = 300.0
     real(kind(0.0d0)) :: Ki, TMR, Rp, Ms, a, b, d, tf, alpha, eta,&
-                         Bsat, gammap, volume, A1, A2, cap_mgo, R2, Htherm, F
+                         Bsat, gammap, volume, A1, A2, cap_mgo, R2, Htherm, F, T
 
     ! ==== Not used in current model ===
     ! real(kind(0.0d0)),parameter :: delta = 40.0 
@@ -41,10 +40,10 @@ module MTJ_RNG_vars
     ! real(kind(0.0d0)),parameter :: RA = 7e-12
     ! ==============================================
     contains
-        subroutine set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in)
+        subroutine set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
-            real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in
+            real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in
 
             Ki = real(Ki_in, dp);  TMR = real(TMR_in, dp)
             Rp = real(Rp_in, dp);  Ms  = real(Ms_in, dp)
@@ -52,6 +51,7 @@ module MTJ_RNG_vars
             d  = real(d_in, dp);   eta = real(eta_in, dp)
             alpha = real(alpha_in, dp); tf = real(tf_in, dp)
 
+            T       = real(T_in,dp)
             Bsat    = Ms*u0
             gammap  = gammall/(1.0_dp+alpha*alpha)
             volume  = tf*pi*b*a/4.0_dp

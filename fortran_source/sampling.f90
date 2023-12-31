@@ -55,8 +55,7 @@ module sampling
                 phi_evol(t_i)   = phi_i
             end if
 
-            T = real(T_in,dp) !set before setting other params
-            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in)
+            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -137,8 +136,7 @@ module sampling
             end if
 
             !set before setting other params
-            T = real(T_in,dp)
-            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in)
+            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -233,8 +231,7 @@ module sampling
             end if
 
             !set before setting other params
-            T = real(T_in,dp)
-            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in)
+            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))

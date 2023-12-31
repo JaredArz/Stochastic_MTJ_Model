@@ -4,8 +4,8 @@ import scienceplots
 
 def plot_init():
     fig, ax = plt.subplots()
-    plt.rc('text', usetex=True)
-    plt.style.use(['science','ieee'])
+    #plt.rc('text', usetex=True)
+    #plt.style.use(['science','ieee'])
     #fig.tight_layout()
     return fig,ax
 
