@@ -33,6 +33,7 @@ import re
 
 from interface_funcs import mtj_sample
 from mtj_types_v3 import SWrite_MTJ_rng
+from scipy.signal import savgol_filter
 import plotting_funcs as pf
 
 # === Constants ===
@@ -166,18 +167,21 @@ def make_and_plot_fig2():
     for i, pulse_duration in enumerate(pulse_durations):
         # plot a pair of scurves for each pulse duration in addition
         # to calculating dp/dT for good measure
-        weights_T0 = np.zeros(len(voltages))
-        weights_T1 = np.zeros(len(voltages))
         V_50_idx = find_idx_at_nearest(voltages, V_50s[i])
-        f_data_T1 = np.load( match_file("voltage", files, pulse_duration, Temps[1], 0) )
-        f_data_T0 = np.load( match_file("voltage", files, pulse_duration, Temps[0], 0) )
+        f_data_T1 = np.load( match_file(files, pulse_duration, Temps[1], 0) )
+        f_data_T0 = np.load( match_file(files, pulse_duration, Temps[0], 0) )
         weights_T1 = f_data_T1["weights"]
         weights_T0 = f_data_T0["weights"]
+        #weights_T1_smoothed = savgol_filter(weights_T1, 50, 2)
+        #weights_T0_smoothed = savgol_filter(weights_T0, 50, 2)
         dp = weights_T1[V_50_idx] - weights_T0[V_50_idx]
+        #dp = weights_T1_smoothed[V_50_idx] - weights_T0_smoothed[V_50_idx]
         print(f"dp: {dp}")
         dpdT.append(dp/dT)
         ax_v.plot(voltages, weights_T0, color=colormap(i), alpha=0.7)
         ax_v.plot(voltages, weights_T1, color=colormap(i), alpha=0.7)
+        #ax_v.plot(voltages, weights_T0_smoothed, color=colormap(i), alpha=0.7)
+        #ax_v.plot(voltages, weights_T1_smoothed, color=colormap(i), alpha=0.7)
 
     ax.stem(pulse_durations, dpdT)
     ax.axhline(0.0016)
@@ -200,7 +204,7 @@ def gen_fig3_data():
     start_time = time.time()
     samples_to_avg = 5000
     out_path = get_out_path()
-    pulse_durations = [1e-9, 1e-8, 1e-7]
+    pulse_durations = [1e-9, 2e-9, 3e-9, 4e-9]
     voltages = np.linspace(-0.9,0,250)
     dev = SWrite_MTJ_rng()
     dev.set_vals(0)
@@ -223,7 +227,6 @@ def make_and_plot_fig3():
     dir_path = sys.argv[1]
 
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
-    num_iters = metadata["num_iters"]
     pulse_durations = metadata["pulse_durations"]
     voltages = metadata["voltages"]
     V_50s = metadata["V_50s"]
@@ -234,20 +237,19 @@ def make_and_plot_fig3():
     dpdV = []
     #TODO: add measure of stddev
     for i, pulse_duration in enumerate(pulse_durations):
-        dp_sum = 0.0
-        avg_weights = np.zeros(len(voltages))
-        for j in range(num_iters):
-            #FIXME
-            V_50_idx = find_idx_at_nearest(voltages, V_50s[i*num_iters+j])
-            f_data = np.load( match_file("voltage", files, pulse_duration, 300, j) )
-            weights = f_data["weights"]
-            dp_sum += (weights[V_50_idx + 1]) - (weights[V_50_idx - 1])
-            for k, weight in enumerate(f_data["weights"]): avg_weights[k] += weight
+        V_50_idx = find_idx_at_nearest(voltages, V_50s[i])
+        f_data = np.load(match_file(files, pulse_duration, 300, 0))
+        weights = f_data["weights"]
+        weights_smoothed = savgol_filter(weights, 50, 3)
+        dp = (weights_smoothed[V_50_idx + 1]) - (weights_smoothed[V_50_idx - 1])
+        dp = (weights[V_50_idx + 1]) - (weights[V_50_idx - 1])
         dV = (voltages[V_50_idx + 1]) - (voltages[V_50_idx - 1])
-        #FIXME: flipping sign to account for negative voltage
-        dpdV.append(-dp_sum/(dV*num_iters))
+        #FIXME: flipping sign to match paper since using negative voltage, interpret plot as positive rate
+        # of decrease
+        dpdV.append(-dp/dV)
         #Fig 3 a
-        ax_a.plot(voltages, [avg/num_iters for avg in avg_weights], color=colormap(i), alpha=0.7)
+        ax_a.plot(voltages, weights, color=colormap(i), alpha=0.7)
+        ax_a.plot(voltages, weights_smoothed, color=colormap(len(pulse_durations)-i), alpha=0.7)
 
     ax_a.set_title('Coin Bias')
     ax_a.set_xlabel('Voltage [v]')
@@ -258,7 +260,7 @@ def make_and_plot_fig3():
     ax_b.set_xscale('log')
 
     ax_b.set_xlabel('Pulse Duration [s]')
-    ax_b.set_ylabel('dp/dV [V-1]')
+    ax_b.set_ylabel('-dp/dV [V-1]')
     ax_b.set_title('Sensitivity to Voltage Amplitude')
 
     pf.prompt_show()
@@ -266,83 +268,75 @@ def make_and_plot_fig3():
     pf.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig3a.svg")
     pf.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig3b.svg")
 
-'''
 def gen_fig4_data():
-    # Generate pulse duration scurve and directly compute a discrete dp/dt around p=0.5.
-    # Repeat for a variety of voltage amplitudes. All at 300K
-    # ====
+    # for a range of pulse durations, calculate V 50 then generate an scurve to compute dp/dt from
 
     start_time = time.time()
-    samples_to_avg = 100 # will analyze deviation a bit differently in this script #TODO
+    samples_to_avg = 1000
+    T = 300
     out_path = get_out_path()
-    pulse_durations_scurve = np.linspace(0, 5e-9, 100)
-    pulse_durations_x = [1e-9, 5e-9, 1e-8]
-    #FIXME
-    voltages = [-0.35, -0.3940, -0.44]
+    pulse_durations = np.linspace(0, 30e-9, 100)
+    voltages = np.linspace(-0.9, 0, 250)
+    t_50s = [1e-9, 2e-9, 3e-9, 4e-9]
     dev = SWrite_MTJ_rng()
     dev.set_vals(0)
     dev.set_mag_vector()
 
-    num_iters = 1
-    T = 300
-
-    for V_50 in voltages:
-        for i in range(num_iters):
-            generate_pulse_duration_scurve(dev, pulse_durations_scurve, V_50, T, samples_to_avg,
-                i=i, out_path=out_path, save_flag=True)
+    V_50s = []
+    for t_50 in t_50s:
+        V_50 = generate_voltage_scurve(dev, voltages, t_50, T, samples_to_avg, save_flag=False)
+        V_50s.append(V_50)
+        generate_pulse_duration_scurve(dev, pulse_durations, V_50, T, samples_to_avg,
+            out_path=out_path, save_flag=True)
 
     np.savez(f"{out_path}/metadata_fig4.npz",
-             V_50s=V_50s, num_iters=num_iters, pulse_durations_scurve=pulse_durations_scurve,
-             pulse_durations_x=pulse_durations_x,T=T)
+             V_50s=V_50s, pulse_durations=pulse_durations,
+             t_50s=t_50s, T=T)
     print("--- %s seconds ---" % (time.time() - start_time))
-'''
 
 
-
-
-
-'''
 def make_and_plot_fig4():
     fig_a, ax_a = pf.plot_init()
     fig_b, ax_b = pf.plot_init()
     dir_path = sys.argv[1]
 
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
-    num_iters = metadata["num_iters"]
     pulse_durations = metadata["pulse_durations"]
     pulse_durations_ns = [t * 1e9 for t in pulse_durations]
-    voltages = metadata["voltages"]
+    V_50s = metadata["V_50s"]
+    t_50s = metadata["t_50s"]
 
-    colormap = plt.cm.get_cmap('viridis', len(voltages)+1)
+    colormap = plt.cm.get_cmap('viridis', len(t_50s)+1)
     files = glob.glob(dir_path + "/*pulse_duration_sweep*")
 
     dpdt = []
     #TODO: add measure of stddev
-    for i, pulse_duration in enumerate(pulse_durations):
-        dp_sum = 0.0
-        avg_weights = np.zeros(len(pulse_durations))
-        for j in range(num_iters):
-            #FIXME
-            f_data = np.load( match_file("pulse", files, voltages[i], 300, j) )
-            weights = f_data["weights"]
-            t_50_idx = find_idx_at_nearest(weights, 0.5) # parallel arrays
-            dp_sum += (weights[t_50_idx + 1]) - (weights[t_50_idx - 1])
-            for k, weight in enumerate(weights): avg_weights[k] += weight
+    for i, t_50 in enumerate(t_50s):
+        t_50_idx = find_idx_at_nearest(pulse_durations, t_50)
+        f_data = np.load(match_file(files, V_50s[i], 300, 0))
+        weights = f_data["weights"]
+        # Note: smoothing not needed here
+        #weights_smoothed = savgol_filter(weights,15,6)
+        # the 0.5 mark can easily be outside the range
+        if t_50_idx >= len(weights)-1:
+            t_50_idx = len(weights)-2
+        dp = (weights_smoothed[t_50_idx + 1]) - (weights_smoothed[t_50_idx - 1])
+        #dp = (weights[t_50_idx + 1]) - (weights[t_50_idx - 1])
         dt = (pulse_durations[t_50_idx + 1]) - (pulse_durations[t_50_idx - 1])
-        dpdt.append(-dp_sum/(dt*num_iters))
+        dpdt.append(dp/dt)
         #Fig 4 a
-        ax_a.plot(pulse_durations_ns, [avg/num_iters for avg in avg_weights], color=colormap(i), alpha=0.7)
+        ax_a.plot(pulse_durations, weights, color=colormap(i), alpha=0.7)
+        #ax_a.plot(pulse_durations, weights_smoothed, color=colormap(len(t_50s)-i), alpha=0.7)
 
     ax_a.set_title('Coin Bias')
     ax_a.set_xlabel('Pulse Durations [ns]')
     ax_a.set_ylabel('p')
 
-    tdpdt = [t_i*dpdt_i for t_i, dpdt_i in zip(pulse_durations, dpdt)]
-    print(tdpdt)
-    ax_b.stem(pulse_durations, tdpdt)
+    tdpdt = [t_i*dpdt_i for t_i, dpdt_i in zip(t_50s, dpdt)]
+    ax_b.stem(t_50s, tdpdt)
     ax_b.set_xscale('log')
 
-    ax_b.set_xlabel('Pulse Duration [s]')
+    ax_b.set_xlabel('t, Pulse Duration [s]')
     ax_b.set_ylabel('t*dp/dt')
     ax_b.set_title('Sensitivity to Pulse Duration')
 
@@ -350,7 +344,6 @@ def make_and_plot_fig4():
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
     pf.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig4a.svg")
     pf.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig4b.svg")
-'''
 # ================================================================
 
 
@@ -360,11 +353,8 @@ def make_and_plot_fig4():
 
 # ================ helper functions for generating data =======================
 
-def match_file(str_option, strings, t, T, i) -> str:
-    if str_option == "voltage":
-        file_pattern = re.compile((fr't{t:.2e}_T{T}_i{i}.npz').replace('.',"\."))
-    elif str_option == "pulse":
-        file_pattern = re.compile((fr'v{v}_T{T}_i{i}.npz').replace('.',"\."))
+def match_file(strings, x, T, i) -> str:
+    file_pattern = re.compile((fr'x{x:.2e}_T{T}_i{i}.npz').replace('.',"\."))
     for s in strings:
         if file_pattern.search(s): return s
 
@@ -381,13 +371,13 @@ def generate_pulse_duration_scurve(dev, durations, V, T, samples_to_avg, i=0, ou
         print("No outpath")
         exit()
     elif save_flag:
-        print(f"Generating pulse duration scurve with V: {V}v, T: {T}K, iteration: {i}")
+        print(f"Generating pulse duration scurve with V: {V:.2e}v, T: {T}K, iteration: {i}")
     for t in durations:
         dev.set_vals(t_pulse = t)
         weights.append(avg_weight_across_samples(dev, V, T, samples_to_avg))
-    t_50 = pulse_durations[find_idx_at_nearest(weights, 0.5)]
+    t_50 = durations[find_idx_at_nearest(weights, 0.5)]
     if save_flag:
-        np.savez(f"{out_path}/pulse_duration_sweep_weights_v{V}_T{T}_i{i}.npz", weights=weights, T=T)
+        np.savez(f"{out_path}/pulse_duration_sweep_weights_x{V:.2e}_T{T}_i{i}.npz", weights=weights, T=T)
     return t_50
 
 def generate_voltage_scurve(dev, voltages, t, T, samples_to_avg, i=0, out_path=None, save_flag=True) -> float:
@@ -402,7 +392,7 @@ def generate_voltage_scurve(dev, voltages, t, T, samples_to_avg, i=0, out_path=N
         weights.append(avg_weight_across_samples(dev, V, T, samples_to_avg))
     V_50 = voltages[find_idx_at_nearest(weights, 0.5)]
     if save_flag:
-        np.savez(f"{out_path}/voltage_sweep_scurve_data_t{t:.2e}_T{T}_i{i}.npz", weights=weights, T=T)
+        np.savez(f"{out_path}/voltage_sweep_scurve_data_x{t:.2e}_T{T}_i{i}.npz", weights=weights, T=T)
     return V_50
 
 def get_out_path() -> str:
@@ -428,9 +418,9 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
 
         #make_and_plot_fig1()
-        make_and_plot_fig2()
+        #make_and_plot_fig2()
         #make_and_plot_fig4()
-        #make_and_plot_fig3()
+        make_and_plot_fig3()
     else:
         #gen_fig3_data()
         #gen_fig4_data()
