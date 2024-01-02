@@ -1,5 +1,5 @@
 ! --------------------------------*---------*----------------------------------------
-! This moudle contains the experimental device parameters for an 
+! This module contains the experimental device parameters for an 
 ! MTJ random number generator device as well as placeholders for variable parameters
 ! --------------------------------*---------*----------------------------------------
 
@@ -7,23 +7,25 @@ module MTJ_RNG_vars
     implicit none
     ! Constants which should not be changed in current model.
     real(kind(0.0d0)),parameter :: pi    = real(4.0,kind(0.0d0))*DATAN(real(1.0,kind(0.0d0)))
-    real(kind(0.0d0)),parameter :: uB    = 9.274e-24
-    real(kind(0.0d0)),parameter :: h_bar = 1.054e-34          
-    real(kind(0.0d0)),parameter :: u0    = pi*4e-7               
-    real(kind(0.0d0)),parameter :: e     = 1.6e-19                
-    real(kind(0.0d0)),parameter :: kb    = 1.38e-23   
+    real(kind(0.0d0)),parameter :: uB    = 9.2740100783e-24
+    real(kind(0.0d0)),parameter :: h_bar = 1.05457182e-34         
+    real(kind(0.0d0)),parameter :: u0    = pi*(4e-7)               
+    real(kind(0.0d0)),parameter :: e     = 1.602176634e-19
+    real(kind(0.0d0)),parameter :: kb    = 1.380649e-23
+    real(kind(0.0d0)),parameter :: eps_not = 8.8541878128e-12
     real(kind(0.0d0)),parameter :: gammall = 2.0*u0*uB/h_bar 
     real(kind(0.0d0)),parameter :: gammab  = gammall/u0
-    real(kind(0.0d0)),parameter :: t_step  = 5e-11
-    !real(kind(0.0d0)),parameter :: tox = 1e-9 ! new
-    real(kind(0.0d0)),parameter :: tox = 1.5e-9 ! old
-    real(kind(0.0d0)),parameter :: P   = 0.6
+    real(kind(0.0d0)),parameter :: t_step  = 4e-11
+    real(kind(0.0d0)),parameter :: tox = 1e-9 ! NOTE: new value
+    !real(kind(0.0d0)),parameter :: tox = 1.5e-9 ! old
+    real(kind(0.0d0)),parameter :: P = 0.6
+    real(kind(0.0d0)),parameter :: eps_mgo = 4.0
+
     real(kind(0.0d0)),parameter :: ksi = 75e-15
     real(kind(0.0d0)),parameter :: Vh  = 0.5
     real(kind(0.0d0)),parameter :: w = 100e-9
     real(kind(0.0d0)),parameter :: l = 100e-9
     real(kind(0.0d0)),parameter :: rho = 200e-8
-    real(kind(0.0d0)),parameter :: eps_mgo = 4.0
     ! NOTE: Nx,Ny,Nz are experimental values dependent on device geometry. 
     real(kind(0.0d0)),parameter :: Nx = 0.010613177892974
     real(kind(0.0d0)),parameter :: Ny = 0.010613177892974
@@ -35,7 +37,6 @@ module MTJ_RNG_vars
                          Bsat, gammap, volume, A1, A2, cap_mgo, R2, Htherm, F, T
 
     ! ==== Not used in current model ===
-    ! real(kind(0.0d0)),parameter :: delta = 40.0 
     ! real(kind(0.0d0)),parameter :: Eb  = delta*kb*T
     ! real(kind(0.0d0)),parameter :: RA = 7e-12
     ! ==============================================
@@ -56,10 +57,11 @@ module MTJ_RNG_vars
             gammap  = gammall/(1.0_dp+alpha*alpha)
             volume  = tf*pi*b*a/4.0_dp
             A1      = a*b*pi/4.0_dp
-            A2      = d*w
-            cap_mgo = 8.854e-12_dp*eps_mgo*A1/tox 
-            R2      = rho*l/(w*d)
+            cap_mgo = eps_not*eps_mgo*A1/tox 
             Htherm  = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
             F       = (gammall*h_bar)/(2.0_dp*u0*e*tf*Ms)
+
+            A2      = d*w
+            R2      = rho*l/(w*d)
         end subroutine set_params
 end module MTJ_RNG_vars

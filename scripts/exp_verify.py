@@ -29,57 +29,76 @@ import matplotlib.style as style
 import scienceplots
 plt.rc('text', usetex=True)
 plt.style.use(['science'])
+from scipy.signal import savgol_filter
 import re
 
 from interface_funcs import mtj_sample
 from mtj_types_v3 import SWrite_MTJ_rng
-from scipy.signal import savgol_filter
 import plotting_funcs as pf
 
 # === Constants ===
-#FIXME: paper value, not default MTJ
 RA_product = 3e-12
 # working in voltage since paper does,
 # fortran code takes current so conversion is here
-#FIXME: assume ohmic relationship
+# NOTE: assume ohmic relationship
 V_to_J = lambda V:  V/RA_product
 # =================
 
 # V_50/t_50 in this code will mean the voltage/time to get a 0.5 probability of switching
 
+def main():
+    print("===========================================================")
+    print("Script takes an optional argument. Call with path to data folder if plotting existing data.")
+    print("Uncomment function call within script to choose between fig 1,2,etc.")
+    print("===========================================================")
+    if len(sys.argv) == 1:
+        start_time = time.time()
+        out_path = get_out_path()
+        dev = SWrite_MTJ_rng()
+        dev.set_mag_vector()
+        dev.set_vals(0)
+        # NOTE: Ms found from Duc-The Ngo et al 2014 J. Phys. D: Appl. Phys. 47
+        # NOTE: Rp is RA/A assuming RA is Rp*A
+        # NOTE: Ki for now is using delta from the P->AP state (delta = 51). May need to add fortran code
+        #       to dectect state (and Temperature) and apply appropriate Ki value on the fly
+        dev.set_vals(a=40e-9, b=40e-9, TMR = 2.03, Ms = 6.8e5, tf = 2.6e-9, Rp = 2387.32414678)
+        #dev.set_vals(Ki = 16.809889e-5) #breaks device operation with the above
+        #gen_fig3_data(dev, out_path)
+        #gen_fig4_data(dev, out_path)
+        #gen_fig2_data(dev, out_path)
+        gen_fig1_data(dev, out_path)
+        print("--- %s seconds ---" % (time.time() - start_time))
+    elif len(sys.argv) == 2:
+        dir_path = sys.argv[1]
+        make_and_plot_fig1(dir_path)
+        #make_and_plot_fig2(dir_path)
+        #make_and_plot_fig4(dir_path)
+        #make_and_plot_fig3(dir_path)
+    else:
+        print("too many arguments")
 
-# ========== main functions =================
-def gen_fig1_data():
-    start_time = time.time()
-    samples_to_avg = 1000 #10000 is smooth
-    out_path = get_out_path()
-    #FIXME using negative voltages currently, positives do not work
-    voltages = np.linspace(-0.9, 0, 500)
-    pulse_durations = np.linspace(0, 3e-9, 500)
-    dev = SWrite_MTJ_rng()
-    #FIXME need correct params
-    #dev.set_vals(a=40e-9, b=40e-9, TMR=2.03, tf=2.6e-9) #paper values
-    dev.set_vals(0)
-    dev.set_mag_vector()
+def gen_fig1_data(dev, out_path):
+    print(dev)
+    samples_to_avg = 250 #1000
+    pulse_durations = np.linspace(0, 3e-9, 100) #250
+    voltages = np.linspace(-1.4, -0.2, 100) #250
 
     V_50 = generate_voltage_scurve(dev, voltages, 1e-9, 300, samples_to_avg, save_flag=False)
     generate_pulse_duration_scurve(dev, pulse_durations, V_50, 300, samples_to_avg, out_path=out_path, save_flag=True)
     np.savez(f"{out_path}/metadata_pulse_duration.npz",
              pulse_durations=pulse_durations, V_50=V_50, T=300)
 
-    samples_to_avg = 8000
+    samples_to_avg = 1000 #8000
     Temps = [290, 300, 310]
     for T in Temps:
         generate_voltage_scurve(dev, voltages, 1e-9, T, samples_to_avg, out_path=out_path, save_flag=True)
     np.savez(f"{out_path}/metadata_voltage.npz",
              voltages=voltages, pulse_duration=1e-9, Temps=Temps)
 
-    print("--- %s seconds ---" % (time.time() - start_time))
 
-def make_and_plot_fig1():
+def make_and_plot_fig1(dir_path):
     fig_v, ax_v = pf.plot_init()
     fig_t, ax_t = pf.plot_init()
-    dir_path = sys.argv[1]
     colormap = plt.cm.get_cmap('viridis', 5)
 
     # voltage scurves
@@ -91,9 +110,8 @@ def make_and_plot_fig1():
       f_data = np.load(f)
       weights = f_data["weights"]
       T = f_data["T"]
-      weights_smoothed = savgol_filter(weights, 50, 3)
       ax_v.scatter(pulse_amplitude, weights, color=colormap(i), s=0.05)
-      ax_v.plot(pulse_amplitude, weights_smoothed, color=colormap(i), label=T)
+      ax_v.plot(pulse_amplitude, weights, color=colormap(i), label=T)
     ax_v.legend()
     ax_v.set_xlabel('Pulse Amplitude [v]')
     ax_v.set_ylabel('Weight')
@@ -105,9 +123,8 @@ def make_and_plot_fig1():
     metadata = np.load(glob.glob(dir_path + "/*metadata_pulse*")[0])
     pulse_durations = metadata["pulse_durations"]
     pulse_durations_ns = [t * 1e9 for t in pulse_durations]
-    weights_smoothed = savgol_filter(weights, 50, 3)
     ax_t.scatter(pulse_durations_ns, weights, color=colormap(0), s=0.05)
-    ax_t.plot(pulse_durations_ns, weights_smoothed, color=colormap(i))
+    ax_t.plot(pulse_durations_ns, weights, color=colormap(i))
     ax_t.set_xlabel('Pulse Duration [ns]')
     ax_t.set_ylabel('Weight')
     ax_t.set_title('Coin Bias')
@@ -117,7 +134,7 @@ def make_and_plot_fig1():
     pf.prompt_save_svg(fig_t,f"../results/scurve_dataset_{date_match.group(0)}/fig1a.svg")
     pf.prompt_save_svg(fig_v,f"../results/scurve_dataset_{date_match.group(0)}/fig1b.svg")
 
-def gen_fig2_data():
+def gen_fig2_data(dev, out_path):
     # Take voltage corresponding to 0.5 probability for pulse duration of 1ns at 300K
     # and compute the change in probability around that voltage for +-5 [K] to get a measure of dp/dT
     #
@@ -126,14 +143,10 @@ def gen_fig2_data():
     # for the default device configuration, V_50 = 0.3940 at 1ns, 300K
     # ====
 
-    start_time = time.time()
+    print(dev)
     samples_to_avg = 10000 #10000
-    out_path = get_out_path()
     pulse_durations = [1e-9, 2e-9, 3e-9]
     voltages = np.linspace(-0.9 ,0 , 200)
-    dev = SWrite_MTJ_rng()
-    dev.set_vals(0)
-    dev.set_mag_vector()
 
     T_delta = 20
     Temps = (300-T_delta, 300+T_delta)
@@ -148,12 +161,10 @@ def gen_fig2_data():
 
     np.savez(f"{out_path}/metadata_fig2.npz",
              voltages=voltages, V_50s=V_50s, Temps=Temps, pulse_durations=pulse_durations)
-    print("--- %s seconds ---" % (time.time() - start_time))
 
-def make_and_plot_fig2():
+def make_and_plot_fig2(dir_path):
     fig, ax = pf.plot_init()
     fig_v, ax_v = pf.plot_init()
-    dir_path = sys.argv[1]
 
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
     pulse_durations = metadata["pulse_durations"]
@@ -207,19 +218,14 @@ def make_and_plot_fig2():
     pf.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig2_curves.svg")
     pf.prompt_save_svg(fig, f"../results/scurve_dataset_{date_match.group(0)}/fig2.svg")
 
-def gen_fig3_data():
+def gen_fig3_data(dev, out_path):
     # Generate voltage scurve and directly compute a discrete dp/dV around p=0.5.
     # Repeat for a variety of pulse durations. All at 300K
     # ====
 
-    start_time = time.time()
     samples_to_avg = 5000
-    out_path = get_out_path()
     pulse_durations = [1e-9, 2e-9, 3e-9, 4e-9]
     voltages = np.linspace(-0.9,0,250)
-    dev = SWrite_MTJ_rng()
-    dev.set_vals(0)
-    dev.set_mag_vector()
 
     T = 300
 
@@ -230,12 +236,10 @@ def gen_fig3_data():
 
     np.savez(f"{out_path}/metadata_fig3.npz",
              voltages=voltages, V_50s=V_50s, pulse_durations=pulse_durations)
-    print("--- %s seconds ---" % (time.time() - start_time))
 
-def make_and_plot_fig3():
+def make_and_plot_fig3(dir_path):
     fig_a, ax_a = pf.plot_init()
     fig_b, ax_b = pf.plot_init()
-    dir_path = sys.argv[1]
 
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
     pulse_durations = metadata["pulse_durations"]
@@ -252,17 +256,15 @@ def make_and_plot_fig3():
         V_50_idx = find_idx_at_nearest(voltages, V_50s[i])
         f_data = np.load(match_file(files, pulse_duration, 300, 0))
         weights = f_data["weights"]
-        weights_smoothed = savgol_filter(weights, 50, 7)
-        #FIXME
+        #weights_smoothed = savgol_filter(weights, 50, 7)
+        #FIXME smooth or step
         #dp = (weights_smoothed[V_50_idx + 1]) - (weights_smoothed[V_50_idx - 1])
-        dp = (weights[V_50_idx + 1]) - (weights[V_50_idx - 1])
-        dV = (voltages[V_50_idx + 1]) - (voltages[V_50_idx - 1])
-        #FIXME: flipping sign to match paper since using negative voltage, interpret plot as positive rate
-        # of decrease
-        dpdV.append(-dp/dV)
+        dp = (weights[V_50_idx + 3]) - (weights[V_50_idx - 3])
+        dV = (voltages[V_50_idx + 3]) - (voltages[V_50_idx - 3])
+        dpdV.append(dp/dV)
         #Fig 3 a
         ax_a.scatter(pulse_amplitude, weights, s=0.05, color=colormap(i), alpha=0.7)
-        ax_a.plot(pulse_amplitude, weights_smoothed,label=pulse_duration, color=colormap(i))
+        #ax_a.plot(pulse_amplitude, weights_smoothed,label=pulse_duration, color=colormap(i))
 
     ax_a.set_title('Coin Bias')
     ax_a.set_xlabel('Pulse Amplitude [v]')
@@ -274,7 +276,7 @@ def make_and_plot_fig3():
     ax_b.set_xscale('log')
 
     ax_b.set_xlabel('Pulse Duration [s]')
-    ax_b.set_ylabel('-dp/dV [V-1]')
+    ax_b.set_ylabel('|dp/dV| [V-1]')
     ax_b.set_title('Sensitivity to Voltage Amplitude')
 
     pf.prompt_show()
@@ -282,19 +284,14 @@ def make_and_plot_fig3():
     pf.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig3a.svg")
     pf.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig3b.svg")
 
-def gen_fig4_data():
+def gen_fig4_data(dev, out_path):
     # for a range of pulse durations, calculate V 50 then generate an scurve to compute dp/dt from
 
-    start_time = time.time()
     samples_to_avg = 2500
     T = 300
-    out_path = get_out_path()
     pulse_durations = np.linspace(0, 20e-9, 250)
     voltages = np.linspace(-0.9, 0, 250)
     t_50s = [1e-9, 2e-9, 3e-9, 4e-9]
-    dev = SWrite_MTJ_rng()
-    dev.set_vals(0)
-    dev.set_mag_vector()
 
     V_50s = []
     for t_50 in t_50s:
@@ -306,13 +303,11 @@ def gen_fig4_data():
     np.savez(f"{out_path}/metadata_fig4.npz",
              V_50s=V_50s, pulse_durations=pulse_durations,
              t_50s=t_50s, T=T)
-    print("--- %s seconds ---" % (time.time() - start_time))
 
 
-def make_and_plot_fig4():
+def make_and_plot_fig4(dir_path):
     fig_a, ax_a = pf.plot_init()
     fig_b, ax_b = pf.plot_init()
-    dir_path = sys.argv[1]
 
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
     pulse_durations = metadata["pulse_durations"]
@@ -329,19 +324,12 @@ def make_and_plot_fig4():
         t_50_idx = find_idx_at_nearest(pulse_durations, t_50)
         f_data = np.load(match_file(files, V_50s[i], 300, 0))
         weights = f_data["weights"]
-        # Note: smoothing not needed here
-        weights_smoothed = savgol_filter(weights,20,8)
-        # the 0.5 mark can easily be outside the range
-        if t_50_idx >= len(weights)-1:
-            t_50_idx = len(weights)-2
-        dp = (weights_smoothed[t_50_idx + 1]) - (weights_smoothed[t_50_idx - 1])
-        #dp = (weights[t_50_idx + 1]) - (weights[t_50_idx - 1])
-        dt = (pulse_durations[t_50_idx + 1]) - (pulse_durations[t_50_idx - 1])
+        dp = (weights[t_50_idx + 3]) - (weights[t_50_idx - 3])
+        dt = (pulse_durations[t_50_idx + 3]) - (pulse_durations[t_50_idx - 3])
         dpdt.append(dp/dt)
         #Fig 4 a
         ax_a.scatter(pulse_durations, weights, s=0.5, color=colormap(i))
-        #ax_a.plot(pulse_durations, weights, alpha=0.5, color=colormap(i), label= f"{V_50s[i]:.2e}")
-        ax_a.plot(pulse_durations, weights_smoothed, color=colormap(len(t_50s)-i))
+        ax_a.plot(pulse_durations, weights, alpha=0.5, color=colormap(i), label= f"{V_50s[i]:.2e}")
 
     ax_a.set_title('Coin Bias')
     ax_a.set_xlabel('Pulse Durations [ns]')
@@ -361,8 +349,6 @@ def make_and_plot_fig4():
     pf.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig4a.svg")
     pf.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig4b.svg")
 # ================================================================
-
-
 
 
 
@@ -425,20 +411,5 @@ def get_out_path() -> str:
 
 
 
-
 if __name__ == "__main__":
-    print("===========================================================")
-    print("Script takes an optional argument. Call with path to data folder if plotting existing data.")
-    print("Uncomment function call within script to choose between fig 1,2,etc.")
-    print("===========================================================")
-    if len(sys.argv) == 2:
-
-        #make_and_plot_fig1()
-        make_and_plot_fig2()
-        #make_and_plot_fig4()
-        #make_and_plot_fig3()
-    else:
-        #gen_fig3_data()
-        #gen_fig4_data()
-        gen_fig2_data()
-        #gen_fig1_data()
+    main()
