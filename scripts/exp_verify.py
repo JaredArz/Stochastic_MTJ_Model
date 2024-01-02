@@ -86,13 +86,16 @@ def make_and_plot_fig1():
     metadata = np.load(glob.glob(dir_path + "/*metadata_voltage*")[0])
     pulse_duration = metadata["pulse_duration"]
     voltages = metadata["voltages"]
+    pulse_amplitude = [ np.abs(v) for v in voltages ]
     for i,f in enumerate(glob.glob(dir_path + "/*voltage_sweep*")):
       f_data = np.load(f)
       weights = f_data["weights"]
       T = f_data["T"]
-      ax_v.plot(voltages, weights, color=colormap(i), alpha=0.7, label=T)
+      weights_smoothed = savgol_filter(weights, 50, 3)
+      ax_v.scatter(pulse_amplitude, weights, color=colormap(i), s=0.05)
+      ax_v.plot(pulse_amplitude, weights_smoothed, color=colormap(i), label=T)
     ax_v.legend()
-    ax_v.set_xlabel('Voltage [v]')
+    ax_v.set_xlabel('Pulse Amplitude [v]')
     ax_v.set_ylabel('Weight')
     ax_v.set_title('Coin Bias')
 
@@ -102,15 +105,17 @@ def make_and_plot_fig1():
     metadata = np.load(glob.glob(dir_path + "/*metadata_pulse*")[0])
     pulse_durations = metadata["pulse_durations"]
     pulse_durations_ns = [t * 1e9 for t in pulse_durations]
-    ax_t.plot(pulse_durations_ns, weights, color=colormap(0), alpha=0.7)
+    weights_smoothed = savgol_filter(weights, 50, 3)
+    ax_t.scatter(pulse_durations_ns, weights, color=colormap(0), s=0.05)
+    ax_t.plot(pulse_durations_ns, weights_smoothed, color=colormap(i))
     ax_t.set_xlabel('Pulse Duration [ns]')
     ax_t.set_ylabel('Weight')
     ax_t.set_title('Coin Bias')
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_v,f"../results/scurve_dataset_{date_match.group(0)}/voltage_scurve.svg")
-    pf.prompt_save_svg(fig_t,f"../results/scurve_dataset_{date_match.group(0)}/pulse_duration_scurve.svg")
+    pf.prompt_save_svg(fig_t,f"../results/scurve_dataset_{date_match.group(0)}/fig1a.svg")
+    pf.prompt_save_svg(fig_v,f"../results/scurve_dataset_{date_match.group(0)}/fig1b.svg")
 
 def gen_fig2_data():
     # Take voltage corresponding to 0.5 probability for pulse duration of 1ns at 300K
@@ -122,15 +127,15 @@ def gen_fig2_data():
     # ====
 
     start_time = time.time()
-    samples_to_avg = 10000
+    samples_to_avg = 10000 #10000
     out_path = get_out_path()
-    pulse_durations = [1e-9, 2e-9, 3e-9, 4e-9]
-    voltages = np.linspace(-0.9 ,0 ,1000)
+    pulse_durations = [1e-9, 2e-9, 3e-9]
+    voltages = np.linspace(-0.9 ,0 , 200)
     dev = SWrite_MTJ_rng()
     dev.set_vals(0)
     dev.set_mag_vector()
 
-    T_delta = 15
+    T_delta = 20
     Temps = (300-T_delta, 300+T_delta)
 
     V_50s = []
@@ -155,12 +160,11 @@ def make_and_plot_fig2():
     Temps = metadata["Temps"]
     voltages = metadata["voltages"]
     V_50s = metadata["V_50s"]
-    print(f"V_50s: {V_50s}")
 
     colormap = plt.cm.get_cmap('viridis', len(pulse_durations)+1)
     files = glob.glob(dir_path + "/*voltage_sweep*")
 
-    dT = Temps[1] - Temps[0]
+    dT = (Temps[1] - Temps[0])
     print(f"dT: {dT}")
     dpdT = []
     #TODO: add measure of stddev
@@ -168,23 +172,30 @@ def make_and_plot_fig2():
         # plot a pair of scurves for each pulse duration in addition
         # to calculating dp/dT for good measure
         V_50_idx = find_idx_at_nearest(voltages, V_50s[i])
+        print(f"V50: {voltages[V_50_idx]}")
         f_data_T1 = np.load( match_file(files, pulse_duration, Temps[1], 0) )
         f_data_T0 = np.load( match_file(files, pulse_duration, Temps[0], 0) )
         weights_T1 = f_data_T1["weights"]
         weights_T0 = f_data_T0["weights"]
-        #weights_T1_smoothed = savgol_filter(weights_T1, 50, 2)
-        #weights_T0_smoothed = savgol_filter(weights_T0, 50, 2)
-        dp = weights_T1[V_50_idx] - weights_T0[V_50_idx]
-        #dp = weights_T1_smoothed[V_50_idx] - weights_T0_smoothed[V_50_idx]
-        print(f"dp: {dp}")
+        weights_T1_smoothed = savgol_filter(weights_T1, 50, 9)
+        weights_T0_smoothed = savgol_filter(weights_T0, 50, 9)
+        #dp = weights_T1[V_50_idx] - weights_T0[V_50_idx]
+        dp = weights_T1_smoothed[V_50_idx] - weights_T0_smoothed[V_50_idx]
+        #print(f"dp: p_T1 - p_T0 = {weights_T1_smoothed[V_50_idx]} - {weights_T0_smoothed[V_50_idx]}" )
+        print(f"--- {dp}")
         dpdT.append(dp/dT)
-        ax_v.plot(voltages, weights_T0, color=colormap(i), alpha=0.7)
-        ax_v.plot(voltages, weights_T1, color=colormap(i), alpha=0.7)
-        #ax_v.plot(voltages, weights_T0_smoothed, color=colormap(i), alpha=0.7)
-        #ax_v.plot(voltages, weights_T1_smoothed, color=colormap(i), alpha=0.7)
+        ax_v.scatter(voltages, weights_T0, s=0.05, color=colormap(i))
+        ax_v.scatter(voltages, weights_T1, s=0.05, color=colormap(i))
+        ax_v.plot(voltages, weights_T0_smoothed, alpha = 0.5, color=colormap(i), label=Temps[0])
+        ax_v.plot(voltages, weights_T1_smoothed, alpha = 0.5, color=colormap(i), label=Temps[1])
+
+    ax_v.set_xlabel('Voltage [v]')
+    ax_v.set_ylabel('Weight')
+    ax_v.set_title('Coin Bias')
+    ax_v.legend()
 
     ax.stem(pulse_durations, dpdT)
-    ax.axhline(0.0016)
+    ax.axhline(np.log(2)/(2*300))
     ax.set_xscale('log')
 
     ax.set_xlabel('Pulse Duration [s]')
@@ -229,6 +240,7 @@ def make_and_plot_fig3():
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
     pulse_durations = metadata["pulse_durations"]
     voltages = metadata["voltages"]
+    pulse_amplitude = [ np.abs(v) for v in voltages ]
     V_50s = metadata["V_50s"]
 
     colormap = plt.cm.get_cmap('viridis', len(pulse_durations)+1)
@@ -240,20 +252,22 @@ def make_and_plot_fig3():
         V_50_idx = find_idx_at_nearest(voltages, V_50s[i])
         f_data = np.load(match_file(files, pulse_duration, 300, 0))
         weights = f_data["weights"]
-        weights_smoothed = savgol_filter(weights, 50, 3)
-        dp = (weights_smoothed[V_50_idx + 1]) - (weights_smoothed[V_50_idx - 1])
+        weights_smoothed = savgol_filter(weights, 50, 7)
+        #FIXME
+        #dp = (weights_smoothed[V_50_idx + 1]) - (weights_smoothed[V_50_idx - 1])
         dp = (weights[V_50_idx + 1]) - (weights[V_50_idx - 1])
         dV = (voltages[V_50_idx + 1]) - (voltages[V_50_idx - 1])
         #FIXME: flipping sign to match paper since using negative voltage, interpret plot as positive rate
         # of decrease
         dpdV.append(-dp/dV)
         #Fig 3 a
-        ax_a.plot(voltages, weights, color=colormap(i), alpha=0.7)
-        ax_a.plot(voltages, weights_smoothed, color=colormap(len(pulse_durations)-i), alpha=0.7)
+        ax_a.scatter(pulse_amplitude, weights, s=0.05, color=colormap(i), alpha=0.7)
+        ax_a.plot(pulse_amplitude, weights_smoothed,label=pulse_duration, color=colormap(i))
 
     ax_a.set_title('Coin Bias')
-    ax_a.set_xlabel('Voltage [v]')
+    ax_a.set_xlabel('Pulse Amplitude [v]')
     ax_a.set_ylabel('p')
+    ax_a.legend()
 
     ax_b.stem(pulse_durations, dpdV)
     #TODO add analytical curve...
@@ -272,10 +286,10 @@ def gen_fig4_data():
     # for a range of pulse durations, calculate V 50 then generate an scurve to compute dp/dt from
 
     start_time = time.time()
-    samples_to_avg = 1000
+    samples_to_avg = 2500
     T = 300
     out_path = get_out_path()
-    pulse_durations = np.linspace(0, 30e-9, 100)
+    pulse_durations = np.linspace(0, 20e-9, 250)
     voltages = np.linspace(-0.9, 0, 250)
     t_50s = [1e-9, 2e-9, 3e-9, 4e-9]
     dev = SWrite_MTJ_rng()
@@ -316,7 +330,7 @@ def make_and_plot_fig4():
         f_data = np.load(match_file(files, V_50s[i], 300, 0))
         weights = f_data["weights"]
         # Note: smoothing not needed here
-        #weights_smoothed = savgol_filter(weights,15,6)
+        weights_smoothed = savgol_filter(weights,20,8)
         # the 0.5 mark can easily be outside the range
         if t_50_idx >= len(weights)-1:
             t_50_idx = len(weights)-2
@@ -325,12 +339,14 @@ def make_and_plot_fig4():
         dt = (pulse_durations[t_50_idx + 1]) - (pulse_durations[t_50_idx - 1])
         dpdt.append(dp/dt)
         #Fig 4 a
-        ax_a.plot(pulse_durations, weights, color=colormap(i), alpha=0.7)
-        #ax_a.plot(pulse_durations, weights_smoothed, color=colormap(len(t_50s)-i), alpha=0.7)
+        ax_a.scatter(pulse_durations, weights, s=0.5, color=colormap(i))
+        #ax_a.plot(pulse_durations, weights, alpha=0.5, color=colormap(i), label= f"{V_50s[i]:.2e}")
+        ax_a.plot(pulse_durations, weights_smoothed, color=colormap(len(t_50s)-i))
 
     ax_a.set_title('Coin Bias')
     ax_a.set_xlabel('Pulse Durations [ns]')
     ax_a.set_ylabel('p')
+    ax_a.legend()
 
     tdpdt = [t_i*dpdt_i for t_i, dpdt_i in zip(t_50s, dpdt)]
     ax_b.stem(t_50s, tdpdt)
@@ -418,9 +434,9 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
 
         #make_and_plot_fig1()
-        #make_and_plot_fig2()
+        make_and_plot_fig2()
         #make_and_plot_fig4()
-        make_and_plot_fig3()
+        #make_and_plot_fig3()
     else:
         #gen_fig3_data()
         #gen_fig4_data()
