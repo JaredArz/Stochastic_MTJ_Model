@@ -131,6 +131,7 @@ class SHE_MTJ_rng(MTJ):
 class SWrite_MTJ_rng(MTJ):
     def __init__(self):
         dflt_m = {"theta"  : 99*np.pi/100,
+        #dflt_m = {"theta"  : np.pi/100,
                   "phi"    : np.random.rand()*2*np.pi}
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,

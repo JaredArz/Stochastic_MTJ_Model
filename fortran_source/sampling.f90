@@ -135,16 +135,7 @@ module sampling
                 phi_evol(t_i)   = phi_i
             end if
 
-            !set before setting other params
-            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
-
-            ! change Ki based on Temperature and Delta
-            ! Delta AP->P = 26, P->AP = 51
-            if( cos(theta_i) > 0.0_dp ) then !+z
-                Ki = (26)*kb*T/A1
-            else !-z
-                Ki = (51)*kb*T/A1
-            end if
+            call set_params(0.0, TMR_in, Rp_in, 0.0, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -279,7 +270,7 @@ module sampling
                        cos_phi, sin_phi, v_pow, she_pow 
            integer  :: i
 
-           Hk = (2.0_dp*Ki)/(tf*Ms*u0)-(2.0_dp*ksi*V)/(u0*Ms*tox*tf)
+           Hk = ((2.0_dp*Ki)/(tf*Ms*u0)) - ((2.0_dp*ksi*V)/(u0*Ms*tox*tf))
            v_pow = 0.5_dp*cap_mgo*V**2
            she_pow = R2*(J_SHE*A2)**2
 

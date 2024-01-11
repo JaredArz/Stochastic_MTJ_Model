@@ -31,13 +31,17 @@ plt.rc('text', usetex=True)
 plt.style.use(['science'])
 from scipy.signal import savgol_filter
 import re
+import scipy.optimize as optimize
 
 from interface_funcs import mtj_sample
 from mtj_types_v3 import SWrite_MTJ_rng
 import plotting_funcs as pf
 
 # === Constants ===
-RA_product = 3e-12
+RA_product = 3.18e-12
+#RA_product = 3e-12
+#RA_product = 10e-12
+#RA_product = 6.3e-12
 # working in voltage since paper does,
 # fortran code takes current so conversion is here
 # NOTE: assume ohmic relationship
@@ -59,41 +63,59 @@ def main():
         dev.set_vals(0)
         # NOTE: Ms found from Duc-The Ngo et al 2014 J. Phys. D: Appl. Phys. 47
         # NOTE: Rp is RA/A assuming RA is Rp*A
-        # NOTE: Ki for now is using delta from the P->AP state (delta = 51). May need to add fortran code
-        #       to dectect state (and Temperature) and apply appropriate Ki value on the fly
-        dev.set_vals(a=40e-9, b=40e-9, TMR = 2.03, Ms = 6.8e5, tf = 2.6e-9, Rp = 2387.32414678)
-        #dev.set_vals(Ki = 16.809889e-5) #breaks device operation with the above
-        #gen_fig3_data(dev, out_path)
-        #gen_fig4_data(dev, out_path)
-        #gen_fig2_data(dev, out_path)
+
+        #dev.set_vals(a=40e-9, b=40e-9, TMR = 2.03, tf = 2.6e-9, Rp = 2530, Ki=0, Ms=0)
+        dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, Ki=0, Ms=0)
+        #dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2230, Ki=0, Ms=0) ooops mightive been using
+        #dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 5849, Ki=0, Ms=0)
+        dev.set_vals(alpha=0.016)
+
         gen_fig1_data(dev, out_path)
         print("--- %s seconds ---" % (time.time() - start_time))
     elif len(sys.argv) == 2:
         dir_path = sys.argv[1]
         make_and_plot_fig1(dir_path)
-        #make_and_plot_fig2(dir_path)
-        #make_and_plot_fig4(dir_path)
-        #make_and_plot_fig3(dir_path)
     else:
         print("too many arguments")
 
-def gen_fig1_data(dev, out_path):
-    print(dev)
-    samples_to_avg = 250 #1000
-    pulse_durations = np.linspace(0, 3e-9, 100) #250
-    voltages = np.linspace(-1.4, -0.2, 100) #250
+def error_function(args):
+    Ms_factor, Ki_factor = args
+    return a**2 + b**2 + c**2
 
-    V_50 = generate_voltage_scurve(dev, voltages, 1e-9, 300, samples_to_avg, save_flag=False)
+def optimize():
+    initial_guess = [0.5, 2] #ms, ki
+    result = optimize.minimize(error_function, initial_guess)
+    if result.success:
+        fitted_params = result.x
+        print(fitted_params)
+    else:
+        raise ValueError(result.message)
+    return
+
+def gen_fig1_data(dev, out_path):
+    #print(dev)
+    #samples_to_avg = 5000
+    samples_to_avg = 1000
+    pulse_durations = np.linspace(0, 3.2e-9, 28) #250
+    voltages = np.linspace(-1.2, 0, 28) #250
+    #voltages = np.linspace(0.2, 1.5, 250) #250
+
+    V_50 = -0.715
     generate_pulse_duration_scurve(dev, pulse_durations, V_50, 300, samples_to_avg, out_path=out_path, save_flag=True)
     np.savez(f"{out_path}/metadata_pulse_duration.npz",
              pulse_durations=pulse_durations, V_50=V_50, T=300)
 
+    dev.set_mag_vector()
+
+    #samples_to_avg = 5000 #8000
     samples_to_avg = 1000 #8000
-    Temps = [290, 300, 310]
+    #Temps = [295, 300, 305]
+    Temps = [300]
+    t = 1e-9
     for T in Temps:
-        generate_voltage_scurve(dev, voltages, 1e-9, T, samples_to_avg, out_path=out_path, save_flag=True)
+        generate_voltage_scurve(dev, voltages, t, T, samples_to_avg, out_path=out_path, save_flag=True)
     np.savez(f"{out_path}/metadata_voltage.npz",
-             voltages=voltages, pulse_duration=1e-9, Temps=Temps)
+             voltages=voltages, pulse_duration=t, Temps=Temps)
 
 
 def make_and_plot_fig1(dir_path):
@@ -107,13 +129,15 @@ def make_and_plot_fig1(dir_path):
     voltages = metadata["voltages"]
     pulse_amplitude = [ np.abs(v) for v in voltages ]
     for i,f in enumerate(glob.glob(dir_path + "/*voltage_sweep*")):
+      print("plotting")
       f_data = np.load(f)
       weights = f_data["weights"]
       T = f_data["T"]
-      ax_v.scatter(pulse_amplitude, weights, color=colormap(i), s=0.05)
-      ax_v.plot(pulse_amplitude, weights, color=colormap(i), label=T)
-    ax_v.legend()
+      ax_v.scatter(pulse_amplitude, weights, color=colormap(i), s=6)
+      #ax_v.plot(pulse_amplitude, weights, color=colormap(i), label=T, alpha=0.1)
     ax_v.set_xlabel('Pulse Amplitude [v]')
+    ax_v.set_ylim([0, 1])
+    #ax_v.set_xlim([-0.2, 10.1])
     ax_v.set_ylabel('Weight')
     ax_v.set_title('Coin Bias')
 
@@ -123,16 +147,34 @@ def make_and_plot_fig1(dir_path):
     metadata = np.load(glob.glob(dir_path + "/*metadata_pulse*")[0])
     pulse_durations = metadata["pulse_durations"]
     pulse_durations_ns = [t * 1e9 for t in pulse_durations]
-    ax_t.scatter(pulse_durations_ns, weights, color=colormap(0), s=0.05)
-    ax_t.plot(pulse_durations_ns, weights, color=colormap(i))
+    ax_t.scatter(pulse_durations_ns, weights, color=colormap(0), s=6)
+    #ax_t.plot(pulse_durations_ns, weights, color=colormap(i), alpha=0.1)
     ax_t.set_xlabel('Pulse Duration [ns]')
     ax_t.set_ylabel('Weight')
+    ax_t.set_ylim([0, 1])
     ax_t.set_title('Coin Bias')
+
+    fig1aLR_x = [t*1e9 for t in (np.loadtxt('./fig1aLR.txt',usecols=0))]
+    fig1aLR_y = np.loadtxt('./fig1aLR.txt',usecols=1)
+    fig1bLR295_x = np.loadtxt('./fig1bLR295.txt',usecols=0)
+    fig1bLR295_y = np.loadtxt('./fig1bLR295.txt',usecols=1)
+    fig1bLR300_x = np.loadtxt('./fig1bLR300.txt',usecols=0)
+    fig1bLR300_y = np.loadtxt('./fig1bLR300.txt',usecols=1)
+    fig1bLR305_x = np.loadtxt('./fig1bLR305.txt',usecols=0)
+    fig1bLR305_y = np.loadtxt('./fig1bLR305.txt',usecols=1)
+
+    ax_t.scatter(fig1aLR_x, fig1aLR_y, color=colormap(1), s=12, marker='^', alpha = 1, label = "experiment")
+    #ax_v.scatter(fig1bLR295_x, fig1bLR295_y, color=colormap(1), s=1.5, alpha = 1)
+    ax_v.scatter(fig1bLR300_x, fig1bLR300_y, color=colormap(1), s=12, marker='^', alpha = 1, label = "experiment")
+    #ax_v.scatter(fig1bLR305_x, fig1bLR305_y, color=colormap(1), s=1.5, alpha = 1)
+
+    ax_v.legend(prop={'size': 12})
+    ax_t.legend(prop={'size': 12})
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_t,f"../results/scurve_dataset_{date_match.group(0)}/fig1a.svg")
-    pf.prompt_save_svg(fig_v,f"../results/scurve_dataset_{date_match.group(0)}/fig1b.svg")
+    pf.prompt_save_svg(fig_t, f"../results/scurve_dataset_{date_match.group(0)}/fig1a.svg")
+    pf.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig1b.svg")
 
 def gen_fig2_data(dev, out_path):
     # Take voltage corresponding to 0.5 probability for pulse duration of 1ns at 300K
