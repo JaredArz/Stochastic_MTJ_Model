@@ -29,13 +29,13 @@ dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha = 0.016
 
 def main():
 
-    #K_range = np.linspace(1.3, 1.8, 100)
-    #Ms_range = np.linspace(0.25, 0.6, 100)
     K_range = np.linspace(1.3, 1.8, 100)
     Ms_range = np.linspace(0.25, 0.6, 100)
 
     result = search(error_function, K_range, Ms_range)
-    print(result)
+    f = open("opt.txt", 'w')
+    f.write(str(result))
+    f.close()
 
 def search(f, K_range, Ms_range):
     min_e = 1e8
