@@ -62,7 +62,9 @@ def main():
         Ms = 5.80769e5 - (2.62206e2)*(300**1.058)
         K = (2.6e-9 * 6.14314e-5)*(Ms**1.708613)
         #Keff = 2.6e-9 * ( (K/2.6e-9) - (2*np.pi*10**(-7) * Ms**2) )
-        dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, Ki=K, Ms=Ms)
+        dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, Ki=1.46735*K, Ms=0.3673*Ms)
+        #1.663265306122449, 0.3
+        #dev.set_vals(Ki=0.0012132710579346336, Ms=165573.63124478742)
         print(dev)
 
         gen_fig1_data(dev, out_path)
@@ -136,14 +138,14 @@ def make_and_plot_fig1(dir_path):
     ax_t.set_ylim([0, 1])
     ax_t.set_title('Coin Bias')
 
-    fig1aLR_x = [t*1e9 for t in (np.loadtxt('./fig1aLR.txt',usecols=0))]
-    fig1aLR_y = np.loadtxt('./fig1aLR.txt',usecols=1)
-    fig1bLR295_x = np.loadtxt('./fig1bLR295.txt',usecols=0)
-    fig1bLR295_y = np.loadtxt('./fig1bLR295.txt',usecols=1)
-    fig1bLR300_x = np.loadtxt('./fig1bLR300.txt',usecols=0)
-    fig1bLR300_y = np.loadtxt('./fig1bLR300.txt',usecols=1)
-    fig1bLR305_x = np.loadtxt('./fig1bLR305.txt',usecols=0)
-    fig1bLR305_y = np.loadtxt('./fig1bLR305.txt',usecols=1)
+    fig1aLR_x = [t*1e9 for t in (np.loadtxt('./exp_data/fig1aLR.txt',usecols=0))]
+    fig1aLR_y = np.loadtxt('./exp_data/fig1aLR.txt',usecols=1)
+    fig1bLR295_x = np.loadtxt('./exp_data/fig1bLR295.txt',usecols=0)
+    fig1bLR295_y = np.loadtxt('./exp_data/fig1bLR295.txt',usecols=1)
+    fig1bLR300_x = np.loadtxt('./exp_data/fig1bLR300.txt',usecols=0)
+    fig1bLR300_y = np.loadtxt('./exp_data/fig1bLR300.txt',usecols=1)
+    fig1bLR305_x = np.loadtxt('./exp_data/fig1bLR305.txt',usecols=0)
+    fig1bLR305_y = np.loadtxt('./exp_data/fig1bLR305.txt',usecols=1)
 
     ax_t.scatter(fig1aLR_x, fig1aLR_y, color=colormap(1), s=12, marker='^', alpha = 1, label = "experiment")
     #ax_v.scatter(fig1bLR295_x, fig1bLR295_y, color=colormap(1), s=1.5, alpha = 1)
@@ -248,10 +250,10 @@ def make_and_plot_fig2(dir_path):
     ax.set_title('Coin Bias')
 
     # experimental results
-    fig2LR_exp_x = np.loadtxt('./fig2LR_exp.txt',usecols=0)
-    fig2LR_exp_y = np.loadtxt('./fig2LR_exp.txt',usecols=1)
-    fig2LR_FP_x = np.loadtxt('./fig2LR_FP.txt',usecols=0)
-    fig2LR_FP_y = np.loadtxt('./fig2LR_FP.txt',usecols=1)
+    fig2LR_exp_x = np.loadtxt('./exp_data/fig2LR_exp.txt',usecols=0)
+    fig2LR_exp_y = np.loadtxt('./exp_data/fig2LR_exp.txt',usecols=1)
+    fig2LR_FP_x = np.loadtxt('./exp_data/fig2LR_FP.txt',usecols=0)
+    fig2LR_FP_y = np.loadtxt('./exp_data/fig2LR_FP.txt',usecols=1)
 
     ax.scatter(fig2LR_exp_x, fig2LR_exp_y, color=colormap(1), s=12, marker='^', alpha = 1, label = "experiment")
     ax.plot(fig2LR_FP_x, fig2LR_FP_y, color=colormap(1), alpha = 1, label = "FP")
@@ -260,8 +262,8 @@ def make_and_plot_fig2(dir_path):
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig2_curves.svg")
-    pf.prompt_save_svg(fig, f"../results/scurve_dataset_{date_match.group(0)}/fig2.svg")
+    pf.prompt_save_svg(fig_v, f"../exp_data/results/scurve_dataset_{date_match.group(0)}/fig2_curves.svg")
+    pf.prompt_save_svg(fig, f"../exp_data/results/scurve_dataset_{date_match.group(0)}/fig2.svg")
 # ================================================================
 
 
@@ -334,10 +336,10 @@ def make_and_plot_fig3(dir_path):
     ax_b.set_title('Sensitivity to Voltage Amplitude')
 
     # experimental results
-    fig3bLR_exp_x = np.loadtxt('./fig3bLR_exp.txt',usecols=0)
-    fig3bLR_exp_y = np.loadtxt('./fig3bLR_exp.txt',usecols=1)
-    fig3bLR_FP_x = np.loadtxt('./fig3bLR_FP.txt',usecols=0)
-    fig3bLR_FP_y = np.loadtxt('./fig3bLR_FP.txt',usecols=1)
+    fig3bLR_exp_x = np.loadtxt('./exp_data/fig3bLR_exp.txt',usecols=0)
+    fig3bLR_exp_y = np.loadtxt('./exp_data/fig3bLR_exp.txt',usecols=1)
+    fig3bLR_FP_x = np.loadtxt('./exp_data/fig3bLR_FP.txt',usecols=0)
+    fig3bLR_FP_y = np.loadtxt('./exp_data/fig3bLR_FP.txt',usecols=1)
 
     ax_b.scatter(fig3bLR_exp_x, fig3bLR_exp_y, color=colormap(1), s=16, marker='^', alpha = 1, label = "experiment")
     ax_b.plot(fig3bLR_FP_x, fig3bLR_FP_y, color=colormap(1), alpha = 1, label = "FP")
@@ -347,8 +349,8 @@ def make_and_plot_fig3(dir_path):
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig3a.svg")
-    pf.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig3b.svg")
+    pf.prompt_save_svg(fig_a, f"../exp_data/results/scurve_dataset_{date_match.group(0)}/fig3a.svg")
+    pf.prompt_save_svg(fig_b, f"../exp_data/results/scurve_dataset_{date_match.group(0)}/fig3b.svg")
 # ================================================================
 
 
@@ -420,10 +422,10 @@ def make_and_plot_fig4(dir_path):
     ax_b.set_title('Sensitivity to Pulse Duration')
 
     # experimental results
-    fig4bLR_exp_x = np.loadtxt('./fig4bLR_exp.txt',usecols=0)
-    fig4bLR_exp_y = np.loadtxt('./fig4bLR_exp.txt',usecols=1)
-    fig4bLR_FP_x = np.loadtxt('./fig4bLR_FP.txt',usecols=0)
-    fig4bLR_FP_y = np.loadtxt('./fig4bLR_FP.txt',usecols=1)
+    fig4bLR_exp_x = np.loadtxt('./exp_data/fig4bLR_exp.txt',usecols=0)
+    fig4bLR_exp_y = np.loadtxt('./exp_data/fig4bLR_exp.txt',usecols=1)
+    fig4bLR_FP_x = np.loadtxt('./exp_data/fig4bLR_FP.txt',usecols=0)
+    fig4bLR_FP_y = np.loadtxt('./exp_data/fig4bLR_FP.txt',usecols=1)
 
     ax_b.scatter(fig4bLR_exp_x, fig4bLR_exp_y, color=colormap(1), s=12, marker='^', alpha = 1, label = "experiment")
     ax_b.plot(fig4bLR_FP_x, fig4bLR_FP_y, color=colormap(1), alpha = 1, label = "FP")
