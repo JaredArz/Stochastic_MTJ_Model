@@ -1,0 +1,18 @@
+
+#a=40e-9, b=40e-9
+
+TMR = 2.03 -- from original exp paper
+TMR = 1.24 -- from dev characterization paper
+
+Rp = 2530
+Rap = 5849
+
+tf = 2.6e-9
+
+alpha = 0.016
+
+first fitted values with correction: Ki=2.95*4.1128e-4, Ms=0.35*4.73077e5
+
+
+calculated RA_product = 3.18e-12
+
