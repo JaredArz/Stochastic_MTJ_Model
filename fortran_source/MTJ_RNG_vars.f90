@@ -36,6 +36,9 @@ module MTJ_RNG_vars
     real(kind(0.0d0)),parameter :: Nx = 3.5520320019e-10
     real(kind(0.0d0)),parameter :: Ny = 3.5520320019e-10
     real(kind(0.0d0)),parameter :: Nz = 0.99999999929
+    !real(kind(0.0d0)),parameter :: Nx = 0.0341667479238
+    !real(kind(0.0d0)),parameter :: Ny = 0.0341667479238
+    !real(kind(0.0d0)),parameter :: Nz = 0.931666504152
     real(kind(0.0d0)) :: Hx = 0.0
     real(kind(0.0d0)) :: Hy = 0.0
     real(kind(0.0d0)) :: Hz = 0.0

@@ -1,0 +1,4 @@
+../results/scurve_dataset_00:27:56
+../results/scurve_dataset_00:30:06
+../results/scurve_dataset_09:37:13 #may replace (fig3)
+ ../results/scurve_dataset_09:32:04

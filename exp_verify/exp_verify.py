@@ -30,6 +30,7 @@ plt.rc('text', usetex=True)
 plt.style.use(['science'])
 from scipy.signal import savgol_filter
 import re
+import matplotlib.lines as mlines
 
 from mtj_types_v3 import SWrite_MTJ_rng
 import plotting_funcs as pf
@@ -43,6 +44,24 @@ RA = 3.18e-12
 # =================
 
 # V_50/t_50 in this code will mean the voltage/time to get a 0.5 probability of switching
+
+def get_mk(T):
+    Tc = 1453
+    n = 1.804
+    q = 1.0583
+    Kstar = 4.389e5
+    Mstar = 5.8077e5
+    Ms_295 = 165576.94999
+    K_295 = 0.001161866/(2.6e-9)
+    cm = Ms_295 - Mstar*( 1 - (295/Tc)**q )
+    ck = K_295 - Kstar*( ( Ms_295/Mstar )**n )
+    #cm = 0
+    #ck = 0
+
+    Ms = Mstar*( 1 - (T/Tc)**q ) + cm
+    K = 2.6e-9*((Kstar)*( (Ms/Mstar)**n ) + ck)
+
+    return (K,Ms)
 
 def main():
     print("===========================================================")
@@ -59,44 +78,54 @@ def main():
         # NOTE: Ms found from Duc-The Ngo et al 2014 J. Phys. D: Appl. Phys. 47
         # NOTE: Rp is RA/A assuming RA is Rp*A
 
-        Ms = 5.80769e5 - (2.62206e2)*(300**1.058)
-        K = (2.6e-9 * 6.14314e-5)*(Ms**1.708613)
+        #Ms = 5.80769e5 - (2.62206e2)*(300**1.058) + 946270.189018873
+        #K = 2.6e-9 * ((6.14314e-5)*(Ms**1.708613) + 141623.699473255)
         #Keff = 2.6e-9 * ( (K/2.6e-9) - (2*np.pi*10**(-7) * Ms**2) )
-        dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, Ki=1.46735*K, Ms=0.3673*Ms)
-        #1.663265306122449, 0.3
+        #dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, Ki=1.46735*K, Ms=0.3673*Ms)
+        dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016)
+        #dev.set_vals(Ki=2.85*4.1128e-4, Ms=0.35*4.73077e5)
+        #dev.set_vals(Ki=2.825*4.1128e-4, Ms=0.35*4.73077e5)
+        #dev.set_vals(Ms=473076.923077, Ki = 158192.307692 * 2.6e-9)
+        #dev.set_vals(Ki=2.75*4.1128e-4, Ms=0.4*4.73077e5)
         #dev.set_vals(Ki=0.0012132710579346336, Ms=165573.63124478742)
+        #dev.set_vals(Ms = 165576.94999999998, Ki = 0.0011618660000000001)
+        K, Ms = get_mk(300)
+        print(K,Ms)
+        dev.set_vals(Ki=K, Ms=Ms)
         print(dev)
 
-        gen_fig1_data(dev, out_path)
+        gen_fig3_data(dev, out_path)
         print("--- %s seconds ---" % (time.time() - start_time))
     elif len(sys.argv) == 2:
         dir_path = sys.argv[1]
-        make_and_plot_fig1(dir_path)
+        make_and_plot_fig3(dir_path)
     else:
         print("too many arguments")
 
 
 def gen_fig1_data(dev, out_path):
     #samples_to_avg = 10000
-    samples_to_avg = 1000
-    pulse_durations = np.linspace(0, 3e-9, 29) #250
+    samples_to_avg = 10000
+    pulse_durations = [3.0e-10, 4.0e-10, 5.0e-10, 6.0e-10, 7.0e-10, 8.0e-10, 9.0e-10, 1.0e-09, 1.1e-09,
+               1.2e-09, 1.3e-09, 1.4e-09, 1.5e-09, 1.6e-09, 1.7e-09, 1.8e-09, 1.9e-09, 2.0e-09,
+               2.1e-09, 2.2e-09, 2.3e-09, 2.4e-09, 2.5e-09, 2.6e-09, 2.7e-09, 3.0e-09, 3.5e-09,
+               4.0e-09]
     voltages = np.linspace(-0.97919268, -0.43084478, 29) #250
-    #voltages = np.linspace(-1.2, 0, 28) #250
-    #voltages = np.linspace(0.2, 1.5, 250) #250
 
     V_50 = -0.715
-    helper.generate_pulse_duration_scurve(dev, pulse_durations, V_50,RA, 300, samples_to_avg, out_path=out_path, save_flag=True)
+    helper.generate_pulse_duration_scurve(dev, pulse_durations, V_50, RA, 300, samples_to_avg, out_path=out_path, save_flag=True)
     np.savez(f"{out_path}/metadata_pulse_duration.npz",
              pulse_durations=pulse_durations, V_50=V_50, T=300)
 
     dev.set_mag_vector()
 
     #samples_to_avg = 10000 #8000
-    samples_to_avg = 1000
-    #Temps = [295, 300, 305]
-    Temps = [300]
+    samples_to_avg = 11000
+    Temps = [295, 300, 305]
     t = 1e-9
     for T in Temps:
+        K, Ms = get_mk(T)
+        dev.set_vals(Ki=K, Ms=Ms)
         helper.generate_voltage_scurve(dev, voltages, RA, t, T, samples_to_avg, out_path=out_path, save_flag=True)
     np.savez(f"{out_path}/metadata_voltage.npz",
              voltages=voltages, pulse_duration=t, Temps=Temps)
@@ -112,17 +141,19 @@ def make_and_plot_fig1(dir_path):
     pulse_duration = metadata["pulse_duration"]
     voltages = metadata["voltages"]
     pulse_amplitude = [ np.abs(v) for v in voltages ]
+    colors = ['k','r','b']
     for i,f in enumerate(glob.glob(dir_path + "/*voltage_sweep*")):
       print("plotting")
       f_data = np.load(f)
       weights = f_data["weights"]
       T = f_data["T"]
-      ax_v.scatter(pulse_amplitude, weights, color=colormap(i), s=6)
+      ax_v.scatter(pulse_amplitude, weights,color=colors[i],marker='^', s=15)
+      ax_v.plot(pulse_amplitude, weights, linestyle = 'dashed', color=colors[i])
       #ax_v.plot(pulse_amplitude, weights, color=colormap(i), label=T, alpha=0.1)
     ax_v.set_xlabel('Pulse Amplitude [v]')
     ax_v.set_ylim([0, 1])
     #ax_v.set_xlim([-0.2, 10.1])
-    ax_v.set_ylabel('Weight')
+    ax_v.set_ylabel('p')
     ax_v.set_title('Coin Bias')
 
     # pulse duration scurves
@@ -131,10 +162,11 @@ def make_and_plot_fig1(dir_path):
     metadata = np.load(glob.glob(dir_path + "/*metadata_pulse*")[0])
     pulse_durations = metadata["pulse_durations"]
     pulse_durations_ns = [t * 1e9 for t in pulse_durations]
-    ax_t.scatter(pulse_durations_ns, weights, color=colormap(0), s=6)
+    ax_t.scatter(pulse_durations_ns, weights, color='r' , marker='^', s=12)
+    ax_t.plot(pulse_durations_ns, weights, 'r', linestyle='dashed' )
     #ax_t.plot(pulse_durations_ns, weights, color=colormap(i), alpha=0.1)
     ax_t.set_xlabel('Pulse Duration [ns]')
-    ax_t.set_ylabel('Weight')
+    ax_t.set_ylabel('p')
     ax_t.set_ylim([0, 1])
     ax_t.set_title('Coin Bias')
 
@@ -147,13 +179,27 @@ def make_and_plot_fig1(dir_path):
     fig1bLR305_x = np.loadtxt('./exp_data/fig1bLR305.txt',usecols=0)
     fig1bLR305_y = np.loadtxt('./exp_data/fig1bLR305.txt',usecols=1)
 
-    ax_t.scatter(fig1aLR_x, fig1aLR_y, color=colormap(1), s=12, marker='^', alpha = 1, label = "experiment")
-    #ax_v.scatter(fig1bLR295_x, fig1bLR295_y, color=colormap(1), s=1.5, alpha = 1)
-    ax_v.scatter(fig1bLR300_x, fig1bLR300_y, color=colormap(1), s=12, marker='^', alpha = 1, label = "experiment")
-    #ax_v.scatter(fig1bLR305_x, fig1bLR305_y, color=colormap(1), s=1.5, alpha = 1)
+    ax_t.plot(fig1aLR_x, fig1aLR_y, color='b', alpha=0.33)
+    ax_t.scatter(fig1aLR_x, fig1aLR_y, color='b', marker='s', s=12,alpha=0.5)
+    ax_v.plot(fig1bLR295_x, fig1bLR295_y, 'm', label = "295k", alpha=0.25)
+    ax_v.plot(fig1bLR300_x, fig1bLR300_y, 'k', label = "300K", alpha=0.25)
+    ax_v.plot(fig1bLR305_x, fig1bLR305_y, 'c', label = "305K",alpha=0.25)
+    ax_v.scatter(fig1bLR295_x, fig1bLR295_y, color='m', marker='s', s=12,alpha=0.2)
+    ax_v.scatter(fig1bLR300_x, fig1bLR300_y, color='k', marker='s', s=12,alpha=0.2)
+    ax_v.scatter(fig1bLR305_x, fig1bLR305_y, color='c', marker='s', s=12,alpha=0.2)
 
-    ax_v.legend(prop={'size': 12})
-    ax_t.legend(prop={'size': 12})
+    line1 = mlines.Line2D([], [], color=colormap(1), marker='s',
+                          markersize=6, label='experiment')
+    line2 = mlines.Line2D([], [], color=colormap(1), marker='^',
+                          markersize=6, label='macrospin model')
+    line3 = mlines.Line2D([], [], color=colormap(1), marker='s',
+                          markersize=6, label='experiment')
+    line4 = mlines.Line2D([], [], color=colormap(1), marker='^',
+                          markersize=6, label='macrospin model')
+    ax_v.legend(handles=[line1, line2])
+    ax_t.legend(handles=[line3, line4])
+    #ax_v.legend(prop={'size': 12})
+    #ax_t.legend(prop={'size': 12})
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
@@ -180,7 +226,7 @@ def gen_fig2_data(dev, out_path):
     print(dev)
     samples_to_avg = 10000 #10000
     pulse_durations = [1e-9, 5e-9, 1e-8, 5e-8, 1e-7]
-    voltages = np.linspace(-0.9 ,0, 100)
+    voltages = np.linspace(-0.97919268, -0.43084478, 100) #250
 
     T_delta = 5
     Temps = (300-T_delta, 300+T_delta)
@@ -188,9 +234,8 @@ def gen_fig2_data(dev, out_path):
     V_50s = []
     for pulse_duration in pulse_durations:
         for T in Temps:
-            Ms = -374.9*T + 583467 + (4.3077e5)*(0.35-1)
-            Ki = 0.5*2.6e-9*Ms*(-1.90331e-9*T**3 - 4.56545e-7*T**2 - 4.6935e-5*T + 0.770003) + (4.1128e-4)*(2.95-1)
-            dev.set_vals(Ki=Ki, Ms=Ms)
+            K, Ms = get_mk(T)
+            dev.set_vals(Ki=K, Ms=Ms)
             helper.generate_voltage_scurve(dev, voltages,RA, pulse_duration, T, samples_to_avg,
                                          out_path=out_path, save_flag=True)
         V_50s.append(helper.generate_voltage_scurve(dev, voltages,RA, pulse_duration, 300, samples_to_avg,
@@ -219,14 +264,12 @@ def make_and_plot_fig2(dir_path):
     for i, pulse_duration in enumerate(pulse_durations):
         # plot a pair of scurves for each pulse duration in addition
         # to calculating dp/dT for good measure
-        V_50_idx = find_idx_at_nearest(voltages, V_50s[i])
+        V_50_idx = helper.find_idx_at_nearest(voltages, V_50s[i])
         print(f"V50: {voltages[V_50_idx]}")
-        f_data_T1 = np.load( match_file(files, pulse_duration, Temps[1], 0) )
-        f_data_T0 = np.load( match_file(files, pulse_duration, Temps[0], 0) )
+        f_data_T1 = np.load( helper.match_file(files, pulse_duration, Temps[1], 0) )
+        f_data_T0 = np.load( helper.match_file(files, pulse_duration, Temps[0], 0) )
         weights_T1 = f_data_T1["weights"]
         weights_T0 = f_data_T0["weights"]
-        #weights_T1_smoothed = savgol_filter(weights_T1, 50, 9)
-        #weights_T0_smoothed = savgol_filter(weights_T0, 50, 9)
         dp = weights_T1[V_50_idx] - weights_T0[V_50_idx]
         #dp = weights_T1_smoothed[V_50_idx] - weights_T0_smoothed[V_50_idx]
         #print(f"dp: p_T1 - p_T0 = {weights_T1_smoothed[V_50_idx]} - {weights_T0_smoothed[V_50_idx]}" )
@@ -241,13 +284,13 @@ def make_and_plot_fig2(dir_path):
     ax_v.set_ylabel('Weight')
     ax_v.set_title('Coin Bias')
 
-    ax.stem(pulse_durations, dpdT)
-    ax.axhline(np.log(2)/(2*300))
+    ax.scatter(pulse_durations, dpdT, color = 'r', s=15, marker='^')
+    ax.axhline(np.log(2)/(2*300), linestyle = 'dashed')
     ax.set_xscale('log')
 
     ax.set_xlabel('Pulse Duration [s]')
     ax.set_ylabel('dp/dT [K-1]')
-    ax.set_title('Coin Bias')
+    ax.set_title('Sensitivity to Pulse Duration')
 
     # experimental results
     fig2LR_exp_x = np.loadtxt('./exp_data/fig2LR_exp.txt',usecols=0)
@@ -255,15 +298,24 @@ def make_and_plot_fig2(dir_path):
     fig2LR_FP_x = np.loadtxt('./exp_data/fig2LR_FP.txt',usecols=0)
     fig2LR_FP_y = np.loadtxt('./exp_data/fig2LR_FP.txt',usecols=1)
 
-    ax.scatter(fig2LR_exp_x, fig2LR_exp_y, color=colormap(1), s=12, marker='^', alpha = 1, label = "experiment")
-    ax.plot(fig2LR_FP_x, fig2LR_FP_y, color=colormap(1), alpha = 1, label = "FP")
+    ax.scatter(fig2LR_exp_x, fig2LR_exp_y, color='k', s=12, marker='s', alpha = 1)
+    ax.plot(fig2LR_FP_x, fig2LR_FP_y, color='0.7', alpha = 1)
 
-    ax.legend(prop={'size': 12})
+    line1 = mlines.Line2D([], [], color='k', marker='s',
+                          markersize=6, label='experiment')
+    line2 = mlines.Line2D([], [], color='r', marker='^',
+                          markersize=6, label='macrospin model')
+    line3 = mlines.Line2D([], [], color='0.7', linestyle='-',
+                          markersize=6, label='Fokker-Planck')
+    line4 = mlines.Line2D([], [], color='b', linestyle='--',
+                          markersize=6, label='Short-pulse limit')
+    ax.legend(handles=[line1, line2, line3, line4])
+    #ax.legend(prop={'size': 12})
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_v, f"../exp_data/results/scurve_dataset_{date_match.group(0)}/fig2_curves.svg")
-    pf.prompt_save_svg(fig, f"../exp_data/results/scurve_dataset_{date_match.group(0)}/fig2.svg")
+    pf.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig2_curves.svg")
+    pf.prompt_save_svg(fig, f"../results/scurve_dataset_{date_match.group(0)}/fig2.svg")
 # ================================================================
 
 
@@ -281,8 +333,8 @@ def gen_fig3_data(dev, out_path):
     # ====
 
     samples_to_avg = 10000
-    pulse_durations = [1e-9, 1e-8, 1e-7, 5e-7]
-    voltages = np.linspace(-0.9,0,100)
+    pulse_durations = [1e-11, 5e-10, 1e-9, 5e-9, 1e-8, 5e-8, 1e-7]
+    voltages = np.linspace(-0.97919268, -0.43084478, 150) #250
 
     T = 300
 
@@ -310,14 +362,14 @@ def make_and_plot_fig3(dir_path):
     dpdV = []
     #TODO: add measure of stddev
     for i, pulse_duration in enumerate(pulse_durations):
-        V_50_idx = find_idx_at_nearest(voltages, V_50s[i])
-        f_data = np.load(match_file(files, pulse_duration, 300, 0))
+        V_50_idx = helper.find_idx_at_nearest(voltages, V_50s[i])
+        f_data = np.load(helper.match_file(files, pulse_duration, 300, 0))
         weights = f_data["weights"]
         #weights_smoothed = savgol_filter(weights, 50, 7)
         #FIXME smooth or step
         #dp = (weights_smoothed[V_50_idx + 1]) - (weights_smoothed[V_50_idx - 1])
-        dp = (weights[V_50_idx + 2]) - (weights[V_50_idx - 2])
-        dV = (-voltages[V_50_idx + 2]) - (-voltages[V_50_idx - 2])
+        dp = (weights[V_50_idx + 1]) - (weights[V_50_idx - 1])
+        dV = (-voltages[V_50_idx + 1]) - (-voltages[V_50_idx - 1])
         dpdV.append(dp/dV)
         #Fig 3 a
         ax_a.scatter(pulse_amplitude, weights, s=5, color=colormap(i), alpha=1, label = pulse_duration)
@@ -327,7 +379,8 @@ def make_and_plot_fig3(dir_path):
     ax_a.set_xlabel('Pulse Amplitude [v]')
     ax_a.set_ylabel('p')
 
-    ax_b.plot(pulse_durations, dpdV, linestyle='dashed', color=colormap(4))
+    ax_b.scatter(pulse_durations[1:], dpdV[1:], color='r', marker='^', s = 15)
+    ax_b.plot(pulse_durations[1:], dpdV[1:], linestyle='dashed', color='r')
     #TODO add analytical curve...
     ax_b.set_xscale('log')
 
@@ -341,16 +394,23 @@ def make_and_plot_fig3(dir_path):
     fig3bLR_FP_x = np.loadtxt('./exp_data/fig3bLR_FP.txt',usecols=0)
     fig3bLR_FP_y = np.loadtxt('./exp_data/fig3bLR_FP.txt',usecols=1)
 
-    ax_b.scatter(fig3bLR_exp_x, fig3bLR_exp_y, color=colormap(1), s=16, marker='^', alpha = 1, label = "experiment")
-    ax_b.plot(fig3bLR_FP_x, fig3bLR_FP_y, color=colormap(1), alpha = 1, label = "FP")
+    ax_b.scatter(fig3bLR_exp_x, fig3bLR_exp_y, color='k', s=12, marker='s', alpha = 0.9)
+    ax_b.plot(fig3bLR_exp_x, fig3bLR_exp_y, color='k', alpha = 0.9)
 
-    ax_a.legend(prop={'size': 12})
-    ax_b.legend(prop={'size': 12})
+    ax_b.plot(fig3bLR_FP_x, fig3bLR_FP_y, color='b', alpha = 1, linestyle='--')
+
+    line1 = mlines.Line2D([], [], color='k', marker='s',
+                          markersize=6, label='experiment')
+    line2 = mlines.Line2D([], [], color='r', marker='^',
+                          markersize=6, label='macrospin model')
+    line3 = mlines.Line2D([], [], color='b', linestyle='--',
+                          markersize=6, label='Short-pulse limit')
+    ax_b.legend(handles=[line1, line2, line3])
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_a, f"../exp_data/results/scurve_dataset_{date_match.group(0)}/fig3a.svg")
-    pf.prompt_save_svg(fig_b, f"../exp_data/results/scurve_dataset_{date_match.group(0)}/fig3b.svg")
+    pf.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig3a.svg")
+    pf.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig3b.svg")
 # ================================================================
 
 
