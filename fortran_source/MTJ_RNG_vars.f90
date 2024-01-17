@@ -30,15 +30,9 @@ module MTJ_RNG_vars
     real(kind(0.0d0)),parameter :: l = 100e-9
     real(kind(0.0d0)),parameter :: rho = 200e-8
     ! NOTE: Nx,Ny,Nz are experimental values dependent on device geometry. 
-    !real(kind(0.0d0)),parameter :: Nx = 0.010613177892974
-    !real(kind(0.0d0)),parameter :: Ny = 0.010613177892974
-    !real(kind(0.0d0)),parameter :: Nz = 0.978773644214052
-    real(kind(0.0d0)),parameter :: Nx = 3.5520320019e-10
-    real(kind(0.0d0)),parameter :: Ny = 3.5520320019e-10
-    real(kind(0.0d0)),parameter :: Nz = 0.99999999929
-    !real(kind(0.0d0)),parameter :: Nx = 0.0341667479238
-    !real(kind(0.0d0)),parameter :: Ny = 0.0341667479238
-    !real(kind(0.0d0)),parameter :: Nz = 0.931666504152
+    real(kind(0.0d0)),parameter :: Nx = 0.138391020053
+    real(kind(0.0d0)),parameter :: Ny = 0.138391020053
+    real(kind(0.0d0)),parameter :: Nz = 0.723217959894
     real(kind(0.0d0)) :: Hx = 0.0
     real(kind(0.0d0)) :: Hy = 0.0
     real(kind(0.0d0)) :: Hz = 0.0
@@ -65,18 +59,6 @@ module MTJ_RNG_vars
 
             T       = real(T_in,dp)
             A1      = a*b*pi/4.0_dp
-
-            !compute Ki and Ms with temperature dependence (very specific to this device)
-            !overwrites any parameters passed in via python
-            !Ki = delta*kb*T/A1
-            !Ms = -374.9_dp*T + 583467_dp ! linear regression from data for this particular device in PHYS. REV. APPLIED 15, 034088 (2021) 
-            !Ms = 4.73077e5
-            !Ms = 0.35*4.73077e5 !VERYGOOD
-            !Ms = 0.35*4.73077e5
-
-            !Ki = 4.1128e-4
-            !Ki = 2.95*4.1128e-4 !VERYGOOD
-            !Ki = 2.95*4.1128e-4
 
             Bsat    = Ms*u0
             gammap  = gammall/(1.0_dp+alpha*alpha)

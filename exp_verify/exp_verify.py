@@ -42,6 +42,7 @@ RA = 3.18e-12
 # fortran code takes current so conversion is here
 # NOTE: assumes ohmic relationship
 # =================
+colormap = plt.cm.get_cmap('viridis', 8)
 
 # V_50/t_50 in this code will mean the voltage/time to get a 0.5 probability of switching
 
@@ -51,13 +52,14 @@ def get_mk(T):
     q = 1.0583
     Kstar = 4.389e5
     Mstar = 5.8077e5
-    Ms_295 = 165576.94999
+    Ms_295 = 165576.94999 #the values that match exp, eyeballed FIXME prior to demag calculation
     K_295 = 0.001161866/(2.6e-9)
     cm = Ms_295 - Mstar*( 1 - (295/Tc)**q )
     ck = K_295 - Kstar*( ( Ms_295/Mstar )**n )
     #cm = 0
     #ck = 0
 
+    # fitted curves with constant offset
     Ms = Mstar*( 1 - (T/Tc)**q ) + cm
     K = 2.6e-9*((Kstar)*( (Ms/Mstar)**n ) + ck)
 
@@ -78,34 +80,25 @@ def main():
         # NOTE: Ms found from Duc-The Ngo et al 2014 J. Phys. D: Appl. Phys. 47
         # NOTE: Rp is RA/A assuming RA is Rp*A
 
-        #Ms = 5.80769e5 - (2.62206e2)*(300**1.058) + 946270.189018873
-        #K = 2.6e-9 * ((6.14314e-5)*(Ms**1.708613) + 141623.699473255)
-        #Keff = 2.6e-9 * ( (K/2.6e-9) - (2*np.pi*10**(-7) * Ms**2) )
-        #dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, Ki=1.46735*K, Ms=0.3673*Ms)
         dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016)
-        #dev.set_vals(Ki=2.85*4.1128e-4, Ms=0.35*4.73077e5)
-        #dev.set_vals(Ki=2.825*4.1128e-4, Ms=0.35*4.73077e5)
-        #dev.set_vals(Ms=473076.923077, Ki = 158192.307692 * 2.6e-9)
-        #dev.set_vals(Ki=2.75*4.1128e-4, Ms=0.4*4.73077e5)
-        #dev.set_vals(Ki=0.0012132710579346336, Ms=165573.63124478742)
-        #dev.set_vals(Ms = 165576.94999999998, Ki = 0.0011618660000000001)
         K, Ms = get_mk(300)
-        print(K,Ms)
-        dev.set_vals(Ki=K, Ms=Ms)
-        print(dev)
 
-        gen_fig3_data(dev, out_path)
+        dev.set_vals(Ki=K, Ms=Ms)
+
+        # NOTE: change generating function here
+        gen_fig1_data(dev, out_path)
         print("--- %s seconds ---" % (time.time() - start_time))
     elif len(sys.argv) == 2:
         dir_path = sys.argv[1]
-        make_and_plot_fig3(dir_path)
+        # NOTE: change plotting function here
+        make_and_plot_fig1(dir_path)
     else:
         print("too many arguments")
 
 
 def gen_fig1_data(dev, out_path):
-    #samples_to_avg = 10000
-    samples_to_avg = 10000
+    #samples_to_avg = 1000
+    samples_to_avg = 500
     pulse_durations = [3.0e-10, 4.0e-10, 5.0e-10, 6.0e-10, 7.0e-10, 8.0e-10, 9.0e-10, 1.0e-09, 1.1e-09,
                1.2e-09, 1.3e-09, 1.4e-09, 1.5e-09, 1.6e-09, 1.7e-09, 1.8e-09, 1.9e-09, 2.0e-09,
                2.1e-09, 2.2e-09, 2.3e-09, 2.4e-09, 2.5e-09, 2.6e-09, 2.7e-09, 3.0e-09, 3.5e-09,
@@ -119,9 +112,9 @@ def gen_fig1_data(dev, out_path):
 
     dev.set_mag_vector()
 
-    #samples_to_avg = 10000 #8000
-    samples_to_avg = 11000
-    Temps = [295, 300, 305]
+    samples_to_avg = 1000
+    #Temps = [295, 300, 305]
+    Temps = [300]
     t = 1e-9
     for T in Temps:
         K, Ms = get_mk(T)
@@ -134,7 +127,6 @@ def gen_fig1_data(dev, out_path):
 def make_and_plot_fig1(dir_path):
     fig_v, ax_v = pf.plot_init()
     fig_t, ax_t = pf.plot_init()
-    colormap = plt.cm.get_cmap('viridis', 5)
 
     # voltage scurves
     metadata = np.load(glob.glob(dir_path + "/*metadata_voltage*")[0])
@@ -143,16 +135,13 @@ def make_and_plot_fig1(dir_path):
     pulse_amplitude = [ np.abs(v) for v in voltages ]
     colors = ['k','r','b']
     for i,f in enumerate(glob.glob(dir_path + "/*voltage_sweep*")):
-      print("plotting")
       f_data = np.load(f)
       weights = f_data["weights"]
       T = f_data["T"]
       ax_v.scatter(pulse_amplitude, weights,color=colors[i],marker='^', s=15)
       ax_v.plot(pulse_amplitude, weights, linestyle = 'dashed', color=colors[i])
-      #ax_v.plot(pulse_amplitude, weights, color=colormap(i), label=T, alpha=0.1)
     ax_v.set_xlabel('Pulse Amplitude [v]')
     ax_v.set_ylim([0, 1])
-    #ax_v.set_xlim([-0.2, 10.1])
     ax_v.set_ylabel('p')
     ax_v.set_title('Coin Bias')
 
@@ -164,7 +153,6 @@ def make_and_plot_fig1(dir_path):
     pulse_durations_ns = [t * 1e9 for t in pulse_durations]
     ax_t.scatter(pulse_durations_ns, weights, color='r' , marker='^', s=12)
     ax_t.plot(pulse_durations_ns, weights, 'r', linestyle='dashed' )
-    #ax_t.plot(pulse_durations_ns, weights, color=colormap(i), alpha=0.1)
     ax_t.set_xlabel('Pulse Duration [ns]')
     ax_t.set_ylabel('p')
     ax_t.set_ylim([0, 1])
@@ -198,8 +186,6 @@ def make_and_plot_fig1(dir_path):
                           markersize=6, label='macrospin model')
     ax_v.legend(handles=[line1, line2])
     ax_t.legend(handles=[line3, line4])
-    #ax_v.legend(prop={'size': 12})
-    #ax_t.legend(prop={'size': 12})
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
@@ -223,10 +209,9 @@ def gen_fig2_data(dev, out_path):
     # for the default device configuration, V_50 = 0.3940 at 1ns, 300K
     # ====
 
-    print(dev)
-    samples_to_avg = 10000 #10000
+    samples_to_avg = 10000
     pulse_durations = [1e-9, 5e-9, 1e-8, 5e-8, 1e-7]
-    voltages = np.linspace(-0.97919268, -0.43084478, 100) #250
+    voltages = np.linspace(-0.97919268, -0.43084478, 100)
 
     T_delta = 5
     Temps = (300-T_delta, 300+T_delta)
@@ -254,7 +239,6 @@ def make_and_plot_fig2(dir_path):
     voltages = metadata["voltages"]
     V_50s = metadata["V_50s"]
 
-    colormap = plt.cm.get_cmap('viridis', len(pulse_durations)+1)
     files = glob.glob(dir_path + "/*voltage_sweep*")
 
     dT = (Temps[1] - Temps[0])
@@ -271,14 +255,9 @@ def make_and_plot_fig2(dir_path):
         weights_T1 = f_data_T1["weights"]
         weights_T0 = f_data_T0["weights"]
         dp = weights_T1[V_50_idx] - weights_T0[V_50_idx]
-        #dp = weights_T1_smoothed[V_50_idx] - weights_T0_smoothed[V_50_idx]
-        #print(f"dp: p_T1 - p_T0 = {weights_T1_smoothed[V_50_idx]} - {weights_T0_smoothed[V_50_idx]}" )
-        print(f"--- {dp}")
         dpdT.append(dp/dT)
         ax_v.scatter(voltages, weights_T0, s=5, color=colormap(i))
         ax_v.scatter(voltages, weights_T1, s=5, color=colormap(i))
-        #ax_v.plot(voltages, weights_T0_smoothed, alpha = 0.5, color=colormap(i), label=Temps[0])
-        #ax_v.plot(voltages, weights_T1_smoothed, alpha = 0.5, color=colormap(i), label=Temps[1])
 
     ax_v.set_xlabel('Voltage [v]')
     ax_v.set_ylabel('Weight')
@@ -310,7 +289,6 @@ def make_and_plot_fig2(dir_path):
     line4 = mlines.Line2D([], [], color='b', linestyle='--',
                           markersize=6, label='Short-pulse limit')
     ax.legend(handles=[line1, line2, line3, line4])
-    #ax.legend(prop={'size': 12})
 
     pf.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
@@ -356,7 +334,6 @@ def make_and_plot_fig3(dir_path):
     pulse_amplitude = [ np.abs(v) for v in voltages ]
     V_50s = metadata["V_50s"]
 
-    colormap = plt.cm.get_cmap('viridis', len(pulse_durations)+1)
     files = glob.glob(dir_path + "/*voltage_sweep*")
 
     dpdV = []
@@ -365,9 +342,6 @@ def make_and_plot_fig3(dir_path):
         V_50_idx = helper.find_idx_at_nearest(voltages, V_50s[i])
         f_data = np.load(helper.match_file(files, pulse_duration, 300, 0))
         weights = f_data["weights"]
-        #weights_smoothed = savgol_filter(weights, 50, 7)
-        #FIXME smooth or step
-        #dp = (weights_smoothed[V_50_idx + 1]) - (weights_smoothed[V_50_idx - 1])
         dp = (weights[V_50_idx + 1]) - (weights[V_50_idx - 1])
         dV = (-voltages[V_50_idx + 1]) - (-voltages[V_50_idx - 1])
         dpdV.append(dp/dV)
@@ -381,7 +355,6 @@ def make_and_plot_fig3(dir_path):
 
     ax_b.scatter(pulse_durations[1:], dpdV[1:], color='r', marker='^', s = 15)
     ax_b.plot(pulse_durations[1:], dpdV[1:], linestyle='dashed', color='r')
-    #TODO add analytical curve...
     ax_b.set_xscale('log')
 
     ax_b.set_xlabel('Pulse Duration [s]')
@@ -441,6 +414,8 @@ def gen_fig4_data(dev, out_path):
              t_50s=t_50s, T=T)
 
 
+# FIXME: fig 4 not entirely working/verified
+# FIXME
 def make_and_plot_fig4(dir_path):
     fig_a, ax_a = pf.plot_init()
     fig_b, ax_b = pf.plot_init()
