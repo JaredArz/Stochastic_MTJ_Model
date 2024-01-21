@@ -17,7 +17,7 @@ def draw_const(x,var,csig):
 #============================= Parent class =========================================
 class MTJ():
      def __init__(self,mtj_type,dflt_params,dflt_noise,dflt_m):
-         shared_params = ('Ms','Ki','TMR','Rp','a','b','tf','alpha','eta','d','t_pulse','t_relax')
+         shared_params = ('Ms','Ki','TMR','Rp','a','b','tf','alpha','eta','d','t_pulse','t_relax','T')
          valid_params = list(shared_params)
          # add parameters unique to mtj type into valid_params
          for key, _ in dflt_params.items():
@@ -100,12 +100,12 @@ class MTJ():
 
      def print_expected_params(self):
          print("Expecting for all MTJ types:")
-         print("Ms, Ki, TMR, Rp,a, b, tf, alpha, eta, d, t_pulse, t_relax,")
+         print("Ms, Ki, TMR, Rp,a, b, tf, alpha, eta, d, t_pulse, t_relax, T,")
          print("and for ",end="")
          if self.mtj_type == SHE:
              print("SHE: J_she, Hy ( optional )")
          elif self.mtj_type == SWrite:
-             print("SWrite: J_reset, H_reset, t_reset")
+             print("SWrite: J_reset, t_reset, H_reset (optional)")
          elif self.mtj_type == VCMA:
              print("VCMA: v_pulse")
 #================================================================================
@@ -130,6 +130,7 @@ class SHE_MTJ_rng(MTJ):
 
 class SWrite_MTJ_rng(MTJ):
     def __init__(self):
+        # FIXME initial condition may have impact on results
         dflt_m = {"theta"  : 99*np.pi/100,
         #dflt_m = {"theta"  : np.pi/100,
                   "phi"    : np.random.rand()*2*np.pi}
@@ -143,7 +144,8 @@ class SWrite_MTJ_rng(MTJ):
                        "tf" : 1.1e-9,       "alpha" :0.03,
                        "eta" : 0.3,         "d"  : 3e-9,
                        "t_pulse" : 1e-9,
-                       "t_relax" : 10e-9,  "t_reset" : 10e-9}
+                       "t_relax" : 10e-9,  "t_reset" : 10e-9,
+                       'T' : 300}
         super().__init__(SWrite,dflt_params,dflt_noise,dflt_m)
 
 class VCMA_MTJ_rng(MTJ):

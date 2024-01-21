@@ -5,26 +5,26 @@ import os
 import signal
 import numpy as np
 
-def mtj_sample(dev,Jstt,dump_mod=1,view_mag_flag=0,file_ID=1,config_check=0,T=300) -> (int,float):
+def mtj_sample(dev,Jstt,dump_mod=1,view_mag_flag=0,file_ID=1,config_check=0) -> (int,float):
     try:
         # fortran call here.
         if (dev.mtj_type == 0):
             energy, bit, theta_end, phi_end = f90.sampling.sample_she(Jstt,\
                     dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d,\
-                    dev.t_pulse, dev.t_relax,T,\
+                    dev.t_pulse, dev.t_relax,dev.T,\
                     dump_mod, view_mag_flag, dev.sample_count, file_ID, config_check)
         elif (dev.mtj_type == 1):
             energy, bit, theta_end, phi_end = f90.sampling.sample_swrite(Jstt,\
                     dev.J_reset,dev.H_reset,dev.theta,dev.phi,dev.Ki,dev.TMR,dev.Rp,\
                     dev.a,dev.b,dev.tf,dev.alpha,dev.Ms,dev.eta,dev.d,\
-                    dev.t_pulse,dev.t_relax,dev.t_reset,T,\
+                    dev.t_pulse,dev.t_relax,dev.t_reset,dev.T,\
                     dump_mod,view_mag_flag,dev.sample_count,file_ID,config_check)
         elif (dev.mtj_type == 2):
             energy, bit, theta_end, phi_end = f90.sampling.sample_vcma(Jstt,\
                     dev.v_pulse, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d,\
-                    dev.t_pulse, dev.t_relax,T,\
+                    dev.t_pulse, dev.t_relax,dev.T,\
                     dump_mod, view_mag_flag, dev.sample_count, file_ID, config_check)
         else:
             dev.print_init_error()
