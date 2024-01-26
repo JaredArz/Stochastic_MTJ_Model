@@ -32,9 +32,9 @@ def main():
 
     V_50 = funcs.p_to_V(0.5, ps, V_range)
 
-    word_size = 1
-    length = int(10)
-    depth = 1
+    word_size = 8
+    length = 100000
+    depth = 2
 
     gen_wordstream(dev, V_50, word_size, length, out_dir + '/p_05')
 

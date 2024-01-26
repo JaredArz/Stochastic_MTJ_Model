@@ -26,7 +26,7 @@ def get_out_path() -> str:
     return out_path
 
 def get_uniformity(path_to_file, word_size):
-    word_stream = np.loadtxt(path_to_file)
+    word_stream = np.load(path_to_file)
 
     word_freq = np.zeros( 2**word_size )
 
@@ -45,7 +45,7 @@ def compute_V_range():
 
 
 def compute_weights(dev, V_range):
-    samples_to_avg = 100
+    samples_to_avg = 10000
     # initializes, should be run at start
     dev.set_mag_vector()
     return [ helper.avg_weight_across_samples(dev, V, samples_to_avg) for V in V_range ]
