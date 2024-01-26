@@ -45,7 +45,7 @@ def compute_V_range():
 
 
 def compute_weights(dev, V_range):
-    samples_to_avg = 10000
+    samples_to_avg = 1000
     # initializes, should be run at start
     dev.set_mag_vector()
     return [ helper.avg_weight_across_samples(dev, V, samples_to_avg) for V in V_range ]
