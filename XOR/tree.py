@@ -1,5 +1,4 @@
 import numpy as np
-import os
 
 class node:
     def __init__(self, fname):
@@ -20,45 +19,28 @@ def is_leaf(root):
     else:
         return False
 
-def clean_tree(root):
-    if is_leaf(root):
-        return
-    elif root.fname is not None:
-        os.remove(root.fname)
-        root.fname = None
-
-    clean_tree(root.left)
-    clean_tree(root.right)
-
-
+NODE_COUNTER = 0
 def build_tree(generator, args, root, depth, out_dir):
-    build_tree_helper(generator, args, root, depth, out_dir)
-    clean_tree(root)
-    return
+    global NODE_COUNTER
 
-
-#remove global variable somehow, kinda janky
-#also wasted compute in generating whole tree then cleaning afterwards
-global_node_counter = 0
-def build_tree_helper(generator, args, root, depth, out_dir):
-    global global_node_counter
     if depth < 1:
         return
 
-    file_L = out_dir + f"/h{int(depth)}_L_{global_node_counter}.txt"
-    generator(*args, file_L)
+    if depth == 1:
+        file_L = out_dir + f"/h{int(depth)}_L_{NODE_COUNTER}.npy"
+        generator(*args, file_L)
+        NODE_COUNTER+=1
+        file_R = out_dir + f"/h{int(depth)}_R_{NODE_COUNTER}.npy"
+        generator(*args, file_R)
+        NODE_COUNTER+=1
+    else:
+        file_L = None
+        file_R = None
+
     L = node( file_L )
-
-    global_node_counter += 1
-
-    file_R = out_dir + f"/h{int(depth)}_R_{global_node_counter}.txt"
-    generator(*args, file_R)
     R = node( file_R )
-
-    global_node_counter += 1
-
-    root.left = L
+    root.left  = L
     root.right = R
 
-    build_tree_helper(generator, args, root.left, depth/2, out_dir)
-    build_tree_helper(generator, args, root.right, depth/2, out_dir)
+    build_tree(generator, args, root.left, depth/2, out_dir)
+    build_tree(generator, args, root.right, depth/2, out_dir)
