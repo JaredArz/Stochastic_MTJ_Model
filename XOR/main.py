@@ -20,17 +20,20 @@ def main():
 
     dev = SWrite_MTJ_rng()
     dev.set_vals(0)
-    T = 300
-    dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016,T=T, RA=3.18e-12)
     #FIXME prior to demag calculation
+    dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, RA=3.18e-12)
     dev.set_vals(Ms_295 = 165576.94999)
-    stddev = 0.00
-    dev.set_vals(K_295 = (0.001161866/(2.6e-9)) * np.random.normal(1,stddev,1) )
 
     V_range = funcs.compute_V_range()
     ps = funcs.compute_weights(dev, V_range)
 
     V_50 = funcs.p_to_V(0.5, ps, V_range)
+
+
+    T = 305
+    stddev = 0.0
+    dev.set_vals(K_295 = (0.001161866/(2.6e-9)) * np.random.normal(1,stddev,1) )
+    dev.set_vals(T=T)
 
     word_size = 8
     length = 100000
