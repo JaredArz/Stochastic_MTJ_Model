@@ -30,8 +30,8 @@ def get_uniformity(path_to_file, word_size):
 
     word_freq = np.zeros( 2**word_size )
 
-    for word_value in word_stream:
-        word_freq[ int(word_value) ] += 1
+    for number in word_stream:
+        word_freq[ int(number) ] += 1
 
     return word_freq
 
@@ -40,12 +40,12 @@ def compute_V_range():
     # V50% is a function of known variables and V_cutoff where V_cutoff is solvable.
     # see Rehm papers.
 
-    V_range = np.linspace(-0.979122, -0.43089, 100)
+    V_range = np.linspace(-0.979122, -0.43089, 150)
     return V_range
 
 
 def compute_weights(dev, V_range):
-    samples_to_avg = 10000
+    samples_to_avg = 50000
     # initializes, should be run at start
     dev.set_mag_vector()
     return [ helper.avg_weight_across_samples(dev, V, samples_to_avg) for V in V_range ]
