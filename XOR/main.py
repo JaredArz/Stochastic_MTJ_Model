@@ -30,20 +30,22 @@ def main():
     V_50 = funcs.p_to_V(0.5, ps, V_range)
 
 
-    T = 305
+    T = 300
     stddev = 0.0
     dev.set_vals(K_295 = (0.001161866/(2.6e-9)) * np.random.normal(1,stddev,1) )
     dev.set_vals(T=T)
 
     word_size = 8
     length = 100000
-    depth = 2
+    #depth = 1
 
     gen_wordstream(dev, V_50, word_size, length, out_dir + '/p_05')
 
+    '''
     gen_wordstream_with_XOR(gen_wordstream,
                             (dev, V_50, word_size, length),
                             depth, out_dir)
+    '''
 
 
     print(f"--- {(time.time() - start_time):.4} seconds ---")
