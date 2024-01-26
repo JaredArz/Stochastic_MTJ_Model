@@ -137,15 +137,15 @@ class SWrite_MTJ_rng(MTJ):
         dflt_noise = {"Ki"  : 0.05,
                       "Rp"  : 0.05,
                       "TMR" : 0.05}
-        dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
-                       "TMR": 1.5,         "Ms" : 1.2e6,
+        dflt_params = {"K_295" : 1.0056364e-3,"Rp" : 5e3,
+                       "TMR": 1.5,         "Ms_295" : 1.2e6,
                        "J_reset": 5e11,    "H_reset": 0,
-                       "a"  : 50e-9,        "b"  : 50e-9,
-                       "tf" : 1.1e-9,       "alpha" :0.03,
-                       "eta" : 0.3,         "d"  : 3e-9,
+                       "a"  : 50e-9,       "b"  : 50e-9,
+                       "tf" : 1.1e-9,      "alpha" :0.03,
+                       "eta" : 0.3,        "d"  : 3e-9,
                        "t_pulse" : 1e-9,
                        "t_relax" : 10e-9,  "t_reset" : 10e-9,
-                       'T' : 300}
+                       'T' : 300,          "RA" : 3.18e-12}
         super().__init__(SWrite,dflt_params,dflt_noise,dflt_m)
 
 class VCMA_MTJ_rng(MTJ):

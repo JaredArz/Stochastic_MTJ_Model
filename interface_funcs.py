@@ -1,27 +1,49 @@
 import sys
-sys.path.append("./fortran_source")
+sys.path.append("../fortran_source")
 import sampling as f90
 import os
 import signal
 import numpy as np
 
-def mtj_sample(dev,Jstt,dump_mod=1,view_mag_flag=0,file_ID=1,config_check=0) -> (int,float):
+# NOTE: assumes ohmic relationship
+def V_to_J(dev, V):
+    return V/dev.RA
+
+def compute_K_and_Ms(K_295, Ms_295, T):
+    Tc = 1453
+    n = 1.804
+    q = 1.0583
+    Kstar = 4.389e5
+    Mstar = 5.8077e5
+    c_Ms = Ms_295 - Mstar*( 1 - (295/Tc)**q )
+    c_K = K_295 - Kstar*( ( Ms_295/Mstar )**n )
+
+    # fitted curves with constant offset
+    Ms = Mstar*( 1 - (T/Tc)**q ) + c_Ms
+    K = 2.6e-9*((Kstar)*( (Ms/Mstar)**n ) + c_K)
+
+    return (K,Ms)
+
+def mtj_sample(dev,V,dump_mod=1,view_mag_flag=0,file_ID=1,config_check=0) -> (int,float):
     try:
         # fortran call here.
         if (dev.mtj_type == 0):
-            energy, bit, theta_end, phi_end = f90.sampling.sample_she(Jstt,\
+            energy, bit, theta_end, phi_end = f90.sampling.sample_she(V_to_J(dev,V),\
                     dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d,\
                     dev.t_pulse, dev.t_relax,dev.T,\
                     dump_mod, view_mag_flag, dev.sample_count, file_ID, config_check)
         elif (dev.mtj_type == 1):
-            energy, bit, theta_end, phi_end = f90.sampling.sample_swrite(Jstt,\
-                    dev.J_reset,dev.H_reset,dev.theta,dev.phi,dev.Ki,dev.TMR,dev.Rp,\
-                    dev.a,dev.b,dev.tf,dev.alpha,dev.Ms,dev.eta,dev.d,\
+
+            K, Ms = compute_K_and_Ms(dev.K_295, dev.Ms_295, dev.T)
+
+            energy, bit, theta_end, phi_end = f90.sampling.sample_swrite(V_to_J(dev,V),\
+                    dev.J_reset,dev.H_reset,dev.theta,dev.phi,K,dev.TMR,dev.Rp,\
+                    dev.a,dev.b,dev.tf,dev.alpha,Ms,dev.eta,dev.d,\
                     dev.t_pulse,dev.t_relax,dev.t_reset,dev.T,\
                     dump_mod,view_mag_flag,dev.sample_count,file_ID,config_check)
         elif (dev.mtj_type == 2):
-            energy, bit, theta_end, phi_end = f90.sampling.sample_vcma(Jstt,\
+            energy, bit, theta_end, phi_end = f90.sampling.sample_vcma(V_to_J(dev,V),\
                     dev.v_pulse, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d,\
                     dev.t_pulse, dev.t_relax,dev.T,\

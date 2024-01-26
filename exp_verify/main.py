@@ -14,12 +14,12 @@
 #                    |
 #               this_script.py
 
-import sys
-sys.path.append('./')
-sys.path.append('../')
-sys.path.append('../fortran_source')
+# V_50/t_50 in this code will mean the
+# voltage/time to get a 0.5 probability of switching
 
-import os
+import sys
+sys.path.append('../')
+
 import time
 import numpy as np
 import glob
@@ -28,74 +28,43 @@ import matplotlib.style as style
 import scienceplots
 plt.rc('text', usetex=True)
 plt.style.use(['science'])
-from scipy.signal import savgol_filter
 import re
 import matplotlib.lines as mlines
 
 from mtj_types_v3 import SWrite_MTJ_rng
-import plotting_funcs as pf
-import helper_exp_verify as helper
+import helper_funcs as helper
+import exp_verify_funcs as funcs
 
-# === Constants ===
-RA = 3.18e-12
-# working in voltage since paper does,
-# fortran code takes current so conversion is here
-# NOTE: assumes ohmic relationship
-# =================
-colormap = plt.cm.get_cmap('viridis', 8)
-
-# V_50/t_50 in this code will mean the voltage/time to get a 0.5 probability of switching
-
-def get_mk(T):
-    Tc = 1453
-    n = 1.804
-    q = 1.0583
-    Kstar = 4.389e5
-    Mstar = 5.8077e5
-    Ms_295 = 165576.94999 #the values that match exp, eyeballed FIXME prior to demag calculation
-    K_295 = 0.001161866/(2.6e-9)
-    cm = Ms_295 - Mstar*( 1 - (295/Tc)**q )
-    ck = K_295 - Kstar*( ( Ms_295/Mstar )**n )
-    #cm = 0
-    #ck = 0
-
-    # fitted curves with constant offset
-    Ms = Mstar*( 1 - (T/Tc)**q ) + cm
-    K = 2.6e-9*((Kstar)*( (Ms/Mstar)**n ) + ck)
-
-    return (K,Ms)
+colormap = plt.colormaps['viridis']
 
 def main():
-    print("===========================================================")
-    print("Script takes an optional argument. Call with path to data folder if plotting existing data.")
-    print("Uncomment function call within script to choose between fig 1,2,etc.")
-    print("===========================================================")
+    print("=========================================================")
+    print("Script takes an optional argument.")
+    print("Call with path to data folder if plotting existing data.")
+    print("=========================================================")
     if len(sys.argv) == 1:
         start_time = time.time()
-        out_path = helper.get_out_path()
+        out_path = funcs.get_out_path()
+        print("Output path:")
         print(out_path)
+        print("===========")
+
         dev = SWrite_MTJ_rng()
         dev.set_mag_vector()
         dev.set_vals(0)
-        # NOTE: Ms found from Duc-The Ngo et al 2014 J. Phys. D: Appl. Phys. 47
-        # NOTE: Rp is RA/A assuming RA is Rp*A
+        dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, RA=3.18e-12)
+        #FIXME prior to demag calculation
+        dev.set_vals(Ms_295 = 165576.94999, K_295 = 0.001161866/(2.6e-9))
 
-        dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016)
-        K, Ms = get_mk(300)
-
-        dev.set_vals(Ki=K, Ms=Ms)
-
-        # NOTE: change generating function here
-        gen_fig1_data(dev, out_path)
+        gen_fig2_data(dev, out_path)
         print("--- %s seconds ---" % (time.time() - start_time))
     elif len(sys.argv) == 2:
         dir_path = sys.argv[1]
-        # NOTE: change plotting function here
-        make_and_plot_fig1(dir_path)
+        make_and_plot_fig2(dir_path)
     else:
         print("too many arguments")
 
-
+# =================================
 def gen_fig1_data(dev, out_path):
     #samples_to_avg = 1000
     samples_to_avg = 500
@@ -106,7 +75,8 @@ def gen_fig1_data(dev, out_path):
     voltages = np.linspace(-0.97919268, -0.43084478, 29) #250
 
     V_50 = -0.715
-    helper.generate_pulse_duration_scurve(dev, pulse_durations, V_50, RA, 300, samples_to_avg, out_path=out_path, save_flag=True)
+    dev.set_vals(T=300)
+    funcs.generate_pulse_duration_scurve(dev, pulse_durations, V_50, 300, samples_to_avg, out_path=out_path, save_flag=True)
     np.savez(f"{out_path}/metadata_pulse_duration.npz",
              pulse_durations=pulse_durations, V_50=V_50, T=300)
 
@@ -117,16 +87,15 @@ def gen_fig1_data(dev, out_path):
     Temps = [300]
     t = 1e-9
     for T in Temps:
-        K, Ms = get_mk(T)
-        dev.set_vals(Ki=K, Ms=Ms)
-        helper.generate_voltage_scurve(dev, voltages, RA, t, T, samples_to_avg, out_path=out_path, save_flag=True)
+        dev.set_vals(T=T)
+        funcs.generate_voltage_scurve(dev, voltages, t, T, samples_to_avg, out_path=out_path, save_flag=True)
     np.savez(f"{out_path}/metadata_voltage.npz",
              voltages=voltages, pulse_duration=t, Temps=Temps)
 
 
 def make_and_plot_fig1(dir_path):
-    fig_v, ax_v = pf.plot_init()
-    fig_t, ax_t = pf.plot_init()
+    fig_v, ax_v = helper.plot_init()
+    fig_t, ax_t = helper.plot_init()
 
     # voltage scurves
     metadata = np.load(glob.glob(dir_path + "/*metadata_voltage*")[0])
@@ -187,17 +156,11 @@ def make_and_plot_fig1(dir_path):
     ax_v.legend(handles=[line1, line2])
     ax_t.legend(handles=[line3, line4])
 
-    pf.prompt_show()
+    helper.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_t, f"../results/scurve_dataset_{date_match.group(0)}/fig1a.svg")
-    pf.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig1b.svg")
+    helper.prompt_save_svg(fig_t, f"../results/scurve_dataset_{date_match.group(0)}/fig1a.svg")
+    helper.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig1b.svg")
 # ================================================================
-
-
-
-
-
-
 
 # ================================================================
 def gen_fig2_data(dev, out_path):
@@ -209,8 +172,9 @@ def gen_fig2_data(dev, out_path):
     # for the default device configuration, V_50 = 0.3940 at 1ns, 300K
     # ====
 
-    samples_to_avg = 10000
-    pulse_durations = [1e-9, 5e-9, 1e-8, 5e-8, 1e-7]
+    samples_to_avg = 1000
+    #pulse_durations = [1e-9, 5e-9, 1e-8, 5e-8, 1e-7]
+    pulse_durations = [1e-9, 5e-9, 1e-8]
     voltages = np.linspace(-0.97919268, -0.43084478, 100)
 
     T_delta = 5
@@ -219,19 +183,18 @@ def gen_fig2_data(dev, out_path):
     V_50s = []
     for pulse_duration in pulse_durations:
         for T in Temps:
-            K, Ms = get_mk(T)
-            dev.set_vals(Ki=K, Ms=Ms)
-            helper.generate_voltage_scurve(dev, voltages,RA, pulse_duration, T, samples_to_avg,
+            dev.set_vals(T=T)
+            funcs.generate_voltage_scurve(dev, voltages, pulse_duration, T, samples_to_avg,
                                          out_path=out_path, save_flag=True)
-        V_50s.append(helper.generate_voltage_scurve(dev, voltages,RA, pulse_duration, 300, samples_to_avg,
+        V_50s.append(funcs.generate_voltage_scurve(dev, voltages, pulse_duration, 300, samples_to_avg,
                                                   save_flag=False))
 
     np.savez(f"{out_path}/metadata_fig2.npz",
              voltages=voltages, V_50s=V_50s, Temps=Temps, pulse_durations=pulse_durations)
 
 def make_and_plot_fig2(dir_path):
-    fig, ax = pf.plot_init()
-    fig_v, ax_v = pf.plot_init()
+    fig, ax = helper.plot_init()
+    fig_v, ax_v = helper.plot_init()
 
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
     pulse_durations = metadata["pulse_durations"]
@@ -250,8 +213,8 @@ def make_and_plot_fig2(dir_path):
         # to calculating dp/dT for good measure
         V_50_idx = helper.find_idx_at_nearest(voltages, V_50s[i])
         print(f"V50: {voltages[V_50_idx]}")
-        f_data_T1 = np.load( helper.match_file(files, pulse_duration, Temps[1], 0) )
-        f_data_T0 = np.load( helper.match_file(files, pulse_duration, Temps[0], 0) )
+        f_data_T1 = np.load( funcs.match_file(files, pulse_duration, Temps[1], 0) )
+        f_data_T0 = np.load( funcs.match_file(files, pulse_duration, Temps[0], 0) )
         weights_T1 = f_data_T1["weights"]
         weights_T0 = f_data_T0["weights"]
         dp = weights_T1[V_50_idx] - weights_T0[V_50_idx]
@@ -290,18 +253,11 @@ def make_and_plot_fig2(dir_path):
                           markersize=6, label='Short-pulse limit')
     ax.legend(handles=[line1, line2, line3, line4])
 
-    pf.prompt_show()
+    helper.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig2_curves.svg")
-    pf.prompt_save_svg(fig, f"../results/scurve_dataset_{date_match.group(0)}/fig2.svg")
+    helper.prompt_save_svg(fig_v, f"../results/scurve_dataset_{date_match.group(0)}/fig2_curves.svg")
+    helper.prompt_save_svg(fig, f"../results/scurve_dataset_{date_match.group(0)}/fig2.svg")
 # ================================================================
-
-
-
-
-
-
-
 
 
 # ================================================================
@@ -310,23 +266,24 @@ def gen_fig3_data(dev, out_path):
     # Repeat for a variety of pulse durations. All at 300K
     # ====
 
-    samples_to_avg = 10000
+    samples_to_avg = 500
     pulse_durations = [1e-11, 5e-10, 1e-9, 5e-9, 1e-8, 5e-8, 1e-7]
     voltages = np.linspace(-0.97919268, -0.43084478, 150) #250
 
     T = 300
+    dev.set_vals(T=T)
 
     V_50s = []
     for pulse_duration in pulse_durations:
-        V_50s.append(helper.generate_voltage_scurve(dev, voltages,RA, pulse_duration, T, samples_to_avg,
+        V_50s.append(funcs.generate_voltage_scurve(dev, voltages, pulse_duration, T, samples_to_avg,
                                              out_path=out_path, save_flag=True))
 
     np.savez(f"{out_path}/metadata_fig3.npz",
              voltages=voltages, V_50s=V_50s, pulse_durations=pulse_durations)
 
 def make_and_plot_fig3(dir_path):
-    fig_a, ax_a = pf.plot_init()
-    fig_b, ax_b = pf.plot_init()
+    fig_a, ax_a = helper.plot_init()
+    fig_b, ax_b = helper.plot_init()
 
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
     pulse_durations = metadata["pulse_durations"]
@@ -340,7 +297,7 @@ def make_and_plot_fig3(dir_path):
     #TODO: add measure of stddev
     for i, pulse_duration in enumerate(pulse_durations):
         V_50_idx = helper.find_idx_at_nearest(voltages, V_50s[i])
-        f_data = np.load(helper.match_file(files, pulse_duration, 300, 0))
+        f_data = np.load(funcs.match_file(files, pulse_duration, 300, 0))
         weights = f_data["weights"]
         dp = (weights[V_50_idx + 1]) - (weights[V_50_idx - 1])
         dV = (-voltages[V_50_idx + 1]) - (-voltages[V_50_idx - 1])
@@ -380,15 +337,11 @@ def make_and_plot_fig3(dir_path):
                           markersize=6, label='Short-pulse limit')
     ax_b.legend(handles=[line1, line2, line3])
 
-    pf.prompt_show()
+    helper.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig3a.svg")
-    pf.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig3b.svg")
+    helper.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig3a.svg")
+    helper.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig3b.svg")
 # ================================================================
-
-
-
-
 
 
 
@@ -398,15 +351,16 @@ def gen_fig4_data(dev, out_path):
 
     samples_to_avg = 10000
     T = 300
+    dev.set_vals(T=T)
     pulse_durations = np.linspace(0, 50e-9, 100)
     voltages = np.linspace(-0.9, 0, 100)
     t_50s = [1e-9, 5e-9, 1e-8, 5e-8]
 
     V_50s = []
     for t_50 in t_50s:
-        V_50 = helper.generate_voltage_scurve(dev, voltages,RA, t_50, T, samples_to_avg, save_flag=False)
+        V_50 = funcs.generate_voltage_scurve(dev, voltages, t_50, T, samples_to_avg, save_flag=False)
         V_50s.append(V_50)
-        helper.generate_pulse_duration_scurve(dev, pulse_durations, V_50,RA, T, samples_to_avg,
+        funcs.generate_pulse_duration_scurve(dev, pulse_durations, V_50, T, samples_to_avg,
             out_path=out_path, save_flag=True)
 
     np.savez(f"{out_path}/metadata_fig4.npz",
@@ -417,8 +371,8 @@ def gen_fig4_data(dev, out_path):
 # FIXME: fig 4 not entirely working/verified
 # FIXME
 def make_and_plot_fig4(dir_path):
-    fig_a, ax_a = pf.plot_init()
-    fig_b, ax_b = pf.plot_init()
+    fig_a, ax_a = helper.plot_init()
+    fig_b, ax_b = helper.plot_init()
 
     metadata = np.load(glob.glob(dir_path + "/*metadata*")[0])
     pulse_durations = metadata["pulse_durations"]
@@ -468,15 +422,11 @@ def make_and_plot_fig4(dir_path):
     ax_a.legend(prop={'size': 12})
     ax_b.legend(prop={'size': 12})
 
-    pf.prompt_show()
+    helper.prompt_show()
     date_match = re.search(r'\d{2}:\d{2}:\d{2}', dir_path)
-    pf.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig4a.svg")
-    pf.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig4b.svg")
+    helper.prompt_save_svg(fig_a, f"../results/scurve_dataset_{date_match.group(0)}/fig4a.svg")
+    helper.prompt_save_svg(fig_b, f"../results/scurve_dataset_{date_match.group(0)}/fig4b.svg")
 # ================================================================
-
-
-
-
 
 if __name__ == "__main__":
     main()

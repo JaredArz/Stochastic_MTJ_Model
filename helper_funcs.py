@@ -1,11 +1,15 @@
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.style as style
 import scienceplots
+from datetime import datetime
+
+from interface_funcs import mtj_sample
 
 def plot_init():
-    fig, ax = plt.subplots()
     #plt.rc('text', usetex=True)
     #plt.style.use(['science','ieee'])
+    fig, ax = plt.subplots()
     #fig.tight_layout()
     return fig,ax
 
@@ -34,3 +38,12 @@ def prompt_save_svg(fig,path):
             valid_user_input = True
         else:
             print("invalid input.")
+
+def avg_weight_across_samples(dev, V, samples_to_avg) -> float:
+    sum_p = np.sum( [ (mtj_sample(dev, V),) for _ in range(samples_to_avg)] )
+    return sum_p/samples_to_avg
+
+def find_idx_at_nearest(vec, val) -> int:
+    vector_difference = np.abs( np.asarray(vec) - val )
+    return vector_difference.argmin()
+
