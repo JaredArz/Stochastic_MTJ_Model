@@ -23,20 +23,19 @@ def main():
     #FIXME prior to demag calculation
     dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, RA=3.18e-12)
     dev.set_vals(Ms_295 = 165576.94999)
-    V_50 = -0.6856240606060606 # for base device, no device variation, 300K
 
     T = 300
     stddev = 0.025
 
     dev.set_vals(K_295 = (0.001161866/(2.6e-9)) * np.random.normal(1,stddev) )
     dev.set_vals(T=T)
-    #print(dev)
 
+    V_50 = funcs.p_to_V(0.5)
     word_size = 8
-    length = 1000000
-    depth = 2
+    length = 100000
+    depth  = 2
 
-    gen_wordstream(dev, V_50, word_size, length, out_dir + '/p_05')
+    gen_wordstream(dev, V_50, word_size, length, out_dir + '/no_xor')
 
     gen_wordstream_with_XOR(gen_wordstream,
                             (dev, V_50, word_size, length),
