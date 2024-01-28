@@ -27,9 +27,8 @@ def get_out_path() -> str:
     return out_path
 
 def get_uniformity(word_stream, word_size, record_size):
-    norm_stream = word_stream / record_size
     word_freq = np.zeros( 2**word_size )
-    for number in norm_stream:
+    for number in word_stream:
         word_freq[ int(number) ] += 1
     return word_freq
 
