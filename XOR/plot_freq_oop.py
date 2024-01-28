@@ -11,6 +11,17 @@ word_size = 8
 record_size = 100000
 dof = 256
 
+class dset(){
+        def __init__(fname, ):
+            self.fname = fname
+            data = np.load(fname)
+            chisq = funcs.compute_chi_squared(base, word_size, record_size)
+            chisq_label = f"{chisq}:.2f"
+            p_val = f"{chi2.sf(base_chisq_label, dof)}:.2f"
+            p_label = f"{chi2.sf(base_chisq_label, dof)}:.2f"
+}
+
+
 fT_290_D1 = "./wordstreams/ws_17:07:16/no_xor.npy"
 fT_290_D2 = "./wordstreams/ws_17:08:24/no_xor.npy"
 fT_310_D1 = "./wordstreams/ws_17:07:44/no_xor.npy"
