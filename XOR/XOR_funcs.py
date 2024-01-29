@@ -32,9 +32,9 @@ def get_uniformity(word_stream, word_size, record_size):
         word_freq[ int(number) ] += 1
     return word_freq
 
-def compute_chi_squared(norm_O, word_size):
-    E = 2**(-1*word_size)
-    return np.sum( [ ((O_i-E)**2)/E for O_i in norm_O ] )
+def compute_chi_squared(O, word_size, record_size):
+    E = 2**(-1*word_size) * record_size
+    return np.sum( [ ((O_i-E)**2)/E for O_i in O ] )
 
 def compute_V_range():
     # if another device is used, this hardcoded J range will need to be calculated instead

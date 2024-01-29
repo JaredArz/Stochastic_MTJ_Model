@@ -25,15 +25,15 @@ def main():
     dev.set_vals(Ms_295 = 165576.94999)
 
     T = 300
-    stddev = 0.025
-
-    dev.set_vals(K_295 = (0.001161866/(2.6e-9)) * np.random.normal(1,stddev) )
+    stddev = 0.1
+    K_var = (0.001161866/(2.6e-9)) * np.random.normal(1,stddev)
+    dev.set_vals(K_295 = K_var)
     dev.set_vals(T=T)
 
     V_50 = funcs.p_to_V(0.5)
     word_size = 8
-    length = 100000
-    depth  = 2
+    length = 1000
+    depth  = 1
 
     gen_wordstream(dev, V_50, word_size, length, out_dir + '/no_xor')
 
