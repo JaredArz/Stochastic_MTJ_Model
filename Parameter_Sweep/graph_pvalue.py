@@ -6,6 +6,7 @@ from collections import Counter
 
 
 df = pd.read_csv("MTJ_Param_Results.csv")
+
 chi2_df = df["chi2Data_path"]
 
 config_nums = []

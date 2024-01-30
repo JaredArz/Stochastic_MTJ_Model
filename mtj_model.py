@@ -152,7 +152,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   for j in range(256):
     chi2 += ((counts[j]-exp_pdf[j])**2)/exp_pdf[j]
 
-  check_output_paths()
+  # check_output_paths()
 
   counts = counts/samples
   exp_pdf = exp_pdf/samples

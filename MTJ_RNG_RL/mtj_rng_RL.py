@@ -15,7 +15,10 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, StopTrainingOnRewardThreshold
 
-from mtj_RL_dev import mtj_run
+import sys
+sys.path.append("../")
+sys.path.append("../fortran_source")
+from mtj_model import mtj_run
 
 # Hyperparameters
 EPISODE_LENGTH = 150
