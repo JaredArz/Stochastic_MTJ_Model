@@ -30,6 +30,7 @@ class MTJ():
          self.mtj_type    = mtj_type
          self.phiHistory   = []
          self.thetaHistory = []
+         self.tempHistory = []
          self.sample_count = 0
 
      #================================================================================

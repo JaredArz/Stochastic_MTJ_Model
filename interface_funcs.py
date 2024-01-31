@@ -58,10 +58,13 @@ def mtj_sample(dev,V,dump_mod=1,view_mag_flag=0,file_ID=1,config_check=0) -> (in
             # These file names are determined by fortran subroutine single_sample.
             phi_from_txt   = np.loadtxt("phi_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, usecols=0, delimiter=None)
             theta_from_txt = np.loadtxt("theta_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, usecols=0, delimiter=None)
+            temp_from_txt  = np.loadtxt("temp_time_evol_"+ format_file_ID(file_ID) + ".txt", dtype=float, usecols=0, delimiter=None)
             os.remove("phi_time_evol_"   + format_file_ID(file_ID) + ".txt")
             os.remove("theta_time_evol_" + format_file_ID(file_ID) + ".txt")
+            os.remove("temp_time_evol_" + format_file_ID(file_ID) + ".txt")
             dev.thetaHistory = list(theta_from_txt)
             dev.phiHistory   = list(phi_from_txt)
+            dev.tempHistory  = list(temp_from_txt)
         if(view_mag_flag):
             dev.sample_count+=1
         return bit,energy

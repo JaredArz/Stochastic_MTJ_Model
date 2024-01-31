@@ -13,32 +13,34 @@ import tree
 
 def main():
     start_time = time.time()
-    out_dir = funcs.get_out_path()
-    print("output dir:")
-    print(out_dir)
-    print("============")
 
-    dev = SWrite_MTJ_rng()
-    dev.set_vals(0)
+    dev_L = SWrite_MTJ_rng()
+    dev_L.set_vals(0)
     #FIXME prior to demag calculation
-    dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, RA=3.18e-12)
-    dev.set_vals(Ms_295 = 165576.94999)
+    dev_L.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, RA=3.18e-12)
+    dev_L.set_vals(Ms_295 = 165576.94999)
 
     T = 300
     stddev = 0.1
-    K_var = (0.001161866/(2.6e-9)) * np.random.normal(1,stddev)
-    dev.set_vals(K_295 = K_var)
-    dev.set_vals(T=T)
+    dev_L.set_vals(K_295 = (0.001161866/(2.6e-9)) * np.random.normal(1,stddev))
+    dev_L.set_vals(T=T)
+
+    dev_R = dev_l
 
     V_50 = funcs.p_to_V(0.5)
     word_size = 8
     length = 1000
     depth  = 1
 
-    gen_wordstream(dev, V_50, word_size, length, out_dir + '/no_xor')
+    #gen_wordstream(dev, V_50, word_size, length, out_dir + '/no_xor')
+
+    out_dir = funcs.get_out_path()
+    print("output dir:")
+    print(out_dir)
+    print("============")
 
     gen_wordstream_with_XOR(gen_wordstream,
-                            (dev, V_50, word_size, length),
+                            (dev_L, dev_R, V_50, word_size, length),
                             depth, out_dir)
 
 
