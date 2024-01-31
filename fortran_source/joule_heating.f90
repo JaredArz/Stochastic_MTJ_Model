@@ -2,6 +2,7 @@ module joule_heating
   use MTJ_RNG_vars
 
   implicit none
+  integer, parameter :: dp = kind(0.0d0)
 
   real(kind=dp) :: cstack, tau_j, fact_j
 
@@ -10,17 +11,12 @@ contains
   subroutine heat_device(p_p, t, T_0, T_free)
 
     implicit none
+    integer, parameter :: dp = kind(0.0d0)
 
     real(kind=dp),intent(in) :: p_p, t, T_0 ! in this context, T0 is the environmental T and the device starts from there
     real(kind=dp),intent(inout) :: T_free
 
-!!$    print*,'fact: ',fact_j
-!!$    print*,'pow: ',p_p
-!!$    print*,'tstep: ',t
-!!$    print*,'cstack: ',cstack
-!!$    print*,'tc: ',exp(-t/tau_j)
     T_free = T_0 + fact_j*p_p*(1.0-exp(-t/tau_j))
-!!$    T_free = T_0 + p_p*t/cstack
 
     return
 
@@ -29,6 +25,7 @@ contains
   subroutine cool_device(t, T_RT, T_0, T_free)
 
     implicit none
+    integer, parameter :: dp = kind(0.0d0)
 
     real(kind=dp),intent(in) :: t, T_RT, T_0 ! in this context, T0 is the initial temperature of the device
     real(kind=dp),intent(inout) :: T_free
@@ -41,6 +38,7 @@ contains
   subroutine comp_cstack(A)
 
     implicit none
+    integer, parameter :: dp = kind(0.0d0)
 
     real(kind=dp), intent(in) :: A
 
@@ -59,10 +57,6 @@ contains
 
     deallocate(tLayer,pLayer,cLayer)
 
-!!$    print*,'cstack: ',cstack
-!!$    cstack = cstack*A
-!!$    print*,'fact_j: ',fact_j
-!!$    print*,'tau_j: ',tau_j
 
     return
 
@@ -71,12 +65,12 @@ contains
   subroutine set_layers(A)
 
     implicit none
+    integer, parameter :: dp = kind(0.0d0)
 
     real(kind=dp), intent(inout) :: A
 
     integer :: ioerr
 
-!!$    print*,'reading stack layout'
     open(unit = 123, file = "stack_layout.txt", action = "read", status = "old", iostat = ioerr)
     if (ioerr .eq. 0) then
        read(123,*) nLayers
@@ -90,7 +84,6 @@ contains
     else
        print*,'error opening stack layout file'
     end if
-!!$
 
     call comp_cstack(A)
 
@@ -101,9 +94,10 @@ contains
 
   subroutine compute_K_and_Ms(K_295, Ms_295, T_in)
     implicit none
-    real(kind(0.0d0)), intent(in) :: T_in, K_295, Ms_295
+    integer, parameter :: dp = kind(0.0d0)
+    real(kind=dp), intent(in) :: T_in, K_295, Ms_295
 
-    real(kind(0.0d0)) :: Tc, n, q, Kstar, Mstar, cm, ck
+    real(kind=dp) :: Tc, n, q, Kstar, Mstar, cm, ck
 
     Tc = 1453.0
     n = 1.804

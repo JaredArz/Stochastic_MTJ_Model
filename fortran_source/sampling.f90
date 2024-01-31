@@ -67,12 +67,12 @@ module sampling
 
             Hy = real(Hy_in,dp)
             !=========== Pulse current and set device to be in-plane =========
-            call drive(0.0_dp, real(Jshe,dp), real(Jappl,dp), pulse_steps,&
+            call drive(0.0_dp, real(Jshe,dp), real(Jappl,dp), 0.0_dp, 0.0_dp, pulse_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow)
 
             Hy = 0
             !=================  Relax into one of two low-energy states out-of-plane  ===================
-            call drive(0.0_dp, 0.0_dp, real(Jappl,dp), relax_steps,&
+            call drive(0.0_dp, 0.0_dp, real(Jappl,dp), 0.0_dp, 0.0_dp, relax_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow)
 
             if(fwrite_enabled) then
@@ -92,8 +92,8 @@ module sampling
         end subroutine sample_SHE
 
         subroutine sample_SWrite(energy_usage, bit, theta_end, phi_end,&
-                                 Jappl, Jreset, Hreset, theta_init, phi_init, K_295, TMR_in, Rp_in,&
-                                 a_in, b_in, tf_in, alpha_in, Ms_295, eta_in, d_in, t_pulse, t_relax, t_reset,&
+                                 Jappl, Jreset, Hreset, theta_init, phi_init, K_295_in, TMR_in, Rp_in,&
+                                 a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, t_pulse, t_relax, t_reset,&
                                  T_in,dump_mod, view_mag_flag, sample_count, file_ID, config_check)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
@@ -101,7 +101,7 @@ module sampling
             real, intent(in) :: Jappl, Jreset, Hreset, theta_init, phi_init,&
                                 t_pulse, t_relax, t_reset, T_in
             ! Device input parameters
-            real, intent(in) :: K_295, TMR_in, Rp_in, Ms_295,&
+            real, intent(in) :: K_295_in, TMR_in, Rp_in, Ms_295_in,&
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in
             ! Functional parameters
             integer, intent(in) :: file_ID, sample_count, dump_mod, config_check
@@ -111,7 +111,7 @@ module sampling
             integer, intent(out) :: bit
             !==================================================================
             real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol
-            real(dp) :: phi_i, theta_i, cuml_pow
+            real(dp) :: phi_i, theta_i, cuml_pow, K_295, Ms_295
             real :: seed
             integer :: t_i, pulse_steps, relax_steps, reset_steps,&
                        sample_steps, total_reset_steps
@@ -132,6 +132,8 @@ module sampling
             cuml_pow = 0.0_dp
             theta_i = real(theta_init, dp)
             phi_i   = real(phi_init, dp)
+            K_295 = real(K_295_in, dp)
+            Ms_295 = real(Ms_295_in, dp)
             T_free = T_in
             T_bath = T_in
             if(fwrite_enabled) then
@@ -147,7 +149,7 @@ module sampling
             !sets K, Ms, and Bsat
             call compute_K_and_Ms(K_295, Ms_295, T_free) 
             !redundant, sets K, Ms, and Bsat with no change. Avoids conflict with other device models
-            call set_params(Ki, TMR_in, Rp_in, Ms, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
+            call set_params(real(Ki), TMR_in, Rp_in, real(Ms), alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -255,10 +257,10 @@ module sampling
             call zigset(int(1+floor((1000001)*seed)))
             !================================
 
-            call drive(real(v_pulse,dp), 0.0_dp, real(Jappl,dp),0 , 0, pulse_steps,&
+            call drive(real(v_pulse,dp), 0.0_dp, real(Jappl,dp),0.0_dp , 0.0_dp, pulse_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow)
 
-            call drive(0.0_dp, 0.0_dp, real(Jappl,dp), 0, 0, relax_steps,&
+            call drive(0.0_dp, 0.0_dp, real(Jappl,dp), 0.0_dp, 0.0_dp, relax_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow)
 
             if(fwrite_enabled) then
@@ -280,7 +282,7 @@ module sampling
         subroutine drive(V, J_SHE, J_STT, K_295, Ms_295, steps, t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow)
            implicit none
            integer,  parameter :: dp = kind(0.0d0)
-           real(dp), intent(in) :: V, J_SHE, J_STT
+           real(dp), intent(in) :: V, J_SHE, J_STT, K_295, Ms_295
            integer,  intent(in)  :: steps
            real(dp), dimension(:), intent(inout) :: phi_evol, theta_evol, temp_evol
            real(dp), intent(inout) :: phi_i, theta_i, cuml_pow
