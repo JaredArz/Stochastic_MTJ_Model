@@ -1,3 +1,4 @@
+import inspect
 import os
 import random
 import argparse
@@ -10,8 +11,9 @@ from gym import Env
 from gym.spaces import Discrete, Box, Dict, Tuple, MultiBinary, MultiDiscrete 
 
 from stable_baselines3.ppo.ppo import PPO
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, StopTrainingOnRewardThreshold
 
@@ -24,23 +26,33 @@ from mtj_model import mtj_run
 EPISODE_LENGTH = 150
 DEV_SAMPLES = 2500
 
+
+# Helper Functions
+def normalize(x, min, max):
+  return (x-min) / (max-min)
+
+def unnormalize(n, min, max):
+  return n*(max-min) + min
+
+
 # Custom callback for plotting additional values in tensorboard.
 class TensorboardCallback(BaseCallback):
-  def __init__(self, env, verbose=0):
+  def __init__(self, envs, verbose=0):
     super().__init__(verbose)
-    self.env = env
-    self.score = 0
+    self.envs = envs
+    self.score = [0 for i in range(self.envs.num_envs)]
 
   def _on_step(self) -> bool:
-    self.score += self.env.reward
-    self.logger.record("score", self.score)
-    self.logger.record("kl_div_score", self.env.kl_div_score)
-    self.logger.record("energy", self.env.energy)
-    self.logger.record("current_config_score", self.env.current_config_score)
-    self.logger.record("best_config_score", self.env.best_config_score)
-    if (self.num_timesteps % 500 == 0):
-      self.logger.dump(self.num_timesteps)
-    return True
+    for i in range(self.envs.num_envs):
+      self.score[i] += self.envs.envs[i].reward
+      self.logger.record(f"score_{i}", self.score[i])
+      self.logger.record(f"kl_div_score_{i}", self.envs.envs[i].kl_div_score)
+      self.logger.record(f"energy_{i}", self.envs.envs[i].energy)
+      self.logger.record(f"current_config_score_{i}", self.envs.envs[i].current_config_score)
+      self.logger.record(f"best_config_score_{i}", self.envs.envs[i].best_config_score)
+      if (self.num_timesteps % 500 == 0):
+        self.logger.dump(self.num_timesteps)
+      return True
 
 
 class MTJ_Env(Env):
@@ -89,9 +101,6 @@ class MTJ_Env(Env):
     self.best_config_score = self.current_config_score
     self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
 
-    # Discrete Actions: increase/decrease the 8 parameters
-    # self.action_space = Discrete(16)
-
     # Continuous Actions: modify the 8 parameters; normalized values between 0-1 for best practice
     self.action_space = Box(low=0, high=1, shape=(8,), dtype=np.float32)
 
@@ -124,57 +133,6 @@ class MTJ_Env(Env):
     
     # Set episode length
     self.episode_length = EPISODE_LENGTH
-  
-
-  # def apply_discrete_action(self, action):
-  #   if action == 0:
-  #     temp = self.alpha + self.alpha_step
-  #     self.alpha = min(temp, self.alpha_range[1])
-  #   elif action == 1:
-  #     temp = self.alpha - self.alpha_step
-  #     self.alpha = max(temp, self.alpha_range[0])
-
-  #   elif action == 2:
-  #     temp = self.Ki + self.Ki_step
-  #     self.Ki = min(temp, self.Ki_range[1])
-  #   elif action == 3:
-  #     temp = self.Ki - self.Ki_step
-  #     self.Ki = max(temp, self.Ki_range[0])
-    
-  #   elif action == 4:
-  #     temp = self.Ms + self.Ms_step
-  #     self.Ms = min(temp, self.Ms_range[1])
-  #   elif action == 5:
-  #     temp = self.Ms - self.Ms_step
-  #     self.Ms = max(temp, self.Ms_range[0])
-    
-  #   elif action == 6:
-  #     temp = self.Rp + self.Rp_step
-  #     self.Rp = min(temp, self.Rp_range[1])
-  #   elif action == 7:
-  #     temp = self.Rp - self.Rp_step
-  #     self.Rp = max(temp, self.Rp_range[0])
-    
-  #   elif action == 8:
-  #     temp = self.TMR + self.TMR_step
-  #     self.TMR = min(temp, self.TMR_range[1])
-  #   elif action == 9:
-  #     temp = self.TMR - self.TMR_step
-  #     self.TMR = max(temp, self.TMR_range[0])
-    
-  #   elif action == 10:
-  #     temp = self.eta + self.eta_step
-  #     self.eta = min(temp, self.eta_range[1])
-  #   elif action == 11:
-  #     temp = self.eta - self.eta_step
-  #     self.eta = max(temp, self.eta_range[0])
-    
-  #   elif action == 12:
-  #     temp = self.J_she + self.J_she_step
-  #     self.J_she = min(temp, self.J_she_range[1])
-  #   elif action == 13:
-  #     temp = self.J_she - self.J_she_step
-  #     self.J_she = max(temp, self.J_she_range[0])
 
 
   def set_limit(self, current, lower, upper):
@@ -214,50 +172,6 @@ class MTJ_Env(Env):
       return True
     else:
       return False
-    
-  
-  def apply_discrete_action(self, action):
-    if action == 0:
-      self.alpha = self.alpha + self.alpha_step
-    elif action == 1:
-      self.alpha = self.alpha - self.alpha_step
-
-    elif action == 2:
-      self.Ki = self.Ki + self.Ki_step
-    elif action == 3:
-      self.Ki = self.Ki - self.Ki_step
-    
-    elif action == 4:
-      self.Ms = self.Ms + self.Ms_step
-    elif action == 5:
-      self.Ms = self.Ms - self.Ms_step
-    
-    elif action == 6:
-      self.Rp = self.Rp + self.Rp_step
-    elif action == 7:
-      self.Rp = self.Rp - self.Rp_step
-    
-    elif action == 8:
-      self.TMR = self.TMR + self.TMR_step
-    elif action == 9:
-      self.TMR = self.TMR - self.TMR_step
-    
-    elif action == 10:
-      self.eta = self.eta + self.eta_step
-    elif action == 11:
-      self.eta = self.eta - self.eta_step
-    
-    elif action == 12:
-      self.J_she = self.J_she + self.J_she_step
-    elif action == 13:
-      self.J_she = self.J_she - self.J_she_step
-    
-    elif action == 14:
-      self.t_pulse = self.t_pulse + self.t_pulse_step
-      self.t_relax = self.t_relax + self.t_relax_step
-    elif action == 15:
-      self.t_pulse = self.t_pulse - self.t_pulse
-      self.t_relax = self.t_relax - self.t_relax
     
   
   def apply_continuous_action(self, actions):
@@ -307,7 +221,6 @@ class MTJ_Env(Env):
 
   def step(self, action):
     # Apply action
-    # self.apply_discrete_action(action)
     self.apply_continuous_action(action)
     
     # Sample new configuration
@@ -346,15 +259,15 @@ class MTJ_Env(Env):
 
     # Check if episode is done
     if self.episode_length <= 0: 
-      done = True
+      truncated = True
     else:
-      done = False
+      truncated = False
     
     # Reduce episode length
     self.episode_length -= 1 
 
     # Return step information
-    return self.obs, self.reward, done, self.info
+    return self.obs, self.reward, False, truncated, self.info
 
 
   def render(self):
@@ -362,7 +275,9 @@ class MTJ_Env(Env):
     pass
   
 
-  def reset(self):
+  def reset(self, seed=None, options=None):
+    # super().reset(seed=seed)
+
     # Initial parameter values
     self.alpha = 0.03
     self.Ki = 0.0009725695027196851
@@ -401,21 +316,20 @@ class MTJ_Env(Env):
     # Reset config validity
     self.invalid_config = 0
     
-    return self.obs
+    return self.obs, None
   
 
 
-############################################## Helper Functions ##############################################
-def normalize(x, min, max):
-  return (x-min) / (max-min)
+############################################## Train/Test Model ##############################################
 
-
-def unnormalize(n, min, max):
-  return n*(max-min) + min
-
-
-def Train_Model(model_dir, log_dir, training_timesteps:int=1000, log_window:int=100, eval:bool=False):
-  env = MTJ_Env()
+def Train_Model(model_dir, log_dir, num_envs:int=1, training_timesteps:int=1000, log_window:int=100, eval:bool=False):
+  if num_envs == 1:
+    # Calls each environment in sequence on the current Python process; better for simple environments
+    env = make_vec_env(MTJ_Env, n_envs=num_envs)
+  else:
+    # Distributes each environment to its own process; better for complex environments
+    env = make_vec_env(MTJ_Env, n_envs=num_envs, vec_env_cls=SubprocVecEnv)
+  
   model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log=log_dir)
 
   for i in range(1, training_timesteps//log_window):
@@ -436,7 +350,7 @@ def Test_Model(model_path:str, episodes:int):
   env = MTJ_Env()
 
   for episode in range(1, episodes+1):
-    obs = env.reset()
+    obs, _ = env.reset()
     done = False
     score = 0
     infos = []
@@ -444,8 +358,9 @@ def Test_Model(model_path:str, episodes:int):
     
     while not done:
       action, _state = model.predict(obs)
-      obs, reward, done, info = env.step(action)
+      obs, reward, terminated, truncated, info = env.step(action)
       score += reward
+      done = terminated or truncated
 
       infos.append(info)
       config_scores.append(env.current_config_score)
@@ -468,15 +383,16 @@ def Test_Env(episodes=5):
   env = MTJ_Env()
 
   for episode in range(1, episodes+1):
-    obs = env.reset()
+    obs, _ = env.reset()
     done = False
     score = 0 
     
     while not done:
       # env.render()
       action = env.action_space.sample()
-      obs, reward, done, info = env.step(action)
+      obs, reward, terminated, truncated, info = env.step(action)
       score += reward
+      done = terminated or truncated
 
       print(f"Action: {action}")
       print(f"Obs   : {obs}")
@@ -499,17 +415,18 @@ if __name__ == "__main__":
 
   if (args.activity == "TrainModel"):
     model_name = "mtj_model_1"
-    model_dir = os.path.join('Training', 'Saved_Models', model_name)
-    log_dir = os.path.join('Training', 'Logs', model_name)
+    model_dir = os.path.join('JETCAS_Training', 'Saved_Models', model_name)
+    log_dir = os.path.join('JETCAS_Training', 'Logs', model_name)
     training_timesteps = 500000
     log_window = training_timesteps//1000
+    num_envs = 4
     eval = True
 
-    Train_Model(model_dir, log_dir, training_timesteps, log_window, eval)
+    Train_Model(model_dir, log_dir, num_envs, training_timesteps, log_window, eval)
 
 
   if (args.activity == "TestModel"):
-    model_path = "Training/Saved_Models/mtj_model_1"
+    model_path = "JETCAS_Training/Saved_Models/mtj_model_1"
     Test_Model(model_path, episodes=150)
 
 

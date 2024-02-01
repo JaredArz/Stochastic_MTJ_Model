@@ -91,7 +91,7 @@ def train():
                     ops.tournament_selection,
                     ops.clone,
                     # mutate_gaussian(std=0.001, hard_bounds=(0, 1), expected_num_mutations=1),
-                    mutate_gaussian(std=0.5, expected_num_mutations=1),
+                    mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations=1),
                     ops.UniformCrossover(),
                     synchronous.eval_pool(client=client, size=len(parents)),
                     ops.elitist_survival(parents=parents))  # accumulate offspring

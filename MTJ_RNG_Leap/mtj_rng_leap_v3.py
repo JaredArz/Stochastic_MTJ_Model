@@ -61,7 +61,6 @@ class MTJ_RNG_Problem(ScalarProblem):
       kl_div = sum(rel_entr(countData, exp_pdf))
       energy = np.mean(energy_avg)
       fitness = w1*kl_div + w2*energy
-    print(fitness)
     return fitness
 
 
@@ -90,7 +89,7 @@ def train():
     offspring = pipe(parents,
                     ops.tournament_selection,
                     ops.clone,
-                    mutate_gaussian(std=0.5, expected_num_mutations=1),
+                    mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations=1),
                     ops.UniformCrossover(),
                     ops.evaluate,
                     ops.pool(size=len(parents)),

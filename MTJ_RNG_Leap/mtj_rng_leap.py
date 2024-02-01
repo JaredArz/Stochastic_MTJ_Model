@@ -1,6 +1,9 @@
 import sys
 import time
+import pickle 
+import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.special import rel_entr
 from toolz import pipe
 from distributed import Client, LocalCluster
@@ -19,6 +22,7 @@ from leap_ec.multiobjective.problems import MultiObjectiveProblem, SCHProblem
 sys.path.append("../")
 sys.path.append("../fortran_source")
 from mtj_model import mtj_run
+import inspect
 
 
 # Hyperparameters
@@ -62,19 +66,17 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
       energy = np.mean(energy_avg)
     
     fitness = [kl_div, energy]
-    print(fitness)
     return fitness
 
 
 def print_generation(population):
-  """ Pipeline probe for echoing current generation """
-  if context['leap']['generation'] % 10 == 0:
-      print(f"generation: {context['leap']['generation']}")
+  fitnesses = [genome.fitness for genome in population]
+  print("Generation ", context["leap"]["generation"], "Min Fitness ", min(fitnesses))
   return population
 
 
 def train():
-  N = 50
+  pop_size = 50
   max_generation = 100
   min_fitness = 1000
   param_bounds = [alpha_range,    # alpha bounds 
@@ -90,20 +92,40 @@ def train():
 
   pipeline = [tournament_selection, # uses domination comparison in MultiObjective.worse_than()
               clone,
-              mutate_gaussian(std=0.5, expected_num_mutations=1),
+              mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations=1),
               evaluate,
               # print_individual, # only if you want to see every single new offspring
-              pool(size=N),
+              pool(size=pop_size),
               print_generation]
   
   final_pop = generalized_nsga_2(max_generations=max_generation,
-                                pop_size=N,
+                                pop_size=pop_size,
                                 problem=MTJ_RNG_Problem(),
                                 representation=representation,
                                 pipeline=pipeline)
   
-  print(final_pop)
+  with open("mtj_rng_leap_results.pkl", "wb") as file:
+    pickle.dump(final_pop, file)
+
+
+def analyze_results():
+  with open("mtj_rng_leap_results.pkl", "rb") as file:
+    data = pickle.load(file)
+  
+  # print(data[0])
+  # exit()
+
+  df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])
+  df.columns = ["genome","kl_div","energy","rank","distance"]
+
+  # Plot Pareto Front
+  df.plot(x="kl_div", y="energy", kind="scatter")
+  plt.show()
+
+  # print(df.iloc[0]["genome"])
+
 
 
 if __name__ == "__main__":
-  train()
+  # train()
+  analyze_results()
