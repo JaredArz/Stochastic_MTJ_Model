@@ -69,25 +69,16 @@ contains
 
     real(kind=dp), intent(inout) :: A
 
-    integer :: ioerr
-
-    open(unit = 123, file = "stack_layout.txt", action = "read", status = "old", iostat = ioerr)
-    if (ioerr .eq. 0) then
-       read(123,*) nLayers
-       allocate(tLayer(nLayers))
-       allocate(pLayer(nLayers))
-       allocate(cLayer(nLayers))
-       read(123,*) tLayer
-       read(123,*) pLayer
-       read(123,*) cLayer
-       read(123,*) k_j
-    else
-       print*,'error opening stack layout file'
-    end if
+    ! layer thicknesses
+    tLayer = (/ 1.5e-9, 0.3e-9, 0.8e-9, 1e-9, 0.9e-9, 9.0e-9, 0.8e-9, 10.0e-9 /)
+    ! layer densities
+    pLayer = (/ 8.2e3, 19.3e3, 8.2e3, 3.6e3, 8.2e3, 12.5e3, 1.53e3, 8.96e3 /)
+    ! layer specific heat capacities
+    cLayer = (/ 440.0, 133.3, 440.0, 935.0, 440.0, 247.0, 364.0, 384.0 /)
+    ! junction layer thermal conductivities
+    k_j = (/ 87.0, 401.0 /)
 
     call comp_cstack(A)
-
-    close(123)
 
     return
   end subroutine set_layers

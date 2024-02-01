@@ -20,7 +20,7 @@ def is_leaf(root):
         return False
 
 NODE_COUNTER = 0
-def build_tree(generator, args, root, depth, out_dir):
+def build_tree(generator, devs, args, root, depth, out_dir):
     global NODE_COUNTER
 
     if depth < 1:
@@ -28,10 +28,10 @@ def build_tree(generator, args, root, depth, out_dir):
 
     if depth == 1:
         file_L = out_dir + f"/h{int(depth)}_L_{NODE_COUNTER}.npy"
-        generator(*args, file_L)
+        generator(devs[0], *args, file_L)
         NODE_COUNTER+=1
         file_R = out_dir + f"/h{int(depth)}_R_{NODE_COUNTER}.npy"
-        generator(*args, file_R)
+        generator(devs[1], *args, file_R)
         NODE_COUNTER+=1
     else:
         file_L = None
@@ -42,5 +42,5 @@ def build_tree(generator, args, root, depth, out_dir):
     root.left  = L
     root.right = R
 
-    build_tree(generator, args, root.left, depth/2, out_dir)
-    build_tree(generator, args, root.right, depth/2, out_dir)
+    build_tree(devs, generator, args, root.left, depth/2, out_dir)
+    build_tree(devs, generator, args, root.right, depth/2, out_dir)

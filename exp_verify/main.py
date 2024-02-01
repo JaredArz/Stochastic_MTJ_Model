@@ -54,20 +54,21 @@ def main():
         dev.set_vals(0)
         dev.set_vals(a=40e-9, b=40e-9, TMR = 1.24, tf = 2.6e-9, Rp = 2530, alpha=0.016, RA=3.18e-12)
         #FIXME prior to demag calculation
-        dev.set_vals(Ms_295 = 165576.94999, K_295 = 0.001161866/(2.6e-9))
+        #dev.set_vals(Ms_295 = 165576.94999, K_295 = 0.001161866/(2.6e-9))
+        dev.set_vals(Ms_295 = 163000, K_295 = 0.001145/(2.6e-9))
 
-        gen_fig2_data(dev, out_path)
+        gen_fig1_data(dev, out_path)
         print("--- %s seconds ---" % (time.time() - start_time))
     elif len(sys.argv) == 2:
         dir_path = sys.argv[1]
-        make_and_plot_fig2(dir_path)
+        make_and_plot_fig1(dir_path)
     else:
         print("too many arguments")
+    return
 
 # =================================
 def gen_fig1_data(dev, out_path):
-    #samples_to_avg = 1000
-    samples_to_avg = 500
+    samples_to_avg = 10000
     pulse_durations = [3.0e-10, 4.0e-10, 5.0e-10, 6.0e-10, 7.0e-10, 8.0e-10, 9.0e-10, 1.0e-09, 1.1e-09,
                1.2e-09, 1.3e-09, 1.4e-09, 1.5e-09, 1.6e-09, 1.7e-09, 1.8e-09, 1.9e-09, 2.0e-09,
                2.1e-09, 2.2e-09, 2.3e-09, 2.4e-09, 2.5e-09, 2.6e-09, 2.7e-09, 3.0e-09, 3.5e-09,
@@ -82,9 +83,8 @@ def gen_fig1_data(dev, out_path):
 
     dev.set_mag_vector()
 
-    samples_to_avg = 1000
-    #Temps = [295, 300, 305]
-    Temps = [300]
+    samples_to_avg = 1
+    Temps = [295, 300, 305]
     t = 1e-9
     for T in Temps:
         dev.set_vals(T=T)
@@ -172,7 +172,7 @@ def gen_fig2_data(dev, out_path):
     # for the default device configuration, V_50 = 0.3940 at 1ns, 300K
     # ====
 
-    samples_to_avg = 1000
+    samples_to_avg = 10000
     #pulse_durations = [1e-9, 5e-9, 1e-8, 5e-8, 1e-7]
     pulse_durations = [1e-9, 5e-9, 1e-8]
     voltages = np.linspace(-0.97919268, -0.43084478, 100)

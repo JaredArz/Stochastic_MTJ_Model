@@ -15,7 +15,7 @@ module sampling
         ! --------------------------------*------------*-----------------------------------
         subroutine sample_SHE(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, Jshe, Hy_in, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
-                                 a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, t_pulse, t_relax,&
+                                 a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
                                  T_in, dump_mod, view_mag_flag, sample_count, file_ID, config_check)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
@@ -23,7 +23,7 @@ module sampling
             real, intent(in) :: Jappl, Jshe, theta_init, phi_init, t_pulse, t_relax, T_in
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, Hy_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in
+                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
             ! Functional parameters
             integer, intent(in) :: file_ID, sample_count, dump_mod, config_check
             logical, intent(in) :: view_mag_flag
@@ -59,7 +59,7 @@ module sampling
                 temp_evol(t_i) = T
             end if
 
-            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
+            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in, T_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -93,7 +93,7 @@ module sampling
 
         subroutine sample_SWrite(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, Jreset, Hreset, theta_init, phi_init, K_295_in, TMR_in, Rp_in,&
-                                 a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, t_pulse, t_relax, t_reset,&
+                                 a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, tox_in, t_pulse, t_relax, t_reset,&
                                  T_in,dump_mod, view_mag_flag, sample_count, file_ID, config_check)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
@@ -102,7 +102,7 @@ module sampling
                                 t_pulse, t_relax, t_reset, T_in
             ! Device input parameters
             real, intent(in) :: K_295_in, TMR_in, Rp_in, Ms_295_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in
+                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
             ! Functional parameters
             integer, intent(in) :: file_ID, sample_count, dump_mod, config_check
             logical, intent(in) :: view_mag_flag
@@ -142,14 +142,14 @@ module sampling
                 allocate(temp_evol(sample_steps))
                 theta_evol(t_i) = theta_i
                 phi_evol(t_i)   = phi_i
-                temp_evol(t_i) = T
+                temp_evol(t_i) = T_free
             end if
 
             ! compute K and Ms with temperature dependence
             !sets K, Ms, and Bsat
             call compute_K_and_Ms(K_295, Ms_295, T_free) 
             !redundant, sets K, Ms, and Bsat with no change. Avoids conflict with other device models
-            call set_params(real(Ki), TMR_in, Rp_in, real(Ms), alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
+            call set_params(real(Ki), TMR_in, Rp_in, real(Ms), alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in ,T_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -206,7 +206,7 @@ module sampling
 
         subroutine sample_VCMA(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, v_pulse, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
-                                 a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, t_pulse, t_relax,&
+                                 a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
                                  T_in, dump_mod, view_mag_flag, sample_count, file_ID, config_check)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
@@ -214,7 +214,7 @@ module sampling
             real, intent(in) :: Jappl, v_pulse, theta_init, phi_init, t_pulse, t_relax, T_in
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in
+                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
             ! Functional parameters
             integer, intent(in) :: file_ID, sample_count, dump_mod, config_check
             logical, intent(in) :: view_mag_flag
@@ -251,7 +251,7 @@ module sampling
             end if
 
             !set before setting other params
-            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
+            call set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in, T_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))

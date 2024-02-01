@@ -17,7 +17,7 @@ def draw_const(x,var,csig):
 #============================= Parent class =========================================
 class MTJ():
      def __init__(self,mtj_type,dflt_params,dflt_noise,dflt_m):
-         shared_params = ('Ms','Ki','TMR','Rp','a','b','tf','alpha','eta','d','t_pulse','t_relax','T')
+         shared_params = ('Ms','Ki','TMR','Rp','a','b','tf','alpha','eta','d','tox','t_pulse','t_relax','T')
          valid_params = list(shared_params)
          # add parameters unique to mtj type into valid_params
          for key, _ in dflt_params.items():
@@ -125,8 +125,8 @@ class SHE_MTJ_rng(MTJ):
                        "J_she" : 5e11, "a"  : 50e-9,
                        "b"  : 50e-9,   "tf" : 1.1e-9,
                        "alpha" :0.03,  "eta" : 0.3,
-                       "d"  : 3e-9,    "t_pulse" : 10e-9,
-                       "t_relax" : 15e-9, "Hy": 0}
+                       "d"  : 3e-9, "tox" : 5e-9,
+                       "t_pulse" : 10e-9, "t_relax" : 15e-9, "Hy": 0}
         super().__init__(SHE,dflt_params,dflt_noise,dflt_m)
 
 class SWrite_MTJ_rng(MTJ):
@@ -135,16 +135,16 @@ class SWrite_MTJ_rng(MTJ):
         dflt_m = {"theta"  : 99*np.pi/100,
         #dflt_m = {"theta"  : np.pi/100,
                   "phi"    : np.random.rand()*2*np.pi}
-        dflt_noise = {"Ki"  : 0.05,
+        dflt_noise = {"Ki"  : 0.025,
                       "Rp"  : 0.05,
                       "TMR" : 0.05}
-        dflt_params = {"K_295" : 1.0056364e-3,"Rp" : 5e3,
-                       "TMR": 1.5,         "Ms_295" : 1.2e6,
+        dflt_params = {"K_295" : 440384.62,"Rp" : 2530,
+                       "TMR": 1.24,        "Ms_295" : 163000,
                        "J_reset": 5e11,    "H_reset": 0,
-                       "a"  : 50e-9,       "b"  : 50e-9,
-                       "tf" : 1.1e-9,      "alpha" :0.03,
+                       "a"  : 40e-9,       "b"  : 40e-9,
+                       "tf" : 2.6e-9,      "alpha" :0.016,
                        "eta" : 0.3,        "d"  : 3e-9,
-                       "t_pulse" : 1e-9,
+                       "t_pulse" : 1e-9,   "tox" : 1e-9,
                        "t_relax" : 10e-9,  "t_reset" : 10e-9,
                        'T' : 300,          "RA" : 3.18e-12}
         super().__init__(SWrite,dflt_params,dflt_noise,dflt_m)
@@ -161,6 +161,6 @@ class VCMA_MTJ_rng(MTJ):
                        "v_pulse" : 1.5, "a"  : 50e-9,
                        "b"  : 50e-9,   "tf" : 1.1e-9,
                        "alpha" :0.03,  "eta" : 0.3,
-                       "d"  : 3e-9,    "t_pulse" : 30e-9,
-                       "t_relax" : 30e-9}
+                       "d"  : 3e-9, "tox" : 5e-9,
+                       "t_pulse" : 30e-9, "t_relax" : 30e-9}
         super().__init__(VCMA,dflt_params,dflt_noise,dflt_m)

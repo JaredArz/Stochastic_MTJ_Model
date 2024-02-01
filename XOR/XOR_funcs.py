@@ -18,9 +18,9 @@ def p_to_V(p) -> float:
     ps = np.load('./ps.npy')
     return V_range[helper.find_idx_at_nearest(ps, p)]
 
-def get_out_path(depth,T,Kdev,method) -> str:
+def get_out_path() -> str:
     date = datetime.now().strftime("%H:%M:%S")
-    out_path = f"./wordstreams/ws_{T}_{Kdev}_{depth}_{method}_{date}"
+    out_path = f"./wordstreams/ws_{date}"
     make_dir = lambda d: None if(os.path.isdir(d)) else(os.mkdir(d))
     make_dir("./wordstreams")
     make_dir(f"{out_path}")

@@ -16,7 +16,6 @@ module MTJ_RNG_vars
     real(kind(0.0d0)),parameter :: gammall = 2.0*u0*uB/h_bar 
     real(kind(0.0d0)),parameter :: gammab  = gammall/u0
     real(kind(0.0d0)),parameter :: t_step  = 5e-11
-    real(kind(0.0d0)),parameter :: tox = 1e-9
     real(kind(0.0d0)),parameter :: P = 0.6
     real(kind(0.0d0)),parameter :: eps_mgo = 4.0
 
@@ -33,7 +32,7 @@ module MTJ_RNG_vars
     real(kind(0.0d0)) :: Hx = 0.0
     real(kind(0.0d0)) :: Hy = 0.0
     real(kind(0.0d0)) :: Hz = 0.0
-    real(kind(0.0d0)) :: Ki, TMR, Rp, Ms, a, b, d, tf, alpha, eta,&
+    real(kind(0.0d0)) :: Ki, TMR, Rp, Ms, a, b, d, tf, alpha, eta, tox,&
                          Bsat, gammap, volume, A1, A2, cap_mgo, R2, Htherm, F, T
     ! Modeling the stack for thermal module
     integer :: nLayers
@@ -45,10 +44,10 @@ module MTJ_RNG_vars
     ! real(kind(0.0d0)),parameter :: RA = 7e-12
     ! ==============================================
     contains
-        subroutine set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in)
+        subroutine set_params(Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in, T_in)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
-            real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in
+            real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, T_in, tox_in
 
             Ki = real(Ki_in, dp)
             TMR = real(TMR_in, dp); Rp = real(Rp_in, dp)
@@ -56,6 +55,7 @@ module MTJ_RNG_vars
             a  = real(a_in, dp);   b   = real(b_in, dp)
             d  = real(d_in, dp);   eta = real(eta_in, dp)
             alpha = real(alpha_in, dp); tf = real(tf_in, dp)
+            tox = real(tox_in,dp)
 
             T       = real(T_in,dp)
             A1      = a*b*pi/4.0_dp
