@@ -30,14 +30,14 @@ def main():
     one stream split :    OSS
     '''
 
-    length = 5000
+    length = 100000
     depth  = 1
     kdev   = 0.0
     T      = 300
     method = "2S1D"
 
-    #gen_T_uniformity(T, length, depth, method, out_dir)
-    gen_T_p_measure(length, depth, method, out_dir)
+    gen_K_uniformity(kdev, length, depth, method, out_dir)
+    #gen_K_p_measure(length, depth, method, out_dir)
 
     print("--- %s seconds ---" % (time.time() - start_time))
 
@@ -129,10 +129,92 @@ def gen_T_p_measure(length, depth, method, out_dir):
 
     return
 
-def gen_K_uniformity():
-    pass
+#T is constant here
+#Generates uniformity data for given device configuration
+def gen_K_uniformity(Kdev, length, depth, method, out_dir):
+    if method == "2S1D":
+        XORd = two_stream_one_dev(300, Kdev, length, depth, out_dir)
+    elif method == "2S2D":
+        XORd = two_stream_two_dev(300, Kdev, length, depth, out_dir)
+    elif method == "OSS":
+        XORd = one_stream_split(300, Kdev, length, out_dir)
 
-def gen_K_p_measure():
+    L1 = np.load(out_dir + '/h1_L_0.npy')
+    R1 = np.load(out_dir + '/h1_R_1.npy')
+    np.savez(f"{out_dir}/metadata.npz",
+             Kdev = Kdev, depth = depth, method = method)
+
+    uniformity, chisq, p_val = funcs.get_stats(XORd, length)
+    np.savez(f"{out_dir}/plottable_{Kdev}_XOR.npz",
+             chisq = chisq, p_val = p_val, x = uniformity/length)
+
+    uniformity, chisq, p_val = funcs.get_stats(L1, length)
+    np.savez(f"{out_dir}/plottable_{Kdev}_L1.npz",
+             chisq = chisq, p_val = p_val, x = uniformity/length)
+
+    uniformity, chisq, p_val = funcs.get_stats(R1, length)
+    np.savez(f"{out_dir}/plottable_{Kdev}_R1.npz",
+             chisq = chisq, p_val = p_val, x = uniformity/length)
+
+    if depth == 2:
+        pass
+        ''' FIXME
+        L2 = np.load(out_dir + '/h1_L_2.npy')
+        R2 = np.load(out_dir + '/h1_R_3.npy')
+        uniformity, chisq, p_val = stats(L2, length)
+        np.savez(f"{out_dir}/plottable_{T}_L2.npz",
+                 chisq = chisq, p_val = p_val, x = uniformity/length)
+
+        uniformity, chisq, p_val = stats(R1, length)
+        np.savez(f"{out_dir}/plottable_{T}_R2.npz",
+                 chisq = chisq, p_val = p_val, x = uniformity/length)
+        '''
+    return
+
+#Same operation as gen_T_p_measure, but varying K deviation
+def gen_K_p_measure(length, depth, method, out_dir):
+
+    Kdevs = [1.0, 2.5, 5.0]
+    iters = 100
+    p_exp = 0.05
+
+    if method == "2S1D":
+        function = two_stream_one_dev
+        args = (length, depth, out_dir)
+    elif method == "2S2D":
+        function = two_stream_two_dev
+        args = (length, depth, out_dir)
+    elif method == "OSS":
+        function  = one_stream_split
+        args = (length, out_dir)
+
+    # not bothering to save xord streams anymore...
+
+    # for range of temperature, generate x number of
+    # p values for each bitstream uniformity
+    # and then take the p value of the p values
+    x_axis = []
+    for K in Kdevs:
+        for i in range(iters):
+            function(300, K, *args, i)
+        xord_streams = glob.glob(out_dir + '/XORd_stream_*')
+        p_vals = [ funcs.get_stats(np.load(stream), length)[2] for stream in xord_streams ]
+
+        # compute meta stats
+        #E = 0.05
+        #chisq = np.sum( [ ((O_i-E)**2)/E for O_i in p_vals ] )
+        #meta_p = chi2.sf(chisq, 1) #??? dof FIXME FIXME FIXME
+        meta_p = np.mean(p_vals)
+        x_axis.append(meta_p)
+
+    np.savez(f"{out_dir}/metadata.npz",
+             Kdevs = Kdevs, depth = depth, method = method)
+
+    np.savez(f"{out_dir}/plottable_{K}_Sweep.npz",
+             x = x_axis)
+
+    return
+
     pass
 
 
