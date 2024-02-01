@@ -13,12 +13,6 @@ def print_tree(root):
     print(root.fname)
     print_tree(root.right)
 
-def is_leaf(root):
-    if root.left == None and root.right == None:
-        return True
-    else:
-        return False
-
 NODE_COUNTER = 0
 def build_tree(generator, devs, args, root, depth, out_dir):
     global NODE_COUNTER
