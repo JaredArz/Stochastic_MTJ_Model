@@ -1,23 +1,13 @@
 import numpy as np
 
-#============================== Private ========================================
-# inject noise if device-to-device variation requested
-def draw_norm(x,var,psig):
-    return (x if not var else(x*np.random.normal(1,psig)))
-
-def draw_const(x,var,csig):
-    return (x if not var else(x+np.random.normal(-csig,csig)))
-
-#================================================================================
-#////////////////////////////////////////////////////////////////////////////////
-
 # C-like enum. Should match Fortran
 (SHE, SWrite, VCMA) = range(0, 3)
 
 #============================= Parent class =========================================
 class MTJ():
      def __init__(self,mtj_type,dflt_params,dflt_noise,dflt_m):
-         shared_params = ('Ms','Ki','TMR','Rp','a','b','tf','alpha','eta','d','tox','t_pulse','t_relax','T')
+         shared_params = ('Ms','Ki','TMR','Rp','a','b','tf','alpha',
+                          'eta','d','tox','t_pulse','t_relax','T')
          valid_params = list(shared_params)
          # add parameters unique to mtj type into valid_params
          for key, _ in dflt_params.items():
