@@ -1,0 +1,5 @@
+note voltage operation,
+Fix config veryfiy
+Update README
+generate scurve plots
+write small script with distributions

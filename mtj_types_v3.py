@@ -1,30 +1,31 @@
 import numpy as np
+import sys
+import json
+import re
+
+
+# extract absolute path of main dir from entry dir to locate mtj_paramaters.json properly
+main_dir = re.match(re.compile(r'^(.*?Stochastic_MTJ_Model)'), sys.path[0]).group(1)
 
 # C-like enum. Should match Fortran
 (SHE, SWrite, VCMA) = range(0, 3)
 
 #============================= Parent class =========================================
 class MTJ():
-     def __init__(self,mtj_type,dflt_params,dflt_noise,dflt_m):
-         shared_params = ('Ms','Ki','TMR','Rp','a','b','tf','alpha',
-                          'eta','d','tox','t_pulse','t_relax','T')
-         valid_params = list(shared_params)
-         # add parameters unique to mtj type into valid_params
-         for key, _ in dflt_params.items():
-             if key not in valid_params:
-                 valid_params.append(key)
-         self.valid_params = valid_params
-         self.dflt_params = dflt_params
-         self.dflt_noise  = dflt_noise
-         self.dflt_m      = dflt_m
-         self.mtj_type    = mtj_type
+     def __init__(self, mtj_type, dflt_params, dflt_m, heating_capable):
+         self.valid_params = [param for param, _ in dflt_params.items()]
+         self.dflt_params  = dflt_params
+         self.dflt_m       = dflt_m
+         self.mtj_type     = mtj_type
          self.phiHistory   = []
          self.thetaHistory = []
-         self.tempHistory = []
+         self.tempHistory  = []
          self.sample_count = 0
+         self.heating_enabled = 0
+         self.heating_capable = heating_capable
 
      #================================================================================
-     # can call print(device) to list all parameters assigned
+     # can use built-in function 'print' to print(dev) and list all parameters 
      def __str__(self):
          out_string = "\nDevice parameters:\n"
          for p in self.valid_params:
@@ -35,34 +36,30 @@ class MTJ():
          return out_string
 
      #================================================================================
-     def set_mag_vector(self,phi=None,theta=None):
+     def set_mag_vector(self, phi=None, theta=None):
          if phi == None and theta == None:
              self.phi = self.dflt_m["phi"]
              self.theta = self.dflt_m["theta"]
          else:
              self.phi   = phi
              self.theta = theta
+         return
 
      #================================================================================
      # A list of valid parameters determined by the subclass is used to check whether the arguments
      # passed to this function are valid.
      # Runtime errors at the fortran interface will catch any parameters that are not yet set at 
      # sampling time.
-     def set_vals(self,dflt_flag = None,**params):
+     def set_vals(self, dflt_flag = None, **params):
          #catch call with no arguments
          if params == {} and dflt_flag is None:
              raise(ValueError)
          #debug option with flag True: use known good device values
-         elif ( dflt_flag == True or dflt_flag == False ) and params == {}:
+         elif dflt_flag == True and params == {}:
              for key, val in self.dflt_params.items():
-                try:
-                    val = draw_norm(val, dflt_flag, self.dflt_noise[key])
-                except(KeyError):
-                    pass
-                finally:
-                    self.__setattr__(key, val)
+                self.__setattr__(key, val)
              self.params_set_flag = True
-
+         #try and set custom param values
          elif dflt_flag is None:
              try:
                  for key, val in params.items():
@@ -74,8 +71,10 @@ class MTJ():
                  raise
          #catch anything else, just in case
          else:
-             print_key_error()
+             self.print_key_error()
              raise(KeyError)
+         return
+
      def print_init_error(self):
           print("--------------------------------*--*-----------------------------------")
           print("Check that the magnetization vector was initalized.")
@@ -85,7 +84,7 @@ class MTJ():
 
      def print_key_error(self):
          print("--------------------------------*--*-----------------------------------")
-         print("An attempt was made to assign an invalid parameter to this device.")
+         print("An attempt was made to assign/access an invalid parameter.")
          self.print_expected_params()
          print("--------------------------------*--*-----------------------------------")
 
@@ -99,6 +98,15 @@ class MTJ():
              print("SWrite: J_reset, t_reset, H_reset (optional)")
          elif self.mtj_type == VCMA:
              print("VCMA: v_pulse")
+
+     def print_device_not_found(self):
+         print("-------------*--*----------------")
+         print("Device subtype not found.")
+         print("Subtypes available:")
+         print("SHE: None (default UTA)")
+         print("SWrite: UTA, NYU")
+         print("VCMA: None (default UTA)")
+         print("--------------*--*---------------")
 #================================================================================
 #////////////////////////////////////////////////////////////////////////////////
 
@@ -107,50 +115,36 @@ class SHE_MTJ_rng(MTJ):
         # MTJ Parameters- This is experimental values from real STT-SOT p-MTJ%
         dflt_m = {"theta" : np.pi/100,
                   "phi"   : np.random.rand()*2*np.pi}
-        dflt_noise = {"Ki"  : 0.05,
-                      "Rp"  : 0.05,
-                      "TMR" : 0.05}
-        dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
-                       "TMR" : 1.2,    "Ms" : 1.2e6,
-                       "J_she" : 5e11, "a"  : 50e-9,
-                       "b"  : 50e-9,   "tf" : 1.1e-9,
-                       "alpha" :0.03,  "eta" : 0.3,
-                       "d"  : 3e-9, "tox" : 5e-9,
-                       "t_pulse" : 10e-9, "t_relax" : 15e-9, "Hy": 0}
-        super().__init__(SHE,dflt_params,dflt_noise,dflt_m)
+        heating_capable = 0
+        with open(f'{main_dir}/mtj_parameters.json', 'r') as f:
+            dflt_params = (json.load(f))["SOT"]
+        super().__init__(SHE,dflt_params,dflt_m,heating_capable)
 
 class SWrite_MTJ_rng(MTJ):
-    def __init__(self):
+    def __init__(self, flavor):
         # FIXME initial condition may have impact on results
         dflt_m = {"theta"  : 99*np.pi/100,
         #dflt_m = {"theta"  : np.pi/100,
                   "phi"    : np.random.rand()*2*np.pi}
-        dflt_noise = {"Ki"  : 0.025,
-                      "Rp"  : 0.05,
-                      "TMR" : 0.05}
-        dflt_params = {"K_295" : 440384.62,"Rp" : 2530,
-                       "TMR": 1.24,        "Ms_295" : 163000,
-                       "J_reset": 5e11,    "H_reset": 0,
-                       "a"  : 40e-9,       "b"  : 40e-9,
-                       "tf" : 2.6e-9,      "alpha" :0.016,
-                       "eta" : 0.3,        "d"  : 3e-9,
-                       "t_pulse" : 1e-9,   "tox" : 1e-9,
-                       "t_relax" : 10e-9,  "t_reset" : 10e-9,
-                       'T' : 300,          "RA" : 3.18e-12}
-        super().__init__(SWrite,dflt_params,dflt_noise,dflt_m)
+        if flavor ==  "UTA":
+            heating_capable = 0
+            with open(f'{main_dir}/mtj_parameters.json', 'r') as f:
+                dflt_params = (json.load(f))["SWRITE"]["UTA"]
+        elif flavor ==  "NYU":
+            heating_capable = 1
+            with open(f'{main_dir}/mtj_parameters.json', 'r') as f:
+                dflt_params = (json.load(f))["SWRITE"]["NYU"]
+        else:
+            self.print_device_not_found()
+            exit()
+        super().__init__(SWrite,dflt_params,dflt_m,heating_capable)
 
 class VCMA_MTJ_rng(MTJ):
     def __init__(self):
         dflt_m = {"theta" : np.pi/100,
                   "phi"   : np.random.rand()*2*np.pi}
-        dflt_noise = {"Ki"  : 0.05,
-                      "Rp"  : 0.05,
-                      "TMR" : 0.05}
-        dflt_params = {"Ki" : 1.0056364e-3,"Rp" : 5e3,
-                       "TMR" : 1.2,    "Ms" : 1.2e6,
-                       "v_pulse" : 1.5, "a"  : 50e-9,
-                       "b"  : 50e-9,   "tf" : 1.1e-9,
-                       "alpha" :0.03,  "eta" : 0.3,
-                       "d"  : 3e-9, "tox" : 5e-9,
-                       "t_pulse" : 30e-9, "t_relax" : 30e-9}
-        super().__init__(VCMA,dflt_params,dflt_noise,dflt_m)
+        heating_capable = 0
+        with open(f'{main_dir}/mtj_parameters.json', 'r') as f:
+            dflt_params = (json.load(f))["VCMA"]
+
+        super().__init__(VCMA,dflt_params,dflt_m,heating_capable)

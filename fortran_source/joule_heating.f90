@@ -1,3 +1,4 @@
+! currently this file is considering the NYU SWrite device
 module joule_heating
   use MTJ_RNG_vars
 
@@ -93,13 +94,13 @@ contains
     Tc = 1453.0
     n = 1.804
     q = 1.0583
-    Kstar = 4.389e5
+    Kstar = 4.389e5*2.6e-9
     Mstar = 5.8077e5
     cm = Ms_295 - Mstar*(1-(295.0/Tc)**q)
     ck = K_295 - Kstar*((Ms_295/Mstar)**n)
 
     Ms = Mstar*(1.0-(T_in/Tc)**q) + cm
-    Ki = 2.6e-9*(Kstar*((Ms/Mstar)**n) + ck)
+    Ki = (Kstar*((Ms/Mstar)**n) + ck)
 
     return
   end subroutine compute_K_and_Ms
