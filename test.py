@@ -1,12 +1,11 @@
 import sys
 from mtj_types_v3 import SHE_MTJ_rng, SWrite_MTJ_rng, VCMA_MTJ_rng
-from mtj_variation import vary_param
 from interface_funcs import mtj_sample
 
-dev = SWrite_MTJ_rng("NYU")
+dev = VCMA_MTJ_rng()
 dev.set_vals(1)
-print(dev)
 dev.set_mag_vector()
-bit,e = mtj_sample(dev, 1)
-print(bit)
+#dev.enable_heating()
+print(dev)
+_,_ = mtj_sample(dev, -1.1, view_mag_flag = True)
 print(dev.tempHistory)

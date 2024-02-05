@@ -33,6 +33,7 @@ class MTJ():
                  out_string += "\r" + str(p) + ": " + str(getattr(self,p)) + "\n"
              except(AttributeError):
                  out_string += "\r" + str(p) + ": " + " \n"
+         out_string += "\rHeating enabled: " + str(bool(self.heating_enabled)) + " \n"
          return out_string
 
      #================================================================================
@@ -43,6 +44,14 @@ class MTJ():
          else:
              self.phi   = phi
              self.theta = theta
+         return
+
+     def enable_heating(self):
+         self.heating_enabled = 1
+         return
+
+     def enable_heating(self):
+         self.heating_enabled = 0
          return
 
      #================================================================================

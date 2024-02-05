@@ -35,7 +35,6 @@ contains
 
     return
   end subroutine cool_device
-
   subroutine comp_cstack(A)
 
     implicit none

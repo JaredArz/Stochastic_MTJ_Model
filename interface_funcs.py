@@ -11,8 +11,6 @@ import numpy as np
 def V_to_J(dev, V):
     return V/dev.RA
 
-# CHECK HEADING CAPABLE, then pass heating enabled flag to fortran
-
 def mtj_sample(dev, V, view_mag_flag = 0, dump_mod = 1,
                file_ID = 1, config_check = 0) -> (int,float):
     if dev.heating_capable == 0 and dev.heating_enabled == 1:

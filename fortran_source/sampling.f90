@@ -245,6 +245,7 @@ module sampling
             ! Fortran array indexing starts at 1
             t_i  = 1
             fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1)
+            
 
             pulse_steps = int(t_pulse/t_step)
             relax_steps = int(t_relax/t_step)
@@ -272,7 +273,6 @@ module sampling
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
             !================================
-            print*,T
 
             call drive(real(v_pulse,dp), 0.0_dp, real(Jappl,dp),0.0_dp , 0.0_dp, pulse_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow, heating_enabled)
@@ -334,22 +334,22 @@ module sampling
                ! only accounting for z-component
                R1 = Rp*(1_dp+(V/Vh)**2+TMR)/(1_dp+(V/Vh)**2 + TMR*(1_dp+cos_theta)/2_dp)
 
-               ! Joule heating only operational for J_STT and is computed when J_STT is non zero
-               if ( (J_STT .ne. 0.0_dp) .and. heating_enabled ) then
+               ! Joule heating only operational for NYU device and is computed when J_STT is non zero
+               if (J_STT .ne. 0.0_dp .and. heating_enabled) then
                   call heat_device(R1*(J_STT*A1)**2,t_i*t_step,T_init,T_free)
                   T = T_free
                   ! update temperature dependent parameters
                   call compute_K_and_Ms(K_295, Ms_295, T)
                   Bsat = Ms*u0
                   Hk = ((2.0_dp*Ki)/(tf*Ms*u0)) - ((2.0_dp*ksi*V)/(u0*Ms*tox*tf))
-                  Htherm  = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
+                  Htherm = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
                else
                   call cool_device(t_i*t_step,T_bath,T_init,T_free)
                   T = T_free
                   call compute_K_and_Ms(K_295, Ms_295, T)
                   Bsat = Ms*u0
                   Hk = ((2.0_dp*Ki)/(tf*Ms*u0)) - ((2.0_dp*ksi*V)/(u0*Ms*tox*tf))
-                  Htherm  = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
+                  Htherm = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
                end if
 
                pow = v_pow + she_pow + (R1*(J_STT*A1)**2)
@@ -359,7 +359,7 @@ module sampling
                if(fwrite_enabled) then
                    theta_evol(t_i) = theta_i
                    phi_evol(t_i)   = phi_i
-                   temp_evol(t_i) = T_free
+                   temp_evol(t_i)  = T_free
                end if
            end do
 

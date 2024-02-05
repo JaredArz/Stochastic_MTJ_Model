@@ -36,7 +36,7 @@ module MTJ_RNG_vars
                          gammap, volume, A1, A2, cap_mgo, R2, Htherm, F
 
     ! Modeling the stack for thermal module
-    integer :: nLayers
+    integer :: nLayers = 8
     real(kind(0.0d0)) :: k_j(2)
     real(kind(0.0d0)), allocatable :: tLayer(:), pLayer(:), cLayer(:)
 
