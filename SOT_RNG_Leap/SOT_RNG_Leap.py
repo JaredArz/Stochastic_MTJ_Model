@@ -104,12 +104,12 @@ def train():
                                 representation=representation,
                                 pipeline=pipeline)
   
-  with open("mtj_rng_leap_results.pkl", "wb") as file:
+  with open("results.pkl", "wb") as file:
     pickle.dump(final_pop, file)
 
 
 def analyze_results():
-  with open("mtj_rng_leap_results.pkl", "rb") as file:
+  with open("results.pkl", "rb") as file:
     data = pickle.load(file)
   
   # print(data[0])
