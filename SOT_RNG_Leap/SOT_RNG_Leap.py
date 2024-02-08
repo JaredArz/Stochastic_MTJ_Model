@@ -1,6 +1,7 @@
 import sys
 import time
-import pickle 
+import pickle
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,8 +40,9 @@ t_relax_range = (0.5e-9, 75e-9)
 
 
 class MTJ_RNG_Problem(MultiObjectiveProblem):
-  def __init__(self):
+  def __init__(self, runID):
     super().__init__(maximize=(False, False))
+    self.runID = runID
   
   def evaluate(self, params):
     chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = mtj_run(alpha=params[0], 
@@ -54,7 +56,8 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
                                                                               J_she=params[6], 
                                                                               t_pulse=params[7], 
                                                                               t_relax=params[7], 
-                                                                              samples=DEV_SAMPLES)
+                                                                              samples=DEV_SAMPLES,
+                                                                              runID=self.runID)
     
     if chi2 == None:    # Penalize when config fails
       # kl_div = np.inf
@@ -75,10 +78,9 @@ def print_generation(population):
   return population
 
 
-def train():
+def train(runID):
   pop_size = 50
   max_generation = 100
-  min_fitness = 1000
   param_bounds = [alpha_range,    # alpha bounds 
                   Ki_range,       # Ki bounds 
                   Ms_range,       # Ms bounds
@@ -100,32 +102,34 @@ def train():
   
   final_pop = generalized_nsga_2(max_generations=max_generation,
                                 pop_size=pop_size,
-                                problem=MTJ_RNG_Problem(),
+                                problem=MTJ_RNG_Problem(runID),
                                 representation=representation,
                                 pipeline=pipeline)
   
-  with open("results.pkl", "wb") as file:
+  with open(f"results_{runID}.pkl", "wb") as file:
     pickle.dump(final_pop, file)
 
 
-def analyze_results():
-  with open("results.pkl", "rb") as file:
+def analyze_results(runID):
+  with open(f"results_{runID}.pkl", "rb") as file:
     data = pickle.load(file)
-  
-  # print(data[0])
-  # exit()
 
   df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])
   df.columns = ["genome","kl_div","energy","rank","distance"]
 
   # Plot Pareto Front
-  df.plot(x="kl_div", y="energy", kind="scatter")
-  plt.show()
+  # df.plot(x="kl_div", y="energy", kind="scatter")
+  # plt.show()
 
-  # print(df.iloc[0]["genome"])
+  print(df)
 
 
 
 if __name__ == "__main__":
-  # train()
-  analyze_results()
+  parser = argparse.ArgumentParser(description="MTJ Parameter Testing")
+  parser.add_argument("--ID", required=True, help="run ID", type=int)
+  args = parser.parse_args()
+  ID = args.ID
+  
+  train(ID)
+  # analyze_results(ID)

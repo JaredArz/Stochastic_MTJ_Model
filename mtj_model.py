@@ -72,7 +72,7 @@ def check_output_paths() -> None:
   dir_check("./results/bitData")
 
 @profile
-def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=1000):
+def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=1000, runID=0):
   dev = SHE_MTJ_rng()
   dev.set_vals(1) # only using default a and b, overwriting with below 
   dev.alpha = alpha
@@ -89,7 +89,7 @@ def mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples
   # print(dev)
   
   # Verifying device paramters
-  nerr, mz1, mz2, PI = config_verify(dev, runID=0)
+  nerr, mz1, mz2, PI = config_verify(dev, runID)
   if nerr == -1:
     # print('numerical error, do not use parameters!')
     return None, None, None, None, None, None, None
