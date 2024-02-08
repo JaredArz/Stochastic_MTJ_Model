@@ -11,6 +11,30 @@ import numpy as np
 def V_to_J(dev, V):
     return V/dev.RA
 
+<<<<<<< HEAD
+
+def mtj_check(dev, V, cycles, pcs, rcs, view_mag_flag = 0, dump_mod = 1,
+               file_ID = 1, config_check = 1) -> (int,float):
+    if dev.heating_capable == 0 and dev.heating_enabled == 1:
+        raise(AttributeError)
+    try:
+        mz_c1, mz_c2, p2pv = f90.sampling.check_she(V_to_J(dev,V),\
+                dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
+                dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
+                dev.t_pulse, dev.t_relax, dev.T,\
+                dump_mod, view_mag_flag, dev.sample_count, file_ID,\
+                0, cycles, pcs, rcs)
+    except(AttributeError):
+        dev.print_init_error()
+        raise
+
+    return mz_c1,mz_c2, p2pv
+
+
+# CHECK HEADING CAPABLE, then pass heating enabled flag to fortran
+
+=======
+>>>>>>> 6cf0fd07220668d62218c898fc259090cf1c52c7
 def mtj_sample(dev, V, view_mag_flag = 0, dump_mod = 1,
                file_ID = 1, config_check = 0) -> (int,float):
     if dev.heating_capable == 0 and dev.heating_enabled == 1:
@@ -22,14 +46,14 @@ def mtj_sample(dev, V, view_mag_flag = 0, dump_mod = 1,
                     dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
                     dev.t_pulse, dev.t_relax, dev.T,\
-                    dump_mod, view_mag_flag, dev.sample_count, file_ID, config_check,
+                    dump_mod, view_mag_flag, dev.sample_count, file_ID,\
                     dev.heating_enabled)
         elif (dev.mtj_type == 1):
             energy, bit, theta_end, phi_end = f90.sampling.sample_swrite(V_to_J(dev,V),\
                     dev.J_reset, dev.H_reset, dev.theta, dev.phi, dev.K_295, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms_295, dev.eta, dev.d, dev.tox,\
                     dev.t_pulse, dev.t_relax, dev.t_reset, dev.T,\
-                    dump_mod, view_mag_flag, dev.sample_count, file_ID, config_check,
+                    dump_mod, view_mag_flag, dev.sample_count, file_ID,\
                     dev.heating_enabled)
 
         elif (dev.mtj_type == 2):
@@ -37,14 +61,14 @@ def mtj_sample(dev, V, view_mag_flag = 0, dump_mod = 1,
                     dev.v_pulse, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
                     dev.t_pulse, dev.t_relax, dev.T,\
-                    dump_mod, view_mag_flag, dev.sample_count, file_ID, config_check,
+                    dump_mod, view_mag_flag, dev.sample_count, file_ID,\
                     dev.heating_enabled)
         else:
             dev.print_init_error()
             raise(AttributeError)
         # Need to update device objects and put together time evolution data after return.
         dev.set_mag_vector(phi_end,theta_end)
-        if( (view_mag_flag and (dev.sample_count % dump_mod == 0)) or config_check):
+        if( (view_mag_flag and (dev.sample_count % dump_mod == 0))):
             # These file names are determined by fortran subroutine single_sample.
             phi_from_txt   = np.loadtxt("phi_time_evol_"+ format_file_ID(file_ID) + ".txt",
                                         dtype=float, usecols=0, delimiter=None)

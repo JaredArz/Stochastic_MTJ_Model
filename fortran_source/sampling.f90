@@ -16,7 +16,7 @@ module sampling
         subroutine sample_SHE(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, Jshe, Hy_in, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                                  a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
-                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, config_check, heating_enabled)
+                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
@@ -25,7 +25,7 @@ module sampling
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, Hy_in,&
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
             ! Functional parameters
-            integer, intent(in) :: file_ID, sample_count, dump_mod, config_check
+            integer, intent(in) :: file_ID, sample_count, dump_mod
             logical, intent(in) :: view_mag_flag, heating_enabled
             ! Return values
             real, intent(out) :: energy_usage, theta_end, phi_end
@@ -41,7 +41,7 @@ module sampling
             ! ======== solve init =========
             ! Fortran array indexing starts at 1
             t_i  = 1
-            fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1)
+            fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag))
 
             pulse_steps = int(t_pulse/t_step)
             relax_steps = int(t_relax/t_step)
@@ -101,7 +101,7 @@ module sampling
         subroutine sample_SWrite(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, Jreset, Hreset, theta_init, phi_init, K_295_in, TMR_in, Rp_in,&
                                  a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, tox_in, t_pulse, t_relax, t_reset,&
-                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, config_check, heating_enabled)
+                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
@@ -111,7 +111,7 @@ module sampling
             real, intent(in) :: K_295_in, TMR_in, Rp_in, Ms_295_in,&
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
             ! Functional parameters
-            integer, intent(in) :: file_ID, sample_count, dump_mod, config_check
+            integer, intent(in) :: file_ID, sample_count, dump_mod
             logical, intent(in) :: view_mag_flag, heating_enabled
             ! Return values
             real, intent(out) :: energy_usage, theta_end, phi_end
@@ -128,7 +128,7 @@ module sampling
             ! ======== solve init =========
             ! Fortran array indexing starts at 1
             t_i  = 1
-            fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1)
+            fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag))
 
             pulse_steps = int(t_pulse/t_step)
             relax_steps = int(t_relax/t_step)
@@ -155,7 +155,7 @@ module sampling
 
             ! compute K and Ms with temperature dependence
             !sets K, Ms
-            call compute_K_and_Ms(K_295, Ms_295, T_free) 
+            call compute_K_and_Ms(K_295, Ms_295, T_free)
             !redundant, sets K, Ms, and Bsat with no change. Avoids conflict with other device models
             call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
 
@@ -219,7 +219,7 @@ module sampling
         subroutine sample_VCMA(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, v_pulse, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                                  a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
-                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, config_check, heating_enabled)
+                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
@@ -228,7 +228,7 @@ module sampling
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in,&
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
             ! Functional parameters
-            integer, intent(in) :: file_ID, sample_count, dump_mod, config_check
+            integer, intent(in) :: file_ID, sample_count, dump_mod
             logical, intent(in) :: view_mag_flag, heating_enabled
             ! Return values
             real, intent(out) :: energy_usage, theta_end, phi_end
@@ -244,8 +244,12 @@ module sampling
             ! ======== solve init =========
             ! Fortran array indexing starts at 1
             t_i  = 1
+<<<<<<< HEAD
+            fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag))
+=======
             fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1)
             
+>>>>>>> 6cf0fd07220668d62218c898fc259090cf1c52c7
 
             pulse_steps = int(t_pulse/t_step)
             relax_steps = int(t_relax/t_step)
@@ -294,7 +298,137 @@ module sampling
             theta_end = real(theta_i)
             phi_end   = real(phi_i)
             energy_usage = real(cuml_pow*t_step)
-        end subroutine sample_VCMA
+          end subroutine sample_VCMA
+
+          subroutine check_SHE(mz_c1, mz_c2, p2pv,&
+               Jappl, Jshe, Hy_in, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
+               a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
+               T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled, cyc, pcs, rcs)
+
+            !++++ Configuration check for SHE device ++++++
+            ! this was formerly done via output files and interacting with python. in order to avoid
+            ! the need to write files to interact with python, the entire functionality was moved here
+
+            implicit none
+            integer, parameter :: dp = kind(0.0d0)
+            ! Dynamical parameters
+            real, intent(in) :: Jappl, Jshe, theta_init, phi_init, t_pulse, t_relax, T_in
+            ! Device input parameters
+            real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, Hy_in,&
+                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+            ! Functional parameters
+            integer, intent(in) :: file_ID, sample_count, dump_mod, cyc, pcs, rcs
+            logical, intent(in) :: view_mag_flag, heating_enabled
+            ! Return values
+            real, intent(out) :: mz_c1, mz_c2, p2pv
+            !==================================================================
+            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol, mz_c1_arr, mz_c2_arr, mz_arr
+            real(dp) :: phi_i, theta_i, cuml_pow
+            real :: seed
+            integer :: t_i, pulse_steps, relax_steps, total_steps, c_i, m_i
+            !==================================================================
+            !//////////////////////////////////////////////////////////////////
+
+            ! ======== solve init =========
+            ! Fortran array indexing starts at 1
+
+            fwrite_enabled = .true.
+
+            p2pv = 0.0; mz_c1 = 0.0; mz_c2 = 0.0
+
+            pulse_steps = int(t_pulse/t_step)
+            relax_steps = int(t_relax/t_step)
+
+            total_steps = pulse_steps+relax_steps+1
+
+            allocate(mz_c1_arr(pulse_steps))
+            allocate(mz_c2_arr(relax_steps))
+            allocate(mz_arr(total_steps))
+
+            mz_c1_arr = 0.0; mz_c2_arr = 0.0; mz_arr = 0.0
+
+            cuml_pow = 0.0_dp
+            theta_i = real(theta_init, dp)
+            phi_i   = real(phi_init, dp)
+            T_free = real(T_in, dp)
+            T_bath = real(T_in, dp)
+            T      = real(T_in, dp)
+
+            allocate(theta_evol(total_steps))
+            allocate(phi_evol(total_steps))
+            allocate(temp_evol(total_steps))
+
+            Ki = real(Ki_in, dp)
+            Ms = real(Ms_in, dp)
+            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+
+            call random_number(seed)
+            call zigset(int(1+floor((1000001)*seed)))
+            !================================
+
+            Hy = real(Hy_in,dp)
+
+            do c_i = 1,cyc
+               t_i  = 1
+               theta_i = real(theta_init, dp)
+               phi_i   = real(phi_init, dp)
+               theta_evol(t_i) = theta_i
+               phi_evol(t_i)   = phi_i
+               temp_evol(t_i) = T
+               mz_arr = 0.0
+               !=========== Pulse current and set device to be in-plane =========
+               call drive(0.0_dp, real(Jshe,dp), real(Jappl,dp), 0.0_dp, 0.0_dp, pulse_steps,&
+                    t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
+                    heating_enabled)
+
+
+               Hy = 0
+               !=================  Relax into one of two low-energy states out-of-plane  ===================
+               call drive(0.0_dp, 0.0_dp, real(Jappl,dp), 0.0_dp, 0.0_dp, relax_steps,&
+                    t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
+                    heating_enabled)
+
+!!$               if (c_i .eq. 1) then
+!!$                  print*,'thetaevol: ',theta_evol
+!!$               end if
+               do m_i = 1,total_steps
+                  mz_arr(m_i) = abs(cos(theta_evol(m_i)))
+               end do
+
+
+               mz_c1_arr = mz_c1_arr + mz_arr(1:pulse_steps)
+               mz_c2_arr = mz_c2_arr + mz_arr(pulse_steps+2:total_steps)
+               p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) - mz_arr(1:total_steps-1)))/real(total_steps-1))
+
+!!$               if (c_i .eq. 1) then
+!!$                  print*,'mz_c1arr1'
+!!$                  print*,mz_c1_arr
+!!$                  print*,'mz_c2arr2'
+!!$                  print*,mz_c2_arr
+!!$               end if
+
+            end do
+
+!!$            print*,'end mz_c1arr1'
+!!$            print*,mz_c1_arr(pcs:pulse_steps)
+!!$            print*,'end mz_c2arr2'
+!!$            print*,mz_c2_arr(rcs:relax_steps)
+
+            p2pv = p2pv/real(cyc)
+            mz_c1 = real(sum(mz_c1_arr(pcs:pulse_steps)))/real(cyc)/real(pulse_steps-pcs)
+            mz_c2 = real(sum(mz_c2_arr(rcs:relax_steps)))/(real(cyc)*real(relax_steps-rcs))
+
+            print*,'p2p, c1, c2: ',p2pv, mz_c1,mz_c2
+
+
+            fwrite_enabled = .false.
+            if(fwrite_enabled) then
+                call file_dump(file_ID, phi_evol, theta_evol, temp_evol, 1)
+            end if
+
+            deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr, mz_arr)
+
+        end subroutine check_SHE
 
         subroutine drive(V, J_SHE, J_STT, K_295, Ms_295, steps, t_i, phi_i, theta_i,&
                          phi_evol, theta_evol, temp_evol, cuml_pow, heating_enabled)
@@ -314,6 +448,7 @@ module sampling
            v_pow = 0.5_dp*cap_mgo*V**2
            she_pow = R2*(J_SHE*A2)**2
            T_init = T_free
+
 
            do i = 1, steps
                t_i = t_i+1
@@ -342,8 +477,13 @@ module sampling
                   call compute_K_and_Ms(K_295, Ms_295, T)
                   Bsat = Ms*u0
                   Hk = ((2.0_dp*Ki)/(tf*Ms*u0)) - ((2.0_dp*ksi*V)/(u0*Ms*tox*tf))
+<<<<<<< HEAD
+                  Htherm  = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
+               elseif (heating_enabled) then
+=======
                   Htherm = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
                else
+>>>>>>> 6cf0fd07220668d62218c898fc259090cf1c52c7
                   call cool_device(t_i*t_step,T_bath,T_init,T_free)
                   T = T_free
                   call compute_K_and_Ms(K_295, Ms_295, T)
@@ -357,7 +497,7 @@ module sampling
                theta_i = theta_i + t_step*dtheta
                cuml_pow = pow + cuml_pow
                if(fwrite_enabled) then
-                   theta_evol(t_i) = theta_i
+                  theta_evol(t_i) = theta_i
                    phi_evol(t_i)   = phi_i
                    temp_evol(t_i)  = T_free
                end if
