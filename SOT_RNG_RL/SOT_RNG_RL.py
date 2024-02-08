@@ -1,3 +1,4 @@
+import inspect
 import os
 import argparse
 import numpy as np
@@ -12,20 +13,37 @@ from SOT_Env import SOT_Env
 
 
 # Custom callback for plotting additional values in tensorboard.
-class TensorboardCallback(BaseCallback):
-  def __init__(self, envs, verbose=0):
+class TensorboardCallback_SingleProcess(BaseCallback):
+  def __init__(self, env, verbose=0):
     super().__init__(verbose)
-    self.envs = envs
-    self.score = [0 for i in range(self.envs.num_envs)]
+    self.env = env
+    self.score = 0
 
   def _on_step(self) -> bool:
-    for i in range(self.envs.num_envs):
-      self.score[i] += self.envs.envs[i].reward
+    self.score += self.env.reward
+    self.logger.record("score", self.score)
+    self.logger.record("kl_div_score", self.env.kl_div_score)
+    self.logger.record("energy", self.env.energy)
+    self.logger.record("current_config_score", self.env.current_config_score)
+    self.logger.record("best_config_score", self.env.best_config_score)
+    if (self.num_timesteps % 500 == 0):
+      self.logger.dump(self.num_timesteps)
+    return True
+    
+class TensorboardCallback_MultiProcess(BaseCallback):
+  def __init__(self, num_envs, verbose=0):
+    super().__init__(verbose)
+    self.num_envs = num_envs
+    self.score = [0 for i in range(self.num_envs)]
+
+  def _on_step(self) -> bool:
+    for i in range(self.num_envs):
+      self.score[i] += self.locals["rewards"][i]
       self.logger.record(f"score_{i}", self.score[i])
-      self.logger.record(f"kl_div_score_{i}", self.envs.envs[i].kl_div_score)
-      self.logger.record(f"energy_{i}", self.envs.envs[i].energy)
-      self.logger.record(f"current_config_score_{i}", self.envs.envs[i].current_config_score)
-      self.logger.record(f"best_config_score_{i}", self.envs.envs[i].best_config_score)
+      self.logger.record(f"kl_div_score_{i}", self.locals["infos"][i]["kl_div_score"])
+      self.logger.record(f"energy_{i}", self.locals["infos"][i]["energy"])
+      self.logger.record(f"current_config_score_{i}", self.locals["infos"][i]["current_config_score"])
+      self.logger.record(f"best_config_score_{i}", self.locals["infos"][i]["best_config_score"])
       if (self.num_timesteps % 500 == 0):
         self.logger.dump(self.num_timesteps)
       return True
@@ -34,17 +52,19 @@ class TensorboardCallback(BaseCallback):
 def Train_Model(model_dir, log_dir, num_envs:int=1, training_timesteps:int=1000, log_window:int=100, eval:bool=False):
   if num_envs == 1:
     # Calls each environment in sequence on the current Python process; better for simple environments
-    env = make_vec_env(SOT_Env, n_envs=num_envs)
+    # env = make_vec_env(SOT_Env, n_envs=num_envs)
+    env = SOT_Env()
+    callback = TensorboardCallback_SingleProcess(env)
   else:
     # Distributes each environment to its own process; better for complex environments
-    # env = make_vec_env(SOT_Env, n_envs=num_envs, vec_env_cls=SubprocVecEnv)
-    env = SubprocVecEnv([SOT_Env(i) for i in range(num_envs)])
+    env = make_vec_env(SOT_Env, n_envs=num_envs, vec_env_cls=SubprocVecEnv)
+    callback = TensorboardCallback_MultiProcess(num_envs)
   
   model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log=log_dir)
 
   for i in range(1, training_timesteps//log_window):
     # Train model for given time window
-    model.learn(total_timesteps=log_window, reset_num_timesteps=False, callback=TensorboardCallback(env))
+    model.learn(total_timesteps=log_window, reset_num_timesteps=False, callback=callback)
 
     # Save model for given time window
     model_path = f"{model_dir}/timestep-{log_window*i}"
