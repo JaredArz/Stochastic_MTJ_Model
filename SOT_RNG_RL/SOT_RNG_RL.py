@@ -37,7 +37,8 @@ def Train_Model(model_dir, log_dir, num_envs:int=1, training_timesteps:int=1000,
     env = make_vec_env(SOT_Env, n_envs=num_envs)
   else:
     # Distributes each environment to its own process; better for complex environments
-    env = make_vec_env(SOT_Env, n_envs=num_envs, vec_env_cls=SubprocVecEnv)
+    # env = make_vec_env(SOT_Env, n_envs=num_envs, vec_env_cls=SubprocVecEnv)
+    env = SubprocVecEnv([SOT_Env(i) for i in range(num_envs)])
   
   model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log=log_dir)
 
