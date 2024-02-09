@@ -401,7 +401,257 @@ module sampling
 
             deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr, mz_arr)
 
-        end subroutine check_SHE
+          end subroutine check_SHE
+
+          subroutine check_SWrite(mz_c1, mz_c2, p2pv,&
+               Jappl, Jreset, Hreset, theta_init, phi_init, K_295_in, TMR_in, Rp_in,&
+               a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, tox_in, t_pulse, t_relax, t_reset,&
+               T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled, cyc, pcs, rcs)
+            implicit none
+            integer, parameter :: dp = kind(0.0d0)
+            ! Dynamical parameters
+            real, intent(in) :: Jappl, Jreset, Hreset, theta_init, phi_init,&
+                                t_pulse, t_relax, t_reset, T_in
+            ! Device input parameters
+            real, intent(in) :: K_295_in, TMR_in, Rp_in, Ms_295_in,&
+                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+            ! Functional parameters
+            integer, intent(in) :: cyc, pcs, rcs
+            integer, intent(in) :: file_ID, sample_count, dump_mod
+            logical, intent(in) :: view_mag_flag, heating_enabled
+            ! Return values
+            real, intent(out) :: mz_c1, mz_c2, p2pv
+            !==================================================================
+            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol, mz_c1_arr, mz_c2_arr, mz_arr
+            real(dp) :: phi_i, theta_i, cuml_pow, K_295, Ms_295
+            real :: seed
+            integer :: t_i, pulse_steps, relax_steps, reset_steps,&
+                       sample_steps, total_reset_steps, total_steps, c_i, m_i
+            !==================================================================
+            !//////////////////////////////////////////////////////////////////
+
+            ! ======== solve init =========
+            ! Fortran array indexing starts at 1
+            t_i  = 1
+            fwrite_enabled = .true.
+            p2pv = 0.0; mz_c1 = 0.0; mz_c2 = 0.0
+
+            pulse_steps = int(t_pulse/t_step)
+            relax_steps = int(t_relax/t_step)
+            reset_steps = int(t_reset/t_step)
+            sample_steps = pulse_steps+relax_steps+1
+            total_reset_steps = reset_steps+relax_steps
+            total_steps = sample_steps + total_reset_steps
+
+            allocate(mz_c1_arr(sample_steps))
+            allocate(mz_c2_arr(total_reset_steps))
+            allocate(mz_arr(total_steps))
+
+            mz_c1_arr = 0.0; mz_c2_arr = 0.0; mz_arr = 0.0
+
+            cuml_pow = 0.0_dp
+            theta_i = real(theta_init, dp)
+            phi_i   = real(phi_init, dp)
+            K_295  = real(K_295_in, dp)
+            Ms_295 = real(Ms_295_in, dp)
+            T_free = real(T_in, dp)
+            T_bath = real(T_in, dp)
+            T      = real(T_in, dp)
+
+            allocate(theta_evol(sample_steps))
+            allocate(phi_evol(sample_steps))
+            allocate(temp_evol(sample_steps))
+            theta_evol(t_i) = theta_i
+            phi_evol(t_i)   = phi_i
+            temp_evol(t_i) = T_free
+
+            ! compute K and Ms with temperature dependence
+            !sets K, Ms
+            call compute_K_and_Ms(K_295, Ms_295, T_free)
+            !redundant, sets K, Ms, and Bsat with no change. Avoids conflict with other device models
+            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+
+            call random_number(seed)
+            call zigset(int(1+floor((1000001)*seed)))
+            !================================
+
+            call set_layers(A1)
+
+            do c_i = 1,cyc
+
+               theta_i = real(theta_init, dp)
+               phi_i   = real(phi_init, dp)
+               T_free = T_in
+               theta_evol(t_i) = theta_i
+               phi_evol(t_i)   = phi_i
+               temp_evol(t_i) = T_free
+               mz_arr = 0.0
+               call compute_K_and_Ms(K_295, Ms_295, T_free)
+
+               Hz = 0.0_dp
+               call drive(0.0_dp, 0.0_dp, real(Jappl,dp), K_295, Ms_295, pulse_steps,&
+                    t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
+                    heating_enabled)
+
+               call drive(0.0_dp, 0.0_dp, 0.0_dp, K_295, Ms_295, relax_steps,&
+                    t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
+                    heating_enabled)
+
+               do m_i = 1,sample_steps
+                  mz_arr(m_i) = abs(cos(theta_evol(m_i)))
+               end do
+
+               ! avoiding stack overflow by having two write operations since f2py forcefully copies arrays
+               deallocate(phi_evol)
+               deallocate(theta_evol)
+               deallocate(temp_evol)
+               t_i = 0
+               allocate(phi_evol(total_reset_steps))
+               allocate(theta_evol(total_reset_steps))
+               allocate(temp_evol(total_reset_steps))
+
+               Hz = Hreset
+               call drive(0.0_dp, 0.0_dp, real(Jreset,dp), K_295, Ms_295, reset_steps,&
+                    t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
+                    heating_enabled)
+
+               Hz = 0.0_dp
+               call drive(0.0_dp, 0.0_dp, 0.0_dp, K_295, Ms_295, relax_steps,&
+                    t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
+                    heating_enabled)
+
+               do m_i = sample_steps+1,total_steps
+                  mz_arr(m_i) = abs(cos(theta_evol(m_i-sample_steps)))
+               end do
+
+               mz_c1_arr = mz_c1_arr + mz_arr(1:sample_steps)
+               mz_c2_arr = mz_c2_arr + mz_arr(sample_steps+2:total_steps)
+               p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) - mz_arr(1:total_steps-1)))/real(total_steps-1))
+
+               deallocate(phi_evol)
+               deallocate(theta_evol)
+               deallocate(temp_evol)
+
+            end do
+
+            ! ===== return final solve values: energy,bit,theta,phi ====
+            p2pv = p2pv/real(cyc)
+            mz_c1 = real(sum(mz_c1_arr(pcs:sample_steps)))/real(cyc)/real(sample_steps-pcs)
+            mz_c2 = real(sum(mz_c2_arr(rcs:total_reset_steps)))/(real(cyc)*real(total_reset_steps-rcs))
+
+            deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr, mz_arr)
+
+
+            return
+
+          end subroutine check_SWrite
+
+          subroutine check_VCMA(mz_c1, mz_c2, p2pv,&
+               Jappl, v_pulse, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
+               a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
+               T_in, heating_enabled, cyc, pcs, rcs)
+
+            !++++ Configuration check for VCMA device ++++++
+            ! this was formerly done via output files and interacting with python. in order to avoid
+            ! the need to write files to interact with python, the entire functionality was moved here
+
+            implicit none
+            integer, parameter :: dp = kind(0.0d0)
+            ! Dynamical parameters
+            real, intent(in) :: Jappl, v_pulse, theta_init, phi_init, t_pulse, t_relax, T_in
+            ! Device input parameters
+            real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in,&
+                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+            ! Functional parameters
+            integer, intent(in) :: cyc, pcs, rcs
+            logical, intent(in) :: heating_enabled
+            ! Return values
+            real, intent(out) :: mz_c1, mz_c2, p2pv
+            !==================================================================
+            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol, mz_c1_arr, mz_c2_arr, mz_arr
+            real(dp) :: phi_i, theta_i, cuml_pow
+            real :: seed
+            integer :: t_i, pulse_steps, relax_steps, total_steps, c_i, m_i
+            !==================================================================
+            !//////////////////////////////////////////////////////////////////
+
+            ! ======== solve init =========
+            ! Fortran array indexing starts at 1
+
+            fwrite_enabled = .true.
+
+            Hy = 0
+
+            p2pv = 0.0; mz_c1 = 0.0; mz_c2 = 0.0
+
+            pulse_steps = int(t_pulse/t_step)
+            relax_steps = int(t_relax/t_step)
+
+            total_steps = pulse_steps+relax_steps+1
+
+            allocate(mz_c1_arr(pulse_steps))
+            allocate(mz_c2_arr(relax_steps))
+            allocate(mz_arr(total_steps))
+
+            mz_c1_arr = 0.0; mz_c2_arr = 0.0; mz_arr = 0.0
+
+            cuml_pow = 0.0_dp
+            theta_i = real(theta_init, dp)
+            phi_i   = real(phi_init, dp)
+            T_free = real(T_in, dp)
+            T_bath = real(T_in, dp)
+            T      = real(T_in, dp)
+
+            allocate(theta_evol(total_steps))
+            allocate(phi_evol(total_steps))
+            allocate(temp_evol(total_steps))
+
+            Ki = real(Ki_in, dp)
+            Ms = real(Ms_in, dp)
+            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+
+            call random_number(seed)
+            call zigset(int(1+floor((1000001)*seed)))
+            !================================
+
+            do c_i = 1,cyc
+               t_i  = 1
+               theta_i = real(theta_init, dp)
+               phi_i   = real(phi_init, dp)
+               theta_evol(t_i) = theta_i
+               phi_evol(t_i)   = phi_i
+               temp_evol(t_i) = T
+               mz_arr = 0.0
+               !=========== Pulse current and set device to be in-plane =========
+               call drive(real(v_pulse,dp), 0.0_dp, real(Jappl,dp), 0.0_dp, 0.0_dp, pulse_steps,&
+                    t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
+                    heating_enabled)
+
+
+               !=================  Relax into one of two low-energy states out-of-plane  ===================
+               call drive(0.0_dp, 0.0_dp, real(Jappl,dp), 0.0_dp, 0.0_dp, relax_steps,&
+                    t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
+                    heating_enabled)
+
+               do m_i = 1,total_steps
+                  mz_arr(m_i) = abs(cos(theta_evol(m_i)))
+               end do
+
+
+               mz_c1_arr = mz_c1_arr + mz_arr(1:pulse_steps)
+               mz_c2_arr = mz_c2_arr + mz_arr(pulse_steps+2:total_steps)
+               p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) - mz_arr(1:total_steps-1)))/real(total_steps-1))
+
+            end do
+
+            p2pv = p2pv/real(cyc)
+            mz_c1 = real(sum(mz_c1_arr(pcs:pulse_steps)))/real(cyc)/real(pulse_steps-pcs)
+            mz_c2 = real(sum(mz_c2_arr(rcs:relax_steps)))/(real(cyc)*real(relax_steps-rcs))
+
+
+            deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr, mz_arr)
+
+          end subroutine check_VCMA
 
         subroutine drive(V, J_SHE, J_STT, K_295, Ms_295, steps, t_i, phi_i, theta_i,&
                          phi_evol, theta_evol, temp_evol, cuml_pow, heating_enabled)
