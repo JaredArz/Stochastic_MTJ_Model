@@ -6,7 +6,7 @@ import numpy as np
 from interface_funcs import mtj_sample
 from scipy.stats import chi2
 
-import helper_funcs as helper
+import mtj_helper as helper
 
 def XOR_op(a, b):
     return [ int(a_i) ^ int(b_i) for a_i,b_i in zip(a,b) ]
