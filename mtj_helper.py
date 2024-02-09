@@ -21,6 +21,19 @@ def vary_param(dev, param, stddev):
     dev.__setattr__(param,updated_val)
     return dev
 
+def print_check(nerr, mz1, mz2, PI):
+  # ignoring warnings
+  if nerr == -1:
+      print('numerical error, do not use parameters!')
+  elif PI == -1:
+      print('PMA too strong')
+  elif PI == 1:
+      print('IMA too strong')
+  else:
+      print('parameters okay')
+      print("running application")
+  return
+
 def gamma_pdf(g1, g2, nrange) -> list:
   # Build an analytical gamma probability density function (PDF)
 

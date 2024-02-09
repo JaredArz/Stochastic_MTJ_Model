@@ -340,11 +340,8 @@ module sampling
             allocate(mz_c2_arr(relax_steps))
             allocate(mz_arr(total_steps))
 
-            mz_c1_arr = 0.0; mz_c2_arr = 0.0; mz_arr = 0.0
+            mz_c1_arr = 0.0; mz_c2_arr = 0.0
 
-            cuml_pow = 0.0_dp
-            theta_i = real(theta_init, dp)
-            phi_i   = real(phi_init, dp)
             T_free = real(T_in, dp)
             T_bath = real(T_in, dp)
             T      = real(T_in, dp)
@@ -365,17 +362,17 @@ module sampling
 
             do c_i = 1,cyc
                t_i  = 1
+               cuml_pow = 0.0_dp
                theta_i = real(theta_init, dp)
                phi_i   = real(phi_init, dp)
                theta_evol(t_i) = theta_i
                phi_evol(t_i)   = phi_i
-               temp_evol(t_i) = T
+               temp_evol(t_i)  = T
                mz_arr = 0.0
                !=========== Pulse current and set device to be in-plane =========
                call drive(0.0_dp, real(Jshe,dp), real(Jappl,dp), 0.0_dp, 0.0_dp, pulse_steps,&
                     t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
                     heating_enabled)
-
 
                Hy = 0
                !=================  Relax into one of two low-energy states out-of-plane  ===================
@@ -387,7 +384,6 @@ module sampling
                   mz_arr(m_i) = abs(cos(theta_evol(m_i)))
                end do
 
-
                mz_c1_arr = mz_c1_arr + mz_arr(1:pulse_steps)
                mz_c2_arr = mz_c2_arr + mz_arr(pulse_steps+2:total_steps)
                p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) - mz_arr(1:total_steps-1)))/real(total_steps-1))
@@ -398,15 +394,14 @@ module sampling
             mz_c1 = real(sum(mz_c1_arr(pcs:pulse_steps)))/real(cyc)/real(pulse_steps-pcs)
             mz_c2 = real(sum(mz_c2_arr(rcs:relax_steps)))/(real(cyc)*real(relax_steps-rcs))
 
-
-            deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr, mz_arr)
+            deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr,mz_arr)
 
           end subroutine check_SHE
 
           subroutine check_SWrite(mz_c1, mz_c2, p2pv,&
                Jappl, Jreset, Hreset, theta_init, phi_init, K_295_in, TMR_in, Rp_in,&
                a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, tox_in, t_pulse, t_relax, t_reset,&
-               T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled, cyc, pcs, rcs)
+               T_in, heating_enabled, cyc, pcs, rcs)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
@@ -417,8 +412,7 @@ module sampling
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
             ! Functional parameters
             integer, intent(in) :: cyc, pcs, rcs
-            integer, intent(in) :: file_ID, sample_count, dump_mod
-            logical, intent(in) :: view_mag_flag, heating_enabled
+            logical, intent(in) :: heating_enabled
             ! Return values
             real, intent(out) :: mz_c1, mz_c2, p2pv
             !==================================================================
@@ -432,7 +426,6 @@ module sampling
 
             ! ======== solve init =========
             ! Fortran array indexing starts at 1
-            t_i  = 1
             fwrite_enabled = .true.
             p2pv = 0.0; mz_c1 = 0.0; mz_c2 = 0.0
 
@@ -447,29 +440,10 @@ module sampling
             allocate(mz_c2_arr(total_reset_steps))
             allocate(mz_arr(total_steps))
 
-            mz_c1_arr = 0.0; mz_c2_arr = 0.0; mz_arr = 0.0
+            mz_c1_arr = 0.0; mz_c2_arr = 0.0
 
-            cuml_pow = 0.0_dp
-            theta_i = real(theta_init, dp)
-            phi_i   = real(phi_init, dp)
             K_295  = real(K_295_in, dp)
             Ms_295 = real(Ms_295_in, dp)
-            T_free = real(T_in, dp)
-            T_bath = real(T_in, dp)
-            T      = real(T_in, dp)
-
-            allocate(theta_evol(sample_steps))
-            allocate(phi_evol(sample_steps))
-            allocate(temp_evol(sample_steps))
-            theta_evol(t_i) = theta_i
-            phi_evol(t_i)   = phi_i
-            temp_evol(t_i) = T_free
-
-            ! compute K and Ms with temperature dependence
-            !sets K, Ms
-            call compute_K_and_Ms(K_295, Ms_295, T_free)
-            !redundant, sets K, Ms, and Bsat with no change. Avoids conflict with other device models
-            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -478,15 +452,23 @@ module sampling
             call set_layers(A1)
 
             do c_i = 1,cyc
-
+               t_i = 1
+               cuml_pow = 0.0_dp
                theta_i = real(theta_init, dp)
                phi_i   = real(phi_init, dp)
-               T_free = T_in
+               T_free = real(T_in, dp)
+               T_bath = real(T_in, dp)
+               T      = real(T_in, dp)
+               call compute_K_and_Ms(K_295, Ms_295, T_free)
+               call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+
+               allocate(theta_evol(sample_steps))
+               allocate(phi_evol(sample_steps))
+               allocate(temp_evol(sample_steps))
                theta_evol(t_i) = theta_i
                phi_evol(t_i)   = phi_i
-               temp_evol(t_i) = T_free
+               temp_evol(t_i)  = T_free
                mz_arr = 0.0
-               call compute_K_and_Ms(K_295, Ms_295, T_free)
 
                Hz = 0.0_dp
                call drive(0.0_dp, 0.0_dp, real(Jappl,dp), K_295, Ms_295, pulse_steps,&
@@ -525,13 +507,12 @@ module sampling
                end do
 
                mz_c1_arr = mz_c1_arr + mz_arr(1:sample_steps)
-               mz_c2_arr = mz_c2_arr + mz_arr(sample_steps+2:total_steps)
+               mz_c2_arr = mz_c2_arr + mz_arr(sample_steps+1:total_steps)
                p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) - mz_arr(1:total_steps-1)))/real(total_steps-1))
 
                deallocate(phi_evol)
                deallocate(theta_evol)
                deallocate(temp_evol)
-
             end do
 
             ! ===== return final solve values: energy,bit,theta,phi ====
@@ -539,8 +520,7 @@ module sampling
             mz_c1 = real(sum(mz_c1_arr(pcs:sample_steps)))/real(cyc)/real(sample_steps-pcs)
             mz_c2 = real(sum(mz_c2_arr(rcs:total_reset_steps)))/(real(cyc)*real(total_reset_steps-rcs))
 
-            deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr, mz_arr)
-
+            deallocate(mz_c1_arr,mz_c2_arr,mz_arr)
 
             return
 
@@ -593,11 +573,9 @@ module sampling
             allocate(mz_c2_arr(relax_steps))
             allocate(mz_arr(total_steps))
 
-            mz_c1_arr = 0.0; mz_c2_arr = 0.0; mz_arr = 0.0
+            mz_c1_arr = 0.0; mz_c2_arr = 0.0
 
             cuml_pow = 0.0_dp
-            theta_i = real(theta_init, dp)
-            phi_i   = real(phi_init, dp)
             T_free = real(T_in, dp)
             T_bath = real(T_in, dp)
             T      = real(T_in, dp)
@@ -649,7 +627,9 @@ module sampling
             mz_c2 = real(sum(mz_c2_arr(rcs:relax_steps)))/(real(cyc)*real(relax_steps-rcs))
 
 
-            deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr, mz_arr)
+            deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr,mz_arr)
+            
+            return
 
           end subroutine check_VCMA
 
@@ -671,7 +651,6 @@ module sampling
            v_pow = 0.5_dp*cap_mgo*V**2
            she_pow = R2*(J_SHE*A2)**2
            T_init = T_free
-
 
            do i = 1, steps
                t_i = t_i+1
