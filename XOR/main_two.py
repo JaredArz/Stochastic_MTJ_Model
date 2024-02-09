@@ -32,8 +32,8 @@ def main():
     no xor :              NO
     '''
 
-    length = 1000
-    n_bins = 1000
+    length = 100
+    n_bins = 100
     kdev   = 0.0
     T      = 300
     Temps  = [290, 300, 310, 320, 330]
@@ -41,8 +41,8 @@ def main():
 
     #gen_x_bins(n_bins, T, kdev, length, method, out_dir, depth)
     gen_bin_T_sweep(n_bins, Temps, length, "NO", out_dir, None, 0)
-    gen_bin_T_sweep(n_bins, Temps, length, "2S1D", out_dir, 1, 1)
-    gen_bin_T_sweep(n_bins, Temps, length, "2S1D", out_dir, 2, 2)
+    gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 1, 1)
+    gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 2, 2)
 
     print("--- %s seconds ---" % (time.time() - start_time))
 
@@ -68,7 +68,10 @@ def gen_x_bins(x, T, kdev, length, method, out_dir, depth = None, iteration = No
     probs = []
     for i in range(x):
         stream = func(*args)
-        probs.append( np.sum(stream)/length )
+        if method == "OSS":
+            probs.append( np.sum(stream)/(length/2) )
+        else:
+            probs.append( np.sum(stream)/length )
 
     #np.savez(f"{out_dir}/metadata_{iteration}.npz",
     #         T = T, kdev=kdev, word_size=word_size,
@@ -141,16 +144,16 @@ def one_stream_split(T, kdev, length, out_dir, iteration = None):
     dev.set_vals() #default device parameters are now updated to be NYU dev
     dev.set_vals(K_295 = dev.K_295 * np.random.normal(1,kdev), T = T)
 
-    funcs.gen_wordstream(dev, V_50, word_size, length, out_dir + '/full')
+    funcs.gen_wordstream(dev, V_50, word_size, length, out_dir + '/full.npy')
 
     # manually build a tree with nodes as the generated stream split in half
     root = tree.node(None)
-    full = np.load(out_dir + '/full')
+    full = np.load(out_dir + '/full.npy')
     # LENGTH SHOULD BE EVEN
-    np.savetxt('L', full[0: (length/2)-1])
-    np.savetxt('R', full[length/2 : length-1])
-    root.left = tree.node('L')
-    root.right = tree.node('R')
+    np.save('L.npy', full[0: (length//2)-1])
+    np.save('R.npy', full[length//2 : length-1])
+    root.left = tree.node('L.npy')
+    root.right = tree.node('R.npy')
     XORd = funcs.recursive_XOR(root)
 
     '''
@@ -173,11 +176,11 @@ def two_stream_one_dev(T, kdev, length, depth, out_dir, iteration = None):
 def two_stream_two_dev(T, kdev, length, depth, out_dir, iteration = None):
     dev_L = SWrite_MTJ_rng("NYU")
     dev_L.set_vals()
-    dev_L.set_vals(K_295 = dev.K_295 * np.random.normal(1,kdev), T = T)
+    dev_L.set_vals(K_295 = dev_L.K_295 * np.random.normal(1,kdev), T = T)
 
     dev_R = SWrite_MTJ_rng("NYU")
     dev_R.set_vals()
-    dev_R.set_vals(K_295 = dev.K_295 * np.random.normal(1,kdev), T = T)
+    dev_R.set_vals(K_295 = dev_R.K_295 * np.random.normal(1,kdev), T = T)
 
     XORd = get_wordstream_with_XOR(funcs.gen_wordstream,
                             (dev_L, dev_R), (V_50, word_size, length), depth, out_dir, iteration)
