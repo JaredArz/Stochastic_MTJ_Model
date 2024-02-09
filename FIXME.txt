@@ -1,3 +1,0 @@
-note voltage operation,
-Update README
-generate scurve plots
