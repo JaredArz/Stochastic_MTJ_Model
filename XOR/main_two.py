@@ -33,9 +33,9 @@ def main():
     '''
 
     length = 1000
+    n_bins = 1000
     kdev   = 0.0
     T      = 300
-    n_bins = 100
     Temps  = [290, 300, 310, 320, 330]
 
 
