@@ -32,17 +32,17 @@ def main():
     no xor :              NO
     '''
 
-    length = 100
-    n_bins = 100
+    length = 100000000
+    n_bins = 1
     kdev   = 0.0
     T      = 300
     Temps  = [290, 300, 310, 320, 330]
 
 
-    #gen_x_bins(n_bins, T, kdev, length, method, out_dir, depth)
-    gen_bin_T_sweep(n_bins, Temps, length, "NO", out_dir, None, 0)
-    gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 1, 1)
-    gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 2, 2)
+    gen_x_bins(n_bins, T, kdev, length, "NO", out_dir, None)
+    #gen_bin_T_sweep(n_bins, Temps, length, "NO", out_dir, None, 0)
+    #gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 1, 1)
+    #gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 2, 2)
 
     print("--- %s seconds ---" % (time.time() - start_time))
 
@@ -73,9 +73,9 @@ def gen_x_bins(x, T, kdev, length, method, out_dir, depth = None, iteration = No
         else:
             probs.append( np.sum(stream)/length )
 
-    #np.savez(f"{out_dir}/metadata_{iteration}.npz",
-    #         T = T, kdev=kdev, word_size=word_size,
-    #         length=length, depth = depth, method = method)
+    np.savez(f"{out_dir}/metadata_{iteration}.npz",
+             T = T, kdev=kdev, word_size=word_size,
+             length=length, depth = depth, method = method)
 
     np.savez(f"{out_dir}/plottable_{T}_streamdata_{iteration}.npz",
              probs=probs)

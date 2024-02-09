@@ -33,18 +33,22 @@ def mtj_check(dev, V, cycles, pcs = None, rcs = None) -> (int,float):
     if p2pv > 0.25:
         nerror = -1
     else:
-        nerror = 0
-        if mz_c1 < 0.2:
-            mz_chk1_res = 0
-        elif mz_c1 < 0.5:
-            mz_chk1_res = 1
-        else: mz_chk1_res = -1
-
-        if mz_c2 < 0.2:
-            mz_chk2_res = -1
-        elif mz_c2 < 0.5:
-            mz_chk2_res = 1
-        else: mz_chk2_res = 0
+        if dev.type == 0:
+            nerror = 0
+            if mz_c1 < 0.2:
+                mz_chk1_res = 0
+            elif mz_c1 < 0.5:
+                mz_chk1_res = 1
+            else: mz_chk1_res = -1
+        if dev.type == 0:
+            if mz_c2 < 0.2:
+                mz_chk2_res = -1
+            elif mz_c2 < 0.5:
+                mz_chk2_res = 1
+            else: mz_chk2_res = 0
+        if dev.type == 1:
+            print("error")
+            exit()
 
         PI = 0
         if mz_chk1_res == -1:

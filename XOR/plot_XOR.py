@@ -1,6 +1,7 @@
 import sys
 sys.path.append("../")
 import glob
+from scipy.fft import fft, ifft
 import matplotlib.pyplot as plt
 import XOR_funcs as funcs
 import mtj_helper as helper
@@ -28,11 +29,25 @@ def init_fig1(length):
     ax.set_ylabel( 'p' )
     return fig, ax
 
+def init_fig1_fft():
+    fig, ax = plt.subplots()
+    #ax.set_xlim( [0,100] )
+    ax.set_ylim( [0,2.5] )
+    ax.set_xlabel( f'frequency' )
+    return fig, ax
+
 def init_fig2():
     fig, ax = plt.subplots()
     ax.set_ylim( [0.375,0.625] )
     ax.set_xlabel( f'Temperature [K]' )
     ax.set_ylabel( 'p' )
+    return fig, ax
+
+def init_fig2_diff():
+    fig, ax = plt.subplots()
+    ax.set_ylim( [10**-5,10**0] )
+    ax.set_xlabel( f'Temperature [K]' )
+    ax.set_ylabel( 'Absolute difference from 0.5' )
     return fig, ax
 
 def plot_fig_1(data_path):
@@ -46,24 +61,26 @@ def plot_fig_1(data_path):
     method = str(metadata['method'])
     T = int(metadata['T'])
     fig, ax = init_fig1(length)
+    fig_fft, ax_fft = init_fig1_fft()
 
     probs = np.load(glob.glob(data_path + '/*streamdata*.npz')[0])
     ax.plot( probs["probs"], color='blue')
 
     ax.legend()
-    print(T)
-    print(depth)
-    print(method)
     plt.title(f"Bit stream w/ T={T}, {depth} XOR(s) {label_dict[method]}")
 
     helper.prompt_show()
     helper.prompt_save_svg(fig, f"{data_path}/fig1.svg")
+    ax_fft.plot( fft( probs["probs"] ), color='blue')
+
+    helper.prompt_save_svg(fig_fft, f"{data_path}/fig1_fft.svg")
 
 
 def plot_fig_2(data_path):
 
     metadatas = np.sort(glob.glob(data_path + '/*metadata*.npz'))
     Temps   = np.load(metadatas[0])['Temps']
+    base = [0.5 for _ in range(len(Temps))]
 
     depths = []
     for m in metadatas:
@@ -73,6 +90,7 @@ def plot_fig_2(data_path):
             depths.append(0)
     methods = [str((np.load(m))['method']) for m in metadatas]
     fig, ax = init_fig2()
+    fig_diff, ax_diff = init_fig2_diff()
 
     data_files = np.sort(glob.glob(data_path + '/*Sweep*.npz'))
     ys = [np.load(data)['probs_per_temp'] for data in data_files]
@@ -84,8 +102,12 @@ def plot_fig_2(data_path):
     ax.axhline(0.5, linestyle = 'dashed', alpha = 0.33)
     plt.title(f"Temperature whitening")
 
+    lines = [ ax_diff.scatter(Temps, abs(base-y), label=labels[i], color=colors[i], s=36, marker='^') for i,y in enumerate(ys)  ]
+    ax_diff.set_yscale('log')
+
     helper.prompt_show()
     helper.prompt_save_svg(fig, f"{data_path}/fig2.svg")
+    helper.prompt_save_svg(fig_diff, f"{data_path}/fig2_diff.svg")
 
 
 if __name__ == "__main__":
