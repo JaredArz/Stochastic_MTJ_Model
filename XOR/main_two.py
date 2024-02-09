@@ -70,9 +70,9 @@ def gen_x_bins(x, T, kdev, length, method, out_dir, depth = None, iteration = No
         stream = func(*args)
         probs.append( np.sum(stream)/length )
 
-    np.savez(f"{out_dir}/metadata_{iteration}.npz",
-             T = T, kdev=kdev, word_size=word_size,
-             length=length, depth = depth, method = method)
+    #np.savez(f"{out_dir}/metadata_{iteration}.npz",
+    #         T = T, kdev=kdev, word_size=word_size,
+    #         length=length, depth = depth, method = method)
 
     np.savez(f"{out_dir}/plottable_{T}_streamdata_{iteration}.npz",
              probs=probs)
@@ -86,7 +86,7 @@ def gen_bin_T_sweep(x, Temps, length, method, out_dir, depth = None, iteration =
         probs = gen_x_bins(x, T, 0, length, method, out_dir, depth)
         probs_per_temp.append( np.average( probs ) )
 
-    np.savez(f"{out_dir}/metadata_{iteration}.npz",
+    np.savez(f"{out_dir}/metadata_sweep_{iteration}.npz",
              Temps = Temps, word_size=word_size,
              length=length, depth = depth, method = method)
 

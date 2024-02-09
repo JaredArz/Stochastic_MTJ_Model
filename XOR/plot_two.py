@@ -62,8 +62,10 @@ def plot_fig_1(data_path):
 
 def plot_fig_2(data_path):
 
-    metadatas = glob.glob(data_path + '/*streamdata.npz')
-    Temps   = np.load(metadatas[0)]['Temps']
+    metadatas = glob.glob(data_path + '/*metadata*.npz')
+    print(metadatas)
+    print(np.load(metadatas[0]))
+    Temps   = np.load(metadatas[0])['Temps']
     depths  = [np.load(metadata)['depth'] for metadata in metadatas]
     methods = [np.load(metadata)['method'] for metadata in metadatas]
     fig, ax = init_fig2()
@@ -73,7 +75,7 @@ def plot_fig_2(data_path):
     colors = ['black', 'blue', 'red']
     labels = [ label_dict[method] for method in method ]
 
-    lines = [ ax.scatter(y), label=labels[i], color=colors[i]) for i,y in enumerate(ys)  ]
+    lines = [ ax.scatter(Temps, y, label=labels[i], color=colors[i]) for i,y in enumerate(ys)  ]
 
     ax.legend()
     #plt.title(f"Temperature whitening (T={T}), {depth} XOR(s) {label_dict[method]}")
