@@ -21,6 +21,7 @@
 
 # outputs
 **/results
+**/wordstreams
 **/backup_results
 **/runs
 *.csv

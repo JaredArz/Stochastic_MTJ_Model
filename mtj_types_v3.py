@@ -50,7 +50,7 @@ class MTJ():
          self.heating_enabled = 1
          return
 
-     def enable_heating(self):
+     def disable_heating(self):
          self.heating_enabled = 0
          return
 
@@ -59,17 +59,13 @@ class MTJ():
      # passed to this function are valid.
      # Runtime errors at the fortran interface will catch any parameters that are not yet set at 
      # sampling time.
-     def set_vals(self, dflt_flag = None, **params):
-         #catch call with no arguments
-         if params == {} and dflt_flag is None:
-             raise(ValueError)
-         #debug option with flag True: use known good device values
-         elif dflt_flag == True and params == {}:
+     def set_vals(self, **params):
+         # no args => use default param
+         if params == {}:
              for key, val in self.dflt_params.items():
                 self.__setattr__(key, val)
-             self.params_set_flag = True
-         #try and set custom param values
-         elif dflt_flag is None:
+         # try and set custom param values
+         elif params != {}:
              try:
                  for key, val in params.items():
                      if key not in self.valid_params:
@@ -78,10 +74,6 @@ class MTJ():
              except(KeyError):
                  self.print_key_error()
                  raise
-         #catch anything else, just in case
-         else:
-             self.print_key_error()
-             raise(KeyError)
          return
 
      def print_init_error(self):
@@ -132,8 +124,9 @@ class SHE_MTJ_rng(MTJ):
 class SWrite_MTJ_rng(MTJ):
     def __init__(self, flavor):
         # FIXME initial condition may have impact on results
-        dflt_m = {"theta"  : 99*np.pi/100,
-        #dflt_m = {"theta"  : np.pi/100,
+        dflt_m = {"theta"  : np.random.normal(np.pi,np.pi/4),
+        #dflt_m = {"theta" : 99*np.pi/100,
+        #dflt_m = {"theta" : np.pi/100,
                   "phi"    : np.random.rand()*2*np.pi}
         if flavor ==  "UTA":
             heating_capable = 0

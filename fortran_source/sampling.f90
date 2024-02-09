@@ -244,12 +244,7 @@ module sampling
             ! ======== solve init =========
             ! Fortran array indexing starts at 1
             t_i  = 1
-<<<<<<< HEAD
             fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag))
-=======
-            fwrite_enabled = ((mod(sample_count,dump_mod) .eq. 0 .and. view_mag_flag) .or. config_check .eq. 1)
-            
->>>>>>> 6cf0fd07220668d62218c898fc259090cf1c52c7
 
             pulse_steps = int(t_pulse/t_step)
             relax_steps = int(t_relax/t_step)
@@ -303,7 +298,7 @@ module sampling
           subroutine check_SHE(mz_c1, mz_c2, p2pv,&
                Jappl, Jshe, Hy_in, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
-               T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled, cyc, pcs, rcs)
+               T_in, heating_enabled, cyc, pcs, rcs)
 
             !++++ Configuration check for SHE device ++++++
             ! this was formerly done via output files and interacting with python. in order to avoid
@@ -317,8 +312,8 @@ module sampling
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, Hy_in,&
                                 a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
             ! Functional parameters
-            integer, intent(in) :: file_ID, sample_count, dump_mod, cyc, pcs, rcs
-            logical, intent(in) :: view_mag_flag, heating_enabled
+            integer, intent(in) :: cyc, pcs, rcs
+            logical, intent(in) :: heating_enabled
             ! Return values
             real, intent(out) :: mz_c1, mz_c2, p2pv
             !==================================================================
@@ -388,9 +383,6 @@ module sampling
                     t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
                     heating_enabled)
 
-!!$               if (c_i .eq. 1) then
-!!$                  print*,'thetaevol: ',theta_evol
-!!$               end if
                do m_i = 1,total_steps
                   mz_arr(m_i) = abs(cos(theta_evol(m_i)))
                end do
@@ -400,31 +392,12 @@ module sampling
                mz_c2_arr = mz_c2_arr + mz_arr(pulse_steps+2:total_steps)
                p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) - mz_arr(1:total_steps-1)))/real(total_steps-1))
 
-!!$               if (c_i .eq. 1) then
-!!$                  print*,'mz_c1arr1'
-!!$                  print*,mz_c1_arr
-!!$                  print*,'mz_c2arr2'
-!!$                  print*,mz_c2_arr
-!!$               end if
-
             end do
-
-!!$            print*,'end mz_c1arr1'
-!!$            print*,mz_c1_arr(pcs:pulse_steps)
-!!$            print*,'end mz_c2arr2'
-!!$            print*,mz_c2_arr(rcs:relax_steps)
 
             p2pv = p2pv/real(cyc)
             mz_c1 = real(sum(mz_c1_arr(pcs:pulse_steps)))/real(cyc)/real(pulse_steps-pcs)
             mz_c2 = real(sum(mz_c2_arr(rcs:relax_steps)))/(real(cyc)*real(relax_steps-rcs))
 
-            print*,'p2p, c1, c2: ',p2pv, mz_c1,mz_c2
-
-
-            fwrite_enabled = .false.
-            if(fwrite_enabled) then
-                call file_dump(file_ID, phi_evol, theta_evol, temp_evol, 1)
-            end if
 
             deallocate(theta_evol,phi_evol,temp_evol,mz_c1_arr,mz_c2_arr, mz_arr)
 
@@ -477,13 +450,8 @@ module sampling
                   call compute_K_and_Ms(K_295, Ms_295, T)
                   Bsat = Ms*u0
                   Hk = ((2.0_dp*Ki)/(tf*Ms*u0)) - ((2.0_dp*ksi*V)/(u0*Ms*tox*tf))
-<<<<<<< HEAD
                   Htherm  = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
                elseif (heating_enabled) then
-=======
-                  Htherm = sqrt((2.0_dp*u0*alpha*kb*T)/(Bsat*gammab*t_step*volume))/u0
-               else
->>>>>>> 6cf0fd07220668d62218c898fc259090cf1c52c7
                   call cool_device(t_i*t_step,T_bath,T_init,T_free)
                   T = T_free
                   call compute_K_and_Ms(K_295, Ms_295, T)

@@ -36,5 +36,5 @@ def build_tree(generator, devs, args, root, depth, out_dir):
     root.left  = L
     root.right = R
 
-    build_tree(devs, generator, args, root.left, depth/2, out_dir)
-    build_tree(devs, generator, args, root.right, depth/2, out_dir)
+    build_tree(generator, devs, args, root.left, depth/2, out_dir)
+    build_tree(generator, devs, args, root.right, depth/2, out_dir)

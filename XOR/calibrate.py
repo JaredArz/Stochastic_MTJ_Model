@@ -19,8 +19,8 @@ def compute_weights(dev, V_range):
     dev.set_mag_vector()
     return [ helper.avg_weight_across_samples(dev, V, samples_to_avg) for V in V_range ]
 
-dev = SWrite_MTJ_rng()
-dev.set_vals(0) #default device parameters are now updated to be NYU dev
+dev = SWrite_MTJ_rng("NYU")
+dev.set_vals() #default device parameters are now updated to be NYU dev
 print("Computing V range")
 V_range = compute_V_range()
 print("Computing ps")

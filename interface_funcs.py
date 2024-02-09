@@ -11,37 +11,56 @@ import numpy as np
 def V_to_J(dev, V):
     return V/dev.RA
 
-<<<<<<< HEAD
-
-def mtj_check(dev, V, cycles, pcs, rcs, view_mag_flag = 0, dump_mod = 1,
-               file_ID = 1, config_check = 1) -> (int,float):
+def mtj_check(dev, V, cycles, pcs = None, rcs = None) -> (int,float):
     if dev.heating_capable == 0 and dev.heating_enabled == 1:
         raise(AttributeError)
     try:
+        if pcs == None or rcs == None:
+            pcs = (1/5) * dev.t_pulse
+            rcs = (3/5) * dev.t_relax
         mz_c1, mz_c2, p2pv = f90.sampling.check_she(V_to_J(dev,V),\
                 dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                 dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
                 dev.t_pulse, dev.t_relax, dev.T,\
-                dump_mod, view_mag_flag, dev.sample_count, file_ID,\
-                0, cycles, pcs, rcs)
+                dev.heating_enabled, cycles, pcs, rcs)
     except(AttributeError):
         dev.print_init_error()
         raise
 
-    return mz_c1,mz_c2, p2pv
+    mz_chk1_res = None
+    mz_chk2_res = None
 
+    if p2pv > 0.25:
+        nerror = -1
+    else:
+        nerror = 0
+        if mz_c1 < 0.2:
+            mz_chk1_res = 0
+        elif mz_c1 < 0.5:
+            mz_chk1_res = 1
+        else: mz_chk1_res = -1
 
-# CHECK HEADING CAPABLE, then pass heating enabled flag to fortran
+        if mz_c2 < 0.2:
+            mz_chk2_res = -1
+        elif mz_c2 < 0.5:
+            mz_chk2_res = 1
+        else: mz_chk2_res = 0
 
-=======
->>>>>>> 6cf0fd07220668d62218c898fc259090cf1c52c7
+        PI = 0
+        if mz_chk1_res == -1:
+            PI = -1
+        elif mz_chk2_res == -1:
+            PI = 1
+    return nerr, mz_chk1_res, mz_chk2_res, PI
+
 def mtj_sample(dev, V, view_mag_flag = 0, dump_mod = 1,
-               file_ID = 1, config_check = 0) -> (int,float):
+               file_ID = 1) -> (int,float):
     if dev.heating_capable == 0 and dev.heating_enabled == 1:
         raise(AttributeError)
     try:
         # fortran call here.
         if (dev.mtj_type == 0):
+            #energy, bit, theta_end, phi_end = f90.sampling.sample_she(V_to_J(dev,V),\
             energy, bit, theta_end, phi_end = f90.sampling.sample_she(V_to_J(dev,V),\
                     dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\

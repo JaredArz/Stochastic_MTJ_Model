@@ -26,7 +26,6 @@ def gen_wordstream(dev, supposed_V50, word_size, length, out_path):
     np.save(out_path, words)
     return
 
-
 # a LUT. requires generating v_range and p array
 def p_to_V(p) -> float:
     if p < 0 or p > 1:
@@ -46,15 +45,14 @@ def compute_chi_squared(O, word_size, record_size):
     E = 2**(-1*word_size) * record_size
     return np.sum( [ ((O_i-E)**2)/E for O_i in O ] )
 
-def p_val(chisq):
-    return chi2.sf(chisq, 256)
+def p_val(chisq, word_size):
+    return chi2.sf(chisq, 2**word_size)
 
-def get_stats(word_stream, length):
-    uniformity = get_uniformity(word_stream, 8, length)
-    chisq = compute_chi_squared(uniformity, 8, length)
+def get_stats(word_stream, word_size, length):
+    uniformity = get_uniformity(word_stream, word_size, length)
+    chisq = compute_chi_squared(uniformity, word_size, length)
     p = p_val(chisq)
     return uniformity, chisq, p
-
 
 def get_out_path() -> str:
     date = datetime.now().strftime("%H:%M:%S")
