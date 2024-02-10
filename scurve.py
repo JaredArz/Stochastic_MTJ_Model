@@ -3,16 +3,27 @@ from mtj_types import SWrite_MTJ_rng, SHE_MTJ_rng, VCMA_MTJ_rng
 from mtj_helper import avg_weight_across_samples
 import numpy as np
 import matplotlib.pyplot as plt
+from functools import reduce
 
-def generate_scurve(dev, apply, num_to_avg):
-    weights = []
-    for j in apply:
-      weight = avg_weight_across_samples(dev, j, num_to_avg)
-      weights.append(weight)
-    return weights
+class scurve:
+  def __init__(self, dev, x, title):
+    num_to_avg = 500
+    self.x = x
+    self.y = self.generate(dev, num_to_avg)
+    fig,ax = plt.subplots()
+    ax.set_ylim([-0.1,1.1])
+    ax.set_xlabel('J [A/m^2]')
+    ax.set_title(title)
+    self.ax = ax
+
+  def generate(self, dev, num_to_avg):
+      weights = []
+      for J in self.x:
+        weight = avg_weight_across_samples(dev, J, num_to_avg)
+        weights.append(weight)
+      return weights
 
 j_steps = 100
-num_to_avg = 500
 SHE_current    = np.linspace(-6e9, 6e9,j_steps)
 SWrite_current = np.linspace(-300e9, 0,j_steps)
 VCMA_current   = np.linspace(-6e9, 6e9,j_steps)
@@ -29,25 +40,10 @@ VCMA = VCMA_MTJ_rng()
 VCMA.init()
 print(VCMA)
 
-SHE_scurve    = generate_scurve(SHE, SHE_current, num_to_avg)
-print(SHE_scurve)
-SWrite_scurve = generate_scurve(SWrite, SWrite_current, num_to_avg)
-VCMA_scurve   = generate_scurve(VCMA, VCMA_current, num_to_avg)
+Ss = [ scurve( SHE, SHE_current, "SHE" ),
+       scurve( SWrite, SWrite_current, "SWrite" ),
+       scurve( VCMA, VCMA_current, "VCMA" )]
 
-_, SHE_ax    = plt.subplots()
-_, SWrite_ax = plt.subplots()
-_, VCMA_ax   = plt.subplots()
-
-SHE_ax.plot(SHE_current,SHE_scurve, label='SHE')
-SWrite_ax.plot(SWrite_current,SWrite_scurve, label='SWRITE')
-VCMA_ax.plot(VCMA_scurve,VCMA_scurve, label='VCMA')
-
-SHE_ax.set_ylim([-1, 2])
-SWrite_ax.set_ylim([-1, 2])
-VCMA_ax.set_ylim([-1, 2])
-
-SHE_ax.set_xlabel('J [A/m^2]')
-SWrite_ax.set_xlabel('J [A/m^2]')
-VCMA_ax.set_xlabel('J [A/m^2]')
+for S in Ss: (S.ax).plot(S.x, S.y)
 
 plt.show()
