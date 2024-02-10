@@ -1,4 +1,5 @@
 import numpy as np
+from interface_funcs import mtj_sample
 import math
 
 def draw_norm(x,psig):
@@ -55,3 +56,7 @@ def gamma_pdf(g1, g2, nrange) -> list:
   pdf = pdf/pdfsum
 
   return pdf
+
+def avg_weight_across_samples(dev, apply, samples_to_avg) -> float:
+    sum_p = np.sum( [ (mtj_sample(dev, apply),) for _ in range(samples_to_avg)] )
+    return sum_p/samples_to_avg

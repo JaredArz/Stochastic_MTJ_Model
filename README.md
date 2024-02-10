@@ -27,18 +27,17 @@ This device class should be intialized with device parameters and an initial mag
 
 The other arguments are as follows:
 - Jstt:     spin-transfer torque current to apply.
-(enter the following as named arguments)
-- T:        Temperature in kelvin
-- dump_mod: save history of phi and theta every n samples if view_mag_flag enabled.
-- view_mag_flag: enables/disables history of phi and theta.
 
+(enter the following as named arguments)
+- view_mag_flag: enables/disables history of phi and theta.
+- dump_mod: save history of phi and theta every n samples if view_mag_flag enabled.
 
 Optional arguments (Used in the backend!):
 - file_ID:      needed if parallelized as each concurrent sample must have a unique file ID.
 
 Returns:
 - bit sampled
-- energy used
+- energy used in joules
 
 Import this function in python with: 
 `from interface_funcs import mtj_sample`
@@ -49,11 +48,13 @@ Declare as one of:
 `dev = VCMA_MTJ_rng()`
 `dev = SWrite_MTJ_rng()`
 
-The SHE, and VCMA devices have default device parameters from a UT Austin fabbed device that can be set using `dev.set_vals()`. The Stochastic Write device has two sets of parameters, one for a UT Austin device, and the other for a NYU device as described in 'Temperature-Resilient True Random Number Generation with Stochastic Actuated Magnetic Tunnel Junction Devices, Laura Rehm et. al. 2023'
+The SHE, and VCMA devices have default device parameters from a UT Austin fabbed device that can be set using `dev.set_vals()`.
+
+The Stochastic Write device has two sets of parameters, one for a UT Austin device, and the other for a NYU device as described in 'Temperature-Resilient True Random Number Generation with Stochastic Actuated Magnetic Tunnel Junction Devices, Laura Rehm et. al. 2023'. This device needs to be declared with one of these options regardless of whether the parameters will be changed with the difference in this case being that the NYU device supports joule heating (see Joule Heating section). For example, `dev = SWrite_MTJ_rng("UTA")`
 
 Device-to-device/cycle-to-cycle variation can be modeled using a simple gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py` 
 
-If setting all the device parameters manually, the following must be set:
+The devices have the following as modifiable parameters:
 - Ki  [$`\frac{J}{m^2}`$]
 - Ms  [$`\frac{A}{m}`$]
 - tf  [$`m`$]
@@ -65,30 +66,31 @@ If setting all the device parameters manually, the following must be set:
 - alpha [dimensionless]
 - Rp   [$`\Omega`$]
 - TMR  [dimensionless]
-- t_pulse  [$`t`$]
-- t_relax  [$`t`$]
+- t_pulse  [$`s`$]
+- t_relax  [$`s`$]
 
 SHE only:
 - J_she  [$`\frac{A}{m^2}`$]
 - Hy (optional)
 
 VCMA only:
-- v_pulse [volts]
+- v_pulse [$`V`$]
 
 Stochastic Write only:
+
 Anistropy and magnetic saturation are only defined at 295K (temperature dependence):
-- K_295
-- Ms_295
-- J_reset
-- H_reset
-- t_reset
+- K_295 [$`\frac{J}{m^2}`$]
+- Ms_295 [$`\frac{A}{m}`$]
+- J_reset [$`\frac{A}{m^2}`$]
+- H_reset [$`\frac{A}{m}`$]
+- t_reset [$`s`$]
 
 ## Joule Heating
 The Stochastic Write NYU device stack has a model of joule heating. This can be enabled with `dev.enable_heating()`. Currently no other device model is compatible with this model since the joule heating is dependent on the number of layers in the stack, materials, thicknesses, etc.
 
 
 ## Device Parameter Verification
-`interface_funcs.py` also has a function for the SHE MTJ, `mtj_check(device, J_stt, number_of_checks...)`, which will check the device parameters applied to the device to see:
+`interface_funcs.py` also has a function, `mtj_check(device, J_stt, number_of_checks...)`, which will check the device parameters applied to the device to see:
 1. Is the device physical?
 2. Does the device go in-plane upon current application?
 3. Does the device return to +- 1 when current is removed?
@@ -106,19 +108,29 @@ for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong. Note that if t
 ## Slurm
 Neither the fortran or python code is paralleized with openMP or MPI.
 
-## Examples 
+## Example
 ```
-Misc.
+from interface_funcs import mtj_sample, mtj_check
+from mtj_helper import print_check
+from mtj_types import SHE_MTJ_rng, SWrite_MTJ_rng, VCMA_MTJ_rng
 
-#set (phi,theta)
-dev.set_mag_vector(3.14/2, 3.14/2)
 
-# print device parameters
+dev = SHE_MTJ_rng()
+dev.init() # calls both set_vals and set_mag_vector with defaults
 print(dev)
 
-# set default device parameters with
-dev.set_vals()
+print_check(*mtj_check(dev, 0, 100))
 
-# or use set vals to specify some parameters
-dev.set_vals(Ki=1,Ms=1)
+dev = SWrite_MTJ_rng("UTA")
+dev.init()
+print(dev)
 
+print_check(*mtj_check(dev, -2e11, 100))
+
+
+dev = VCMA_MTJ_rng()
+dev.init()
+print(dev)
+
+print_check(*mtj_check(dev, 0, 100))
+```
