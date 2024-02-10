@@ -1,3 +1,5 @@
+import pickle
+import random
 import numpy as np
 from scipy.special import rel_entr
 from gym import Env
@@ -24,21 +26,43 @@ def unnormalize(n, min, max):
 
 class SOT_Env(Env):
   def __init__(self):
+    self.PID = random.randint(0, 100000)
     self.dev_samples = DEV_SAMPLES
     self.invalid_config = 0
 
     # Initial parameter values
-    self.alpha = 0.03
-    self.Ki = 0.0009725695027196851
-    self.Ms = 1200000.0
-    self.Rp = 4602.402954025149
-    self.TMR = 1.1829030593531298
-    self.eta = 0.3
-    self.J_she = 500000000000.0
-    self.t_pulse = 1e-08
-    self.t_relax = 1.5e-08
-    self.d = 3e-09
-    self.tf = 1.1e-09
+    # self.alpha = 0.03
+    # self.Ki = 0.0009725695027196851
+    # self.Ms = 1200000.0
+    # self.Rp = 4602.402954025149
+    # self.TMR = 1.1829030593531298
+    # self.eta = 0.3
+    # self.J_she = 500000000000.0
+    # self.t_pulse = 1e-08
+    # self.t_relax = 1.5e-08
+    # self.d = 3e-09
+    # self.tf = 1.1e-09
+
+    # Seed initial state
+    with open("seed_params.pkl", "rb") as pklFile:
+      self.seed_params = pickle.load(pklFile)
+    while(True):
+      params = self.seed_params[random.randint(0, len(self.seed_params)-1)]
+      self.alpha = params["alpha"]
+      self.Ki = params["Ki"]
+      self.Ms = params["Ms"]
+      self.Rp = params["Rp"]
+      self.TMR = params["TMR"]
+      self.eta = params["eta"]
+      self.J_she = params["J_she"]
+      self.t_pulse = params["t_pulse"]
+      self.t_relax = params["t_relax"]
+      self.d = 3e-09
+      self.tf = 1.1e-09
+
+      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+      if chi2 != None:
+        break
     
     # Parameter ranges
     self.alpha_range = [0.01, 0.1]
@@ -51,19 +75,8 @@ class SOT_Env(Env):
     self.t_pulse_range = [0.5e-9, 75e-9]
     self.t_relax_range = [0.5e-9, 75e-9]
 
-    # Parameter step sizes
-    self.alpha_step = 0.01
-    self.Ki_step = 0.1e-3
-    self.Ms_step = 0.1e6
-    self.Rp_step = 500
-    self.TMR_step = 0.5
-    self.eta_step = 0.4
-    self.J_she_step = 0.25e12
-    self.t_pulse_step = 5e-9
-    self.t_relax_step = 5e-9
-
     # Get initial config score
-    chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
+    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf)
     self.best_config_score = self.current_config_score
     self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
@@ -160,11 +173,8 @@ class SOT_Env(Env):
     
     w1 = 0.5
     w2 = 0.5
-    # p_value = 1 - stats.chi2.cdf(chi2, 256)
     self.kl_div_score = sum(rel_entr(countData, exp_pdf))
-    self.energy = np.mean(energy_avg) 
-    
-    # score = w1*p_value + w2*(1-energy)  # (1-energy) attempts to maximize a minimization parameter
+    self.energy = np.mean(energy_avg)
     score = w1*self.kl_div_score + w2*self.energy
     return score
 
@@ -176,7 +186,6 @@ class SOT_Env(Env):
     elif self.is_out_of_bounds():
       reward = -1
     elif self.current_config_score < self.best_config_score:  # Minimization reward scheme
-    # elif self.current_config_score > self.best_config_score:  # Maximization reward scheme
       self.best_config_score = self.current_config_score
       self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
       reward = 1 
@@ -191,7 +200,7 @@ class SOT_Env(Env):
     self.apply_continuous_action(action)
     
     # Sample new configuration
-    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
+    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf)
     
     # Calculate reward
@@ -212,17 +221,22 @@ class SOT_Env(Env):
     self.obs["best_config_score"] = np.array([self.best_config_score], dtype=np.float32)
     
     # Set placeholder for info
-    self.info = {'alpha'  : self.alpha,
-                'Ki'      : self.Ki,
-                'Ms'      : self.Ms,
-                'Rp'      : self.Rp,
-                'TMR'     : self.TMR,
-                'eta'     : self.eta,
-                'J_she'   : self.J_she,
-                't_pulse' : self.t_pulse,
-                't_relax' : self.t_relax,
+    self.info = {"alpha"  : self.alpha,
+                "Ki"      : self.Ki,
+                "Ms"      : self.Ms,
+                "Rp"      : self.Rp,
+                "TMR"     : self.TMR,
+                "eta"     : self.eta,
+                "J_she"   : self.J_she,
+                "t_pulse" : self.t_pulse,
+                "t_relax" : self.t_relax,
                 "d"       : self.d,
-                "tf"      : self.tf}
+                "tf"      : self.tf,
+                "energy"               : self.energy,
+                "kl_div_score"         : self.kl_div_score,
+                "current_config_score" : self.current_config_score,
+                "best_config_score"    : self.best_config_score,
+                "best_config"          : self.best_config}
 
     # Check if episode is done
     if self.episode_length <= 0: 
@@ -246,20 +260,39 @@ class SOT_Env(Env):
     # super().reset(seed=seed)
 
     # Initial parameter values
-    self.alpha = 0.03
-    self.Ki = 0.0009725695027196851
-    self.Ms = 1200000.0
-    self.Rp = 4602.402954025149
-    self.TMR = 1.1829030593531298
-    self.eta = 0.3
-    self.J_she = 500000000000.0
-    self.t_pulse = 1e-08
-    self.t_relax = 1.5e-08
-    self.d = 3e-09
-    self.tf = 1.1e-09
-    
+    # self.alpha = 0.03
+    # self.Ki = 0.0009725695027196851
+    # self.Ms = 1200000.0
+    # self.Rp = 4602.402954025149
+    # self.TMR = 1.1829030593531298
+    # self.eta = 0.3
+    # self.J_she = 500000000000.0
+    # self.t_pulse = 1e-08
+    # self.t_relax = 1.5e-08
+    # self.d = 3e-09
+    # self.tf = 1.1e-09
+
+    # Seed new initial state
+    while(True):
+      params = self.seed_params[random.randint(0, len(self.seed_params)-1)]
+      self.alpha = params["alpha"]
+      self.Ki = params["Ki"]
+      self.Ms = params["Ms"]
+      self.Rp = params["Rp"]
+      self.TMR = params["TMR"]
+      self.eta = params["eta"]
+      self.J_she = params["J_she"]
+      self.t_pulse = params["t_pulse"]
+      self.t_relax = params["t_relax"]
+      self.d = 3e-09
+      self.tf = 1.1e-09
+
+      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+      if chi2 != None:
+        break
+
     # Get initial config score
-    chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
+    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf)
     # self.best_config_score = self.current_config_score
 

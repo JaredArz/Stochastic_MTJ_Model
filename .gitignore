@@ -23,6 +23,7 @@
 **/results
 **/runs
 *.csv
+!valid_param.csv
 
 #cache
 **/__pycache__
