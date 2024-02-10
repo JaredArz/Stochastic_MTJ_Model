@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
 
   if (args.activity == "TestModel"):
-    model_path = "JETCAS_Training/Saved_Models/mtj_model_1"
+    model_path = "JETCAS_Training/Saved_Models/mtj_model_1/timestep-1000.zip"
     Test_Model(model_path, episodes=150)
 
 
