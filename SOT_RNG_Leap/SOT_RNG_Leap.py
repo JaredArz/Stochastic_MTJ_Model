@@ -106,12 +106,12 @@ def train(runID):
                                 representation=representation,
                                 pipeline=pipeline)
   
-  with open(f"results_{runID}.pkl", "wb") as file:
+  with open(f"leap_results/results_{runID}.pkl", "wb") as file:
     pickle.dump(final_pop, file)
 
 
 def analyze_results(runID):
-  with open(f"results_{runID}.pkl", "rb") as file:
+  with open(f"leap_results/results_{runID}.pkl", "rb") as file:
     data = pickle.load(file)
 
   df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])
