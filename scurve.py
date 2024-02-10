@@ -30,6 +30,7 @@ VCMA.init()
 print(VCMA)
 
 SHE_scurve    = generate_scurve(SHE, SHE_current, num_to_avg)
+print(SHE_scurve)
 SWrite_scurve = generate_scurve(SWrite, SWrite_current, num_to_avg)
 VCMA_scurve   = generate_scurve(VCMA, VCMA_current, num_to_avg)
 
@@ -37,9 +38,13 @@ _, SHE_ax    = plt.subplots()
 _, SWrite_ax = plt.subplots()
 _, VCMA_ax   = plt.subplots()
 
-SHE_ax.plot(SHE_current,SHE_scurve)
-SWrite_ax.plot(SWrite_current,SWrite_scurve)
-VCMA_ax.plot(VCMA_scurve,VCMA_scurve)
+SHE_ax.plot(SHE_current,SHE_scurve, label='SHE')
+SWrite_ax.plot(SWrite_current,SWrite_scurve, label='SWRITE')
+VCMA_ax.plot(VCMA_scurve,VCMA_scurve, label='VCMA')
+
+SHE_ax.set_ylim([-1, 2])
+SWrite_ax.set_ylim([-1, 2])
+VCMA_ax.set_ylim([-1, 2])
 
 SHE_ax.set_xlabel('J [A/m^2]')
 SWrite_ax.set_xlabel('J [A/m^2]')

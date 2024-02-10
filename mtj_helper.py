@@ -28,10 +28,6 @@ def vary_param(dev, param, stddev):
     dev.__setattr__(param,updated_val)
     return dev
 
-def avg_weight_across_samples(dev, V, samples_to_avg) -> float:
-    sum_p = np.sum( [ (mtj_sample(dev, V),) for _ in range(samples_to_avg)] )
-    return sum_p/samples_to_avg
-
 def print_check(nerr, mz1, mz2, PI):
   # ignoring warnings
   if nerr == -1:
