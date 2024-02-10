@@ -46,6 +46,11 @@ class MTJ():
              self.theta = theta
          return
 
+     def init(self):
+         self.set_mag_vector()
+         self.set_vals()
+         return
+
      def enable_heating(self):
          self.heating_enabled = 1
          return
@@ -114,7 +119,7 @@ class MTJ():
 class SHE_MTJ_rng(MTJ):
     def __init__(self):
         # MTJ Parameters- This is experimental values from real STT-SOT p-MTJ%
-        dflt_m = {"theta" : np.pi/100,
+        dflt_m = {"theta" : np.random.normal(0,np.pi/4),
                   "phi"   : np.random.rand()*2*np.pi}
         heating_capable = 0
         with open(f'{main_dir}/mtj_parameters.json', 'r') as f:
@@ -123,10 +128,7 @@ class SHE_MTJ_rng(MTJ):
 
 class SWrite_MTJ_rng(MTJ):
     def __init__(self, flavor):
-        # FIXME initial condition may have impact on results
         dflt_m = {"theta"  : np.random.normal(np.pi,np.pi/4),
-        #dflt_m = {"theta" : 99*np.pi/100,
-        #dflt_m = {"theta" : np.pi/100,
                   "phi"    : np.random.rand()*2*np.pi}
         if flavor ==  "UTA":
             heating_capable = 0
@@ -143,7 +145,7 @@ class SWrite_MTJ_rng(MTJ):
 
 class VCMA_MTJ_rng(MTJ):
     def __init__(self):
-        dflt_m = {"theta" : np.pi/100,
+        dflt_m = {"theta" : np.random.normal(0,np.pi/4),
                   "phi"   : np.random.rand()*2*np.pi}
         heating_capable = 0
         with open(f'{main_dir}/mtj_parameters.json', 'r') as f:

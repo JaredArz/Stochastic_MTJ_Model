@@ -7,67 +7,96 @@ import sampling as f90
 import os
 import numpy as np
 
+using_voltage = 0
+
 # NOTE: assumes ohmic relationship
 def V_to_J(dev, V):
     return V/dev.RA
 
-def mtj_check(dev, V, cycles, pcs = None, rcs = None) -> (int,float):
+def mtj_check(dev, applied, cycles, pcs = None, rcs = None) -> (int,float):
     if dev.heating_capable == 0 and dev.heating_enabled == 1:
         raise(AttributeError)
     try:
         if pcs == None or rcs == None:
             pcs = (1/5) * dev.t_pulse
             rcs = (3/5) * dev.t_relax
-        mz_c1, mz_c2, p2pv = f90.sampling.check_she(V_to_J(dev,V),\
-                dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
-                dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
-                dev.t_pulse, dev.t_relax, dev.T,\
-                dev.heating_enabled, cycles, pcs, rcs)
+
+        if (dev.mtj_type == 0):
+            mz_c1, mz_c2, p2pv = f90.sampling.check_she(\
+                    V_to_J(dev, applied) if using_voltage else applied,\
+                    dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
+                    dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
+                    dev.t_pulse, dev.t_relax, dev.T,\
+                    dev.heating_enabled, cycles, pcs, rcs)
+        elif (dev.mtj_type == 1):
+            mz_c1, mz_c2, p2pv = f90.sampling.check_swrite(\
+                    V_to_J(dev, applied) if using_voltage else applied,\
+                    dev.J_reset, dev.H_reset, dev.theta, dev.phi, dev.K_295, dev.TMR, dev.Rp,\
+                    dev.a, dev.b, dev.tf, dev.alpha, dev.Ms_295, dev.eta, dev.d, dev.tox,\
+                    dev.t_pulse, dev.t_relax, dev.t_reset, dev.T,\
+                    dev.heating_enabled, cycles, pcs, rcs)
+        elif (dev.mtj_type == 2):
+            mz_c1, mz_c2, p2pv = f90.sampling.check_vcma(\
+                    V_to_J(dev, applied) if using_voltage else applied,\
+                    dev.v_pulse, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
+                    dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
+                    dev.t_pulse, dev.t_relax, dev.T,\
+                    dev.heating_enabled, cycles, pcs, rcs)
     except(AttributeError):
         dev.print_init_error()
         raise
 
     mz_chk1_res = None
     mz_chk2_res = None
+    PI          = None
 
     if p2pv > 0.25:
         nerror = -1
-    else:
-        nerror = 0
+        return nerror, mz_chk1_res, mz_chk2_res, PI
+    nerror = 0
+    PI     = 0
+    if dev.mtj_type == 0 or dev.mtj_type == 2:
         if mz_c1 < 0.2:
             mz_chk1_res = 0
         elif mz_c1 < 0.5:
             mz_chk1_res = 1
         else: mz_chk1_res = -1
-        if mz_c2 < 0.2:
-            mz_chk2_res = -1
-        elif mz_c2 < 0.5:
-            mz_chk2_res = 1
-        else: mz_chk2_res = 0
+    else:
+        if mz_c1 > 0.5:
+            mz_chk1_res = 0
+        elif mz_c1 > 0.2:
+            mz_chk1_res = 1
+        else: mz_chk1_res = -1
 
-        PI = 0
-        if mz_chk1_res == -1:
-            PI = -1
-        elif mz_chk2_res == -1:
-            PI = 1
-    return nerr, mz_chk1_res, mz_chk2_res, PI
+    if mz_c2 < 0.2:
+        mz_chk2_res = -1
+    elif mz_c2 < 0.5:
+        mz_chk2_res = 1
+    else: mz_chk2_res = 0
 
-def mtj_sample(dev, V, view_mag_flag = 0, dump_mod = 1,
+    if mz_chk1_res == -1:
+        PI = -1
+    elif mz_chk2_res == -1:
+        PI = 1
+    return nerror, mz_chk1_res, mz_chk2_res, PI
+
+def mtj_sample(dev, applied, view_mag_flag = 0, dump_mod = 1,
                file_ID = 1) -> (int,float):
     if dev.heating_capable == 0 and dev.heating_enabled == 1:
         raise(AttributeError)
     try:
         # fortran call here.
         if (dev.mtj_type == 0):
-            #energy, bit, theta_end, phi_end = f90.sampling.sample_she(V_to_J(dev,V),\
-            energy, bit, theta_end, phi_end = f90.sampling.sample_she(V_to_J(dev,V),\
+            energy, bit, theta_end, phi_end = f90.sampling.sample_she(\
+                    V_to_J(dev, applied) if using_voltage else applied,\
                     dev.J_she, dev.Hy, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
                     dev.t_pulse, dev.t_relax, dev.T,\
                     dump_mod, view_mag_flag, dev.sample_count, file_ID,\
                     dev.heating_enabled)
         elif (dev.mtj_type == 1):
-            energy, bit, theta_end, phi_end = f90.sampling.sample_swrite(V_to_J(dev,V),\
+            energy, bit, theta_end, phi_end = f90.sampling.sample_swrite(\
+                    V_to_J(dev, applied) if using_voltage else applied,\
                     dev.J_reset, dev.H_reset, dev.theta, dev.phi, dev.K_295, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms_295, dev.eta, dev.d, dev.tox,\
                     dev.t_pulse, dev.t_relax, dev.t_reset, dev.T,\
@@ -75,7 +104,8 @@ def mtj_sample(dev, V, view_mag_flag = 0, dump_mod = 1,
                     dev.heating_enabled)
 
         elif (dev.mtj_type == 2):
-            energy, bit, theta_end, phi_end = f90.sampling.sample_vcma(V_to_J(dev,V),\
+            energy, bit, theta_end, phi_end = f90.sampling.sample_vcma(
+                    V_to_J(dev, applied) if using_voltage else applied,\
                     dev.v_pulse, dev.theta, dev.phi, dev.Ki, dev.TMR, dev.Rp,\
                     dev.a, dev.b, dev.tf, dev.alpha, dev.Ms, dev.eta, dev.d, dev.tox,\
                     dev.t_pulse, dev.t_relax, dev.T,\
@@ -85,7 +115,7 @@ def mtj_sample(dev, V, view_mag_flag = 0, dump_mod = 1,
             dev.print_init_error()
             raise(AttributeError)
         # Need to update device objects and put together time evolution data after return.
-        dev.set_mag_vector(phi_end,theta_end)
+        dev.set_mag_vector(phi_end, theta_end)
         if( (view_mag_flag and (dev.sample_count % dump_mod == 0))):
             # These file names are determined by fortran subroutine single_sample.
             phi_from_txt   = np.loadtxt("phi_time_evol_"+ format_file_ID(file_ID) + ".txt",
