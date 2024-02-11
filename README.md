@@ -57,8 +57,8 @@ The default parameters are set in `mtj_parameters.json`
 
 The devices have the following as modifiable parameters:
 - T   [$`K`$]:  Temperature
-- Ki  [$`\frac{J}{m^2}`$]:  Anisotropy Energy
-- Ms  [$`\frac{A}{m}`$] : Magnetic Saturation
+- Ki  [$`\frac{J}{m^2}`$]:  Anisotropy energy
+- Ms  [$`\frac{A}{m}`$] : Magnetic saturation
 - tf  [$`m`$] : Thickness of the free layer
 - tox [$`m`$] : Thickness of the oxide
 - d   [$`m`$] : Thickness of the heavy metal layer
@@ -92,10 +92,10 @@ Anistropy and magnetic saturation are defined strictly at 295K. This enables the
 - t_reset [$`s`$] : Reset time
 
 ## Device to Device / Cycle to Cycle variation
-Device-to-device/cycle-to-cycle variation can be modeled crudely using a gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py` which takes a device, a named parameter, and the standard deviation for a gaussian distribution centered around the current device parameters value. The function returns a modified device. 
+Device-to-device/cycle-to-cycle variation can be modeled crudely using a gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py`. This function takes a device, a named parameter, and the standard deviation for a gaussian distribution centered around the current device parameters value and returns a modified device. 
 
 ## Joule Heating
-The Stochastic Write NYU device stack has a model of joule heating. This can be enabled with `dev.enable_heating()`. Currently no other device model is compatible with this model since the joule heating is dependent on the number of layers in the stack, materials, thicknesses, etc.
+The Stochastic Write NYU device stack has a model of joule heating. This can be enabled/disabled with `dev.enable_heating()`/`dev.disable_heating()`. Currently no other device model is compatible with this model since the joule heating is dependent on the number of layers in the stack, materials, thicknesses, etc.
 
 
 ## Device Parameter Verification
