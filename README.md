@@ -46,11 +46,13 @@ Import this function in python with:
 Declare as one of:
 `dev = SHE_MTJ_rng()`
 `dev = VCMA_MTJ_rng()`
-`dev = SWrite_MTJ_rng()`
+`dev = SWrite_MTJ_rng("<device flavor>")`
 
 The SHE, and VCMA devices have default device parameters from a UT Austin fabbed device that can be set using `dev.set_vals()`.
 
 The Stochastic Write device has two sets of parameters, one for a UT Austin device, and the other for a NYU device as described in 'Temperature-Resilient True Random Number Generation with Stochastic Actuated Magnetic Tunnel Junction Devices, Laura Rehm et. al. 2023'. This device needs to be declared with one of these options regardless of whether the parameters will be changed with the difference in this case being that the NYU device supports joule heating (see Joule Heating section). For example, `dev = SWrite_MTJ_rng("UTA")`
+
+The default parameters are set in `mtj_parameters.json`
 
 Device-to-device/cycle-to-cycle variation can be modeled using a simple gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py` 
 
