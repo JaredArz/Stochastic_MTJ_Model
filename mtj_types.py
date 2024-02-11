@@ -3,7 +3,6 @@ import sys
 import json
 import re
 
-
 # extract absolute path of main dir from entry dir to locate mtj_paramaters.json properly
 main_dir = re.match(re.compile(r'^(.*?Stochastic_MTJ_Model)'), sys.path[0]).group(1)
 
@@ -118,7 +117,6 @@ class MTJ():
 
 class SHE_MTJ_rng(MTJ):
     def __init__(self):
-        # MTJ Parameters- This is experimental values from real STT-SOT p-MTJ%
         dflt_m = {"theta" : np.random.normal(0,np.pi/4),
                   "phi"   : np.random.rand()*2*np.pi}
         heating_capable = 0
@@ -150,5 +148,4 @@ class VCMA_MTJ_rng(MTJ):
         heating_capable = 0
         with open(f'{main_dir}/mtj_parameters.json', 'r') as f:
             dflt_params = (json.load(f))["VCMA"]
-
         super().__init__(VCMA,dflt_params,dflt_m,heating_capable)

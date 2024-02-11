@@ -11,19 +11,21 @@ module sampling
         !   they are declared as they are because subroutine arguments declared with intent(out)
         !   will return back to python as a tuple (see numpy f2py)
         !
-        !   intended to mimic the python function call: out,energy = dev.sample_*(Jappl,Jshe_in, self.theta, self.phi, self.Ki....)
+        !   intended to mimic the python function call: out,energy = dev.sample_*(Jappl, [device params]....)
         ! --------------------------------*------------*-----------------------------------
         subroutine sample_SHE(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, Jshe, Hy_in, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                                  a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
-                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
+                                 T_in, Nx_in, Ny_in, Nz_in,&
+                                 dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
             real, intent(in) :: Jappl, Jshe, theta_init, phi_init, t_pulse, t_relax, T_in
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, Hy_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+                                a_in, b_in, d_in, tf_in, alpha_in,&
+                                eta_in, tox_in, Nx_in, Ny_in, Nz_in
             ! Functional parameters
             integer, intent(in) :: file_ID, sample_count, dump_mod
             logical, intent(in) :: view_mag_flag, heating_enabled
@@ -64,7 +66,8 @@ module sampling
 
             Ki = real(Ki_in, dp)
             Ms = real(Ms_in, dp)
-            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in,&
+                            eta_in, tox_in, Nx_in, Ny_in, Nz_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -77,7 +80,7 @@ module sampling
                            heating_enabled)
 
             Hy = 0
-            !=================  Relax into one of two low-energy states out-of-plane  ===================
+            !=================  Relax into one of two low-energy states out-of-plane  ================
             call drive(0.0_dp, 0.0_dp, real(Jappl,dp), 0.0_dp, 0.0_dp, relax_steps,&
                            t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
                            heating_enabled)
@@ -100,8 +103,9 @@ module sampling
 
         subroutine sample_SWrite(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, Jreset, Hreset, theta_init, phi_init, K_295_in, TMR_in, Rp_in,&
-                                 a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, tox_in, t_pulse, t_relax, t_reset,&
-                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
+                                 a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, tox_in, t_pulse,&
+                                 t_relax, t_reset, T_in, Nx_in, Ny_in, Nz_in,&
+                                 dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
@@ -109,7 +113,8 @@ module sampling
                                 t_pulse, t_relax, t_reset, T_in
             ! Device input parameters
             real, intent(in) :: K_295_in, TMR_in, Rp_in, Ms_295_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+                                a_in, b_in, d_in, tf_in, alpha_in,&
+                                eta_in, tox_in, Nx_in, Ny_in, Nz_in
             ! Functional parameters
             integer, intent(in) :: file_ID, sample_count, dump_mod
             logical, intent(in) :: view_mag_flag, heating_enabled
@@ -157,7 +162,8 @@ module sampling
             !sets K, Ms
             call compute_K_and_Ms(K_295, Ms_295, T_free)
             !redundant, sets K, Ms, and Bsat with no change. Avoids conflict with other device models
-            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in,&
+                            eta_in, tox_in, Nx_in, Ny_in, Nz_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -218,15 +224,17 @@ module sampling
 
         subroutine sample_VCMA(energy_usage, bit, theta_end, phi_end,&
                                  Jappl, v_pulse, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
-                                 a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
-                                 T_in, dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
+                                 a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in,&
+                                 t_pulse, t_relax, T_in, Nx_in, Ny_in, Nz_in,&
+                                 dump_mod, view_mag_flag, sample_count, file_ID, heating_enabled)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
             real, intent(in) :: Jappl, v_pulse, theta_init, phi_init, t_pulse, t_relax, T_in
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in,&
+                                Nx_in, Ny_in, Nz_in
             ! Functional parameters
             integer, intent(in) :: file_ID, sample_count, dump_mod
             logical, intent(in) :: view_mag_flag, heating_enabled
@@ -267,7 +275,8 @@ module sampling
 
             Ki = real(Ki_in, dp)
             Ms = real(Ms_in, dp)
-            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in,&
+                            eta_in, tox_in, Nx_in, Ny_in, Nz_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -298,7 +307,7 @@ module sampling
           subroutine check_SHE(mz_c1, mz_c2, p2pv,&
                Jappl, Jshe, Hy_in, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
                a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
-               T_in, heating_enabled, cyc, pcs, rcs)
+               T_in, Nx_in, Ny_in, Nz_in, heating_enabled, cyc, pcs, rcs)
 
             !++++ Configuration check for SHE device ++++++
             ! this was formerly done via output files and interacting with python. in order to avoid
@@ -310,14 +319,16 @@ module sampling
             real, intent(in) :: Jappl, Jshe, theta_init, phi_init, t_pulse, t_relax, T_in
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in, Hy_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+                                a_in, b_in, d_in, tf_in, alpha_in,&
+                                eta_in, tox_in, Nx_in, Ny_in, Nz_in
             ! Functional parameters
             integer, intent(in) :: cyc, pcs, rcs
             logical, intent(in) :: heating_enabled
             ! Return values
             real, intent(out) :: mz_c1, mz_c2, p2pv
             !==================================================================
-            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol, mz_c1_arr, mz_c2_arr, mz_arr
+            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol,&
+                                                   mz_c1_arr, mz_c2_arr, mz_arr
             real(dp) :: phi_i, theta_i, cuml_pow
             real :: seed
             integer :: t_i, pulse_steps, relax_steps, total_steps, c_i, m_i
@@ -352,7 +363,8 @@ module sampling
 
             Ki = real(Ki_in, dp)
             Ms = real(Ms_in, dp)
-            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in,&
+                            eta_in, tox_in, Nx_in, Ny_in, Nz_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -375,7 +387,7 @@ module sampling
                     heating_enabled)
 
                Hy = 0
-               !=================  Relax into one of two low-energy states out-of-plane  ===================
+               !=================  Relax into one of two low-energy states out-of-plane  ================
                call drive(0.0_dp, 0.0_dp, real(Jappl,dp), 0.0_dp, 0.0_dp, relax_steps,&
                     t_i, phi_i, theta_i, phi_evol, theta_evol, temp_evol, cuml_pow,&
                     heating_enabled)
@@ -386,7 +398,8 @@ module sampling
 
                mz_c1_arr = mz_c1_arr + mz_arr(1:pulse_steps)
                mz_c2_arr = mz_c2_arr + mz_arr(pulse_steps+2:total_steps)
-               p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) - mz_arr(1:total_steps-1)))/real(total_steps-1))
+               p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) &
+                           - mz_arr(1:total_steps-1)))/real(total_steps-1))
 
             end do
 
@@ -400,8 +413,9 @@ module sampling
 
           subroutine check_SWrite(mz_c1, mz_c2, p2pv,&
                Jappl, Jreset, Hreset, theta_init, phi_init, K_295_in, TMR_in, Rp_in,&
-               a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, tox_in, t_pulse, t_relax, t_reset,&
-               T_in, heating_enabled, cyc, pcs, rcs)
+               a_in, b_in, tf_in, alpha_in, Ms_295_in, eta_in, d_in, tox_in, t_pulse,&
+               t_relax, t_reset, T_in, Nx_in, Ny_in, Nz_in,&
+               heating_enabled, cyc, pcs, rcs)
             implicit none
             integer, parameter :: dp = kind(0.0d0)
             ! Dynamical parameters
@@ -409,14 +423,16 @@ module sampling
                                 t_pulse, t_relax, t_reset, T_in
             ! Device input parameters
             real, intent(in) :: K_295_in, TMR_in, Rp_in, Ms_295_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+                                a_in, b_in, d_in, tf_in, alpha_in,&
+                                eta_in, tox_in, Nx_in, Ny_in, Nz_in
             ! Functional parameters
             integer, intent(in) :: cyc, pcs, rcs
             logical, intent(in) :: heating_enabled
             ! Return values
             real, intent(out) :: mz_c1, mz_c2, p2pv
             !==================================================================
-            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol, mz_c1_arr, mz_c2_arr, mz_arr
+            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol,&
+                                                   mz_c1_arr, mz_c2_arr, mz_arr
             real(dp) :: phi_i, theta_i, cuml_pow, K_295, Ms_295
             real :: seed
             integer :: t_i, pulse_steps, relax_steps, reset_steps,&
@@ -460,7 +476,8 @@ module sampling
                T_bath = real(T_in, dp)
                T      = real(T_in, dp)
                call compute_K_and_Ms(K_295, Ms_295, T_free)
-               call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+               call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in,&
+                               eta_in, tox_in, Nx_in, Ny_in, Nz_in)
 
                allocate(theta_evol(sample_steps))
                allocate(phi_evol(sample_steps))
@@ -508,7 +525,8 @@ module sampling
 
                mz_c1_arr = mz_c1_arr + mz_arr(1:sample_steps)
                mz_c2_arr = mz_c2_arr + mz_arr(sample_steps+1:total_steps)
-               p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) - mz_arr(1:total_steps-1)))/real(total_steps-1))
+               p2pv = p2pv + real(sum(abs(mz_arr(2:total_steps) &
+                           - mz_arr(1:total_steps-1)))/real(total_steps-1))
 
                deallocate(phi_evol)
                deallocate(theta_evol)
@@ -528,8 +546,9 @@ module sampling
 
           subroutine check_VCMA(mz_c1, mz_c2, p2pv,&
                Jappl, v_pulse, theta_init, phi_init, Ki_in, TMR_in, Rp_in,&
-               a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in, t_pulse, t_relax,&
-               T_in, heating_enabled, cyc, pcs, rcs)
+               a_in, b_in, tf_in, alpha_in, Ms_in, eta_in, d_in, tox_in,&
+               t_pulse, t_relax, T_in, Nx_in, Ny_in, Nz_in,&
+               heating_enabled, cyc, pcs, rcs)
 
             !++++ Configuration check for VCMA device ++++++
             ! this was formerly done via output files and interacting with python. in order to avoid
@@ -541,14 +560,16 @@ module sampling
             real, intent(in) :: Jappl, v_pulse, theta_init, phi_init, t_pulse, t_relax, T_in
             ! Device input parameters
             real, intent(in) :: Ki_in, TMR_in, Rp_in, Ms_in,&
-                                a_in, b_in, d_in, tf_in, alpha_in, eta_in, tox_in
+                                a_in, b_in, d_in, tf_in, alpha_in,&
+                                eta_in, tox_in, Nx_in, Ny_in, Nz_in
             ! Functional parameters
             integer, intent(in) :: cyc, pcs, rcs
             logical, intent(in) :: heating_enabled
             ! Return values
             real, intent(out) :: mz_c1, mz_c2, p2pv
             !==================================================================
-            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol, mz_c1_arr, mz_c2_arr, mz_arr
+            real(dp), dimension(:), allocatable :: theta_evol, phi_evol, temp_evol,&
+                                                   mz_c1_arr, mz_c2_arr, mz_arr
             real(dp) :: phi_i, theta_i, cuml_pow
             real :: seed
             integer :: t_i, pulse_steps, relax_steps, total_steps, c_i, m_i
@@ -586,7 +607,8 @@ module sampling
 
             Ki = real(Ki_in, dp)
             Ms = real(Ms_in, dp)
-            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in, eta_in, tox_in)
+            call set_params(TMR_in, Rp_in, alpha_in, tf_in, a_in, b_in, d_in,&
+                            eta_in, tox_in, Nx_in, Ny_in, Nz_in)
 
             call random_number(seed)
             call zigset(int(1+floor((1000001)*seed)))
@@ -712,33 +734,33 @@ module sampling
             ! ===== array dump to file of theta/phi time evolution  ====
             write (file_string,'(I7.7)') file_ID
             if( overwrite_flag .eq. 1) then
-                open(unit = file_ID, file = "phi_time_evol_"//file_string//".txt", action = "write", status = "replace", &
-                        form = 'formatted')
+                open(unit = file_ID, file = "phi_time_evol_"//file_string//".txt", action = "write",&
+                     status = "replace", form = 'formatted')
             else
-                open(unit = file_ID, file = "phi_time_evol_"//file_string//".txt", action = "write", status = "old",&
-                        position="append",form = 'formatted')
+                open(unit = file_ID, file = "phi_time_evol_"//file_string//".txt", action = "write",&
+                     status = "old", position="append",form = 'formatted')
             end if
             write(file_ID,'(ES24.17)',advance="no") phi_evol
             close(file_ID)
 
             write (file_string,'(I7.7)') file_ID
             if( overwrite_flag .eq. 1) then
-                open(unit = file_ID, file = "theta_time_evol_"//file_string//".txt", action = "write", status = "replace", &
-                        form = 'formatted')
+                open(unit = file_ID, file = "theta_time_evol_"//file_string//".txt", action = "write",&
+                     status = "replace", form = 'formatted')
             else
-                open(unit = file_ID, file = "theta_time_evol_"//file_string//".txt", action = "write", status = "old",&
-                        position="append",form = 'formatted')
+                open(unit = file_ID, file = "theta_time_evol_"//file_string//".txt", action = "write",&
+                     status = "old", position="append",form = 'formatted')
             end if
             write(file_ID,'(ES24.17)',advance="no") theta_evol
             close(file_ID)
 
             write (file_string,'(I7.7)') file_ID
             if( overwrite_flag .eq. 1) then
-                open(unit = file_ID, file = "temp_time_evol_"//file_string//".txt", action = "write", status = "replace", &
-                        form = 'formatted')
+                open(unit = file_ID, file = "temp_time_evol_"//file_string//".txt", action = "write",&
+                     status = "replace", form = 'formatted')
             else
-                open(unit = file_ID, file = "temp_time_evol_"//file_string//".txt", action = "write", status = "old",&
-                        position="append",form = 'formatted')
+                open(unit = file_ID, file = "temp_time_evol_"//file_string//".txt", action = "write",&
+                     status = "old", position="append",form = 'formatted')
             end if
             write(file_ID,'(ES24.17)',advance="no") temp_evol
             close(file_ID)
