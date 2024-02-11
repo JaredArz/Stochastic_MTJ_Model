@@ -56,40 +56,40 @@ The default parameters are set in `mtj_parameters.json`
 
 
 The devices have the following as modifiable parameters:
-- T   [$`K`$]
-- Ki  [$`\frac{J}{m^2}`$]
-- Ms  [$`\frac{A}{m}`$]
-- tf  [$`m`$]
-- tox [$`m`$]
-- a   [$`m`$]
-- b   [$`m`$]
-- d   [$`m`$]
-- eta   [dimensionless]
-- alpha [dimensionless]
-- Rp   [$`\Omega`$]
-- TMR  [dimensionless]
-- t_pulse  [$`s`$]
-- t_relax  [$`s`$]
-- Nx  [dimensionless]
+- T   [$`K`$]:  Temperature
+- Ki  [$`\frac{J}{m^2}`$]:  Anisotropy Energy
+- Ms  [$`\frac{A}{m}`$] : Magnetic Saturation
+- tf  [$`m`$] : Thickness of the free layer
+- tox [$`m`$] : Thickness of the oxide
+- d   [$`m`$] : Thickness of the heavy metal layer
+- a   [$`m`$]:  MTJ major ellipsoidal radius
+- b   [$`m`$]:  MTJ minor ellipsoidal radius
+- eta   [dimensionless] : Spin hall angle
+- alpha [dimensionless] : Gilbert damping factor
+- Rp   [$`\Omega`$] : Resistance in the parallel state
+- TMR  [dimensionless] : Tunneling magneto resistance
+- t_pulse  [$`s`$] : Pulse time
+- t_relax  [$`s`$] : Relax time
+- Nx  [dimensionless] : Demagnetization factors in x, y, and z
 - Ny  [dimensionless]
 - Nz  [dimensionless]
 
 SHE only:
-- J_she  [$`\frac{A}{m^2}`$]
-- Hy (optional)
+- J_she  [$`\frac{A}{m^2}`$] : SHE current density
+- Hy (optional) : Applied magnetic field
 
 VCMA only:
-- v_pulse [$`V`$]
+- v_pulse [$`V`$] : Voltage pulse
 
 Stochastic Write only:
 
 Anistropy and magnetic saturation are defined strictly at 295K. This enables the joule heating model for the NYU device. The current type implementation mandates that the UT Austin device follows the naming convention even without a joule heating model.
 
-- K_295 [$`\frac{J}{m^2}`$]
-- Ms_295 [$`\frac{A}{m}`$]
-- J_reset [$`\frac{A}{m^2}`$]
-- H_reset [$`\frac{A}{m}`$]
-- t_reset [$`s`$]
+- K_295 [$`\frac{J}{m^2}`$] : Anisotropy at room temp
+- Ms_295 [$`\frac{A}{m}`$] : Magnetic saturation at room temp
+- J_reset [$`\frac{A}{m^2}`$] : Reset current density
+- H_reset [$`\frac{A}{m}`$] : Reset applied magnetic field
+- t_reset [$`s`$] : Reset time
 
 ## Device to Device / Cycle to Cycle variation
 Device-to-device/cycle-to-cycle variation can be modeled crudely using a gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py` which takes a device, a named parameter, and the standard deviation for a gaussian distribution centered around the current device parameters value. The function returns a modified device. 
