@@ -2,11 +2,8 @@ import numpy as np
 from interface_funcs import mtj_sample
 import math
 
-def draw_norm(x,psig):
+def draw_gauss(x,psig):
     return (x*np.random.normal(1,psig))
-
-def draw_const(x,csig):
-    return (x+np.random.normal(-csig,csig))
 
 # Device-to-device variation and cycle-to-cycle variation
 # can be modeled simply with this function.
@@ -18,7 +15,7 @@ def draw_const(x,csig):
 # Returns the modified device.
 def vary_param(dev, param, stddev):
     current_val = dev.__getattribute__(param)
-    updated_val = draw_norm(current_val, stddev)
+    updated_val = draw_gauss(current_val, stddev)
     dev.__setattr__(param,updated_val)
     return dev
 
@@ -58,5 +55,13 @@ def gamma_pdf(g1, g2, nrange) -> list:
   return pdf
 
 def avg_weight_across_samples(dev, apply, samples_to_avg) -> float:
-    sum_p = np.sum( [ (mtj_sample(dev, apply),) for _ in range(samples_to_avg)] )
+    # STT device does not need to be reset on sample
+    if dev.mtj_type == 1:
+      sum_p = np.sum( [ (mtj_sample(dev, apply),) for _ in range(samples_to_avg)] )
+    else:
+      sum_p = 0
+      for _ in range(samples_to_avg):
+        dev.set_mag_vector()
+        bit,_ = mtj_sample(dev, apply)
+        sum_p += bit
     return sum_p/samples_to_avg

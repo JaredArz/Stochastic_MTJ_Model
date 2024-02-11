@@ -55,6 +55,7 @@ The Stochastic Write device has two sets of parameters, one for a UT Austin devi
 Device-to-device/cycle-to-cycle variation can be modeled using a simple gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py` 
 
 The devices have the following as modifiable parameters:
+- T   [$`K`$]
 - Ki  [$`\frac{J}{m^2}`$]
 - Ms  [$`\frac{A}{m}`$]
 - tf  [$`m`$]
@@ -68,6 +69,9 @@ The devices have the following as modifiable parameters:
 - TMR  [dimensionless]
 - t_pulse  [$`s`$]
 - t_relax  [$`s`$]
+- Nx  [dimensionless]
+- Ny  [dimensionless]
+- Nz  [dimensionless]
 
 SHE only:
 - J_she  [$`\frac{A}{m^2}`$]
@@ -78,7 +82,8 @@ VCMA only:
 
 Stochastic Write only:
 
-Anistropy and magnetic saturation are only defined at 295K (temperature dependence):
+Anistropy and magnetic saturation are defined strictly at 295K. This enables the joule heating model for the NYU device. The current type implementation mandates that the UT Austin device follows the naming convention even without a joule heating model.
+
 - K_295 [$`\frac{J}{m^2}`$]
 - Ms_295 [$`\frac{A}{m}`$]
 - J_reset [$`\frac{A}{m^2}`$]
@@ -108,12 +113,12 @@ for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong. Note that if t
 ## Slurm
 Neither the fortran or python code is paralleized with openMP or MPI.
 
-## Example
+## Examples
 ```
+# ===== test devices with mtj_check ======
 from interface_funcs import mtj_sample, mtj_check
 from mtj_helper import print_check
-from mtj_types import SHE_MTJ_rng, SWrite_MTJ_rng, VCMA_MTJ_rng
-
+from mtj_types  import SHE_MTJ_rng, SWrite_MTJ_rng, VCMA_MTJ_rng
 
 dev = SHE_MTJ_rng()
 dev.init() # calls both set_vals and set_mag_vector with defaults
@@ -125,12 +130,60 @@ dev = SWrite_MTJ_rng("UTA")
 dev.init()
 print(dev)
 
-print_check(*mtj_check(dev, -2e11, 100))
-
+print_check(*mtj_check(dev, -1.2e11, 100))
 
 dev = VCMA_MTJ_rng()
 dev.init()
 print(dev)
 
 print_check(*mtj_check(dev, 0, 100))
+```
+```
+# ===== generate scurve plots ======
+from interface_funcs import mtj_sample
+from mtj_types  import SWrite_MTJ_rng, SHE_MTJ_rng, VCMA_MTJ_rng
+from mtj_helper import avg_weight_across_samples
+import numpy as np
+import matplotlib.pyplot as plt
+
+class scurve:
+  def __init__(self, dev, x, title):
+    self.x = x
+    self.y = self.generate(dev, num_to_avg = 1000)
+    fig, ax = plt.subplots()
+    ax.set_xlabel('J [A/m^2]')
+    ax.set_title(title)
+    self.ax = ax
+
+  def generate(self, dev, num_to_avg):
+      weights = []
+      for J in self.x:
+        weights.append(
+          avg_weight_across_samples(dev, J, num_to_avg))
+      return weights
+
+j_steps = 50
+SHE_current    = np.linspace(-6e9, 6e9, j_steps)
+SWrite_current = np.linspace(-300e9, 0,  j_steps)
+VCMA_current   = np.linspace(-6e9, 6e9, j_steps)
+
+SWrite = SWrite_MTJ_rng("UTA")
+SWrite.init()
+print(SWrite)
+
+SHE = SHE_MTJ_rng()
+SHE.init()
+print(SHE)
+
+VCMA = VCMA_MTJ_rng()
+VCMA.init()
+print(VCMA)
+
+curves = [ scurve( SHE, SHE_current, "SHE" ),
+           scurve( SWrite, SWrite_current, "SWrite" ),
+           scurve( VCMA, VCMA_current, "VCMA" )]
+
+for c in curves: c.ax.plot(c.x, c.y), c.ax.scatter(c.x, c.y, s=36, marker='^')
+
+plt.show()
 ```
