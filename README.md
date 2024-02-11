@@ -54,7 +54,6 @@ The Stochastic Write device has two sets of parameters, one for a UT Austin devi
 
 The default parameters are set in `mtj_parameters.json`
 
-Device-to-device/cycle-to-cycle variation can be modeled using a simple gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py` 
 
 The devices have the following as modifiable parameters:
 - T   [$`K`$]
@@ -91,6 +90,9 @@ Anistropy and magnetic saturation are defined strictly at 295K. This enables the
 - J_reset [$`\frac{A}{m^2}`$]
 - H_reset [$`\frac{A}{m}`$]
 - t_reset [$`s`$]
+
+## Device to Device / Cycle to Cycle variation
+Device-to-device/cycle-to-cycle variation can be modeled crudely using a gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py` which takes a device, a named parameter, and the standard deviation for a gaussian distribution centered around the current device parameters value. The function returns a modified device. 
 
 ## Joule Heating
 The Stochastic Write NYU device stack has a model of joule heating. This can be enabled with `dev.enable_heating()`. Currently no other device model is compatible with this model since the joule heating is dependent on the number of layers in the stack, materials, thicknesses, etc.
