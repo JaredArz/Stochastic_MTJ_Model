@@ -149,7 +149,7 @@ if __name__ == "__main__":
     log_dir = os.path.join('JETCAS_Training', 'Logs', model_name)
     training_timesteps = 500000
     log_window = training_timesteps//1000
-    num_envs = 4
+    num_envs = 1
     eval = True
 
     Train_Model(model_dir, log_dir, num_envs, training_timesteps, log_window, eval)
