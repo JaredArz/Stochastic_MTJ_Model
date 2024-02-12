@@ -10,7 +10,7 @@ from paretoset import paretoset
 sys.path.append("../")
 sys.path.append("../fortran_source")
 from mtj_model import mtj_run
-from SOT_RNG_Leap import MTJ_RNG_Problem
+from SOT_RNG_Leap_SingleProc import MTJ_RNG_Problem
 
 
 def scraper():

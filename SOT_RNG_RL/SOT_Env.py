@@ -8,7 +8,8 @@ from gym.spaces import Discrete, Box, Dict, Tuple, MultiBinary, MultiDiscrete
 import sys
 sys.path.append("../")
 sys.path.append("../fortran_source")
-from mtj_model import mtj_run
+# from mtj_model import mtj_run
+from SOT_model import SOT_Model
 
 
 # Hyperparameters
@@ -60,7 +61,7 @@ class SOT_Env(Env):
       self.d = 3e-09
       self.tf = 1.1e-09
 
-      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
       if chi2 != None:
         break
     
@@ -76,10 +77,10 @@ class SOT_Env(Env):
     self.t_relax_range = [0.5e-9, 75e-9]
 
     # Get initial config score
-    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf)
     self.best_config_score = self.current_config_score
-    self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
+    self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf, "kl_div_score":self.kl_div_score, "energy":self.energy}
 
     # Continuous Actions: modify the 8 parameters; normalized values between 0-1 for best practice
     self.action_space = Box(low=0, high=1, shape=(8,), dtype=np.float32)
@@ -187,7 +188,7 @@ class SOT_Env(Env):
       reward = -1
     elif self.current_config_score < self.best_config_score:  # Minimization reward scheme
       self.best_config_score = self.current_config_score
-      self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf}
+      self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf, "kl_div_score":self.kl_div_score, "energy":self.energy}
       reward = 1 
     else: 
       reward = 0 
@@ -200,7 +201,7 @@ class SOT_Env(Env):
     self.apply_continuous_action(action)
     
     # Sample new configuration
-    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf)
     
     # Calculate reward
@@ -287,12 +288,12 @@ class SOT_Env(Env):
       self.d = 3e-09
       self.tf = 1.1e-09
 
-      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
       if chi2 != None:
         break
 
     # Get initial config score
-    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = mtj_run(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf)
     # self.best_config_score = self.current_config_score
 

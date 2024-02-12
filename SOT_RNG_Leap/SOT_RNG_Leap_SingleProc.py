@@ -22,7 +22,8 @@ from leap_ec.multiobjective.problems import MultiObjectiveProblem, SCHProblem
 
 sys.path.append("../")
 sys.path.append("../fortran_source")
-from mtj_model import mtj_run
+# from mtj_model import mtj_run
+from SOT_model import SOT_Model
 import inspect
 
 
@@ -45,7 +46,7 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
     self.runID = runID
   
   def evaluate(self, params):
-    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = mtj_run(alpha=params[0], 
+    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = SOT_Model(alpha=params[0], 
                                                                               Ki=params[1], 
                                                                               Ms=params[2], 
                                                                               Rp=params[3],
@@ -56,8 +57,7 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
                                                                               J_she=params[6], 
                                                                               t_pulse=params[7], 
                                                                               t_relax=params[7], 
-                                                                              samples=DEV_SAMPLES,
-                                                                              runID=self.runID)
+                                                                              samples=DEV_SAMPLES)
     
     if chi2 == None:    # Penalize when config fails
       # kl_div = np.inf
@@ -126,7 +126,7 @@ def analyze_results(runID):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="MTJ Parameter Testing")
+  parser = argparse.ArgumentParser()
   parser.add_argument("--ID", required=True, help="run ID", type=int)
   args = parser.parse_args()
   ID = args.ID
