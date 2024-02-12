@@ -1,8 +1,10 @@
-! =======================================================================================================
-! rng from: Marsaglia, G. & Tsang, W.W. (2000) `The ziggurat method for generating
+! ================================================================================================
+! pseudo RNG from: Marsaglia, G. & Tsang, W.W. (2000) `The ziggurat method for generating
 ! random variables', J. Statist. Software, v5(8).
-! translated from C by Alan Miller (amiller@bigpond.net.au) with edits by Jared Arzate
-! ======================================================================================================
+! translated from C by Alan Miller (amiller@bigpond.net.au)
+! Edits of this code and an implementatoin of the Box-Muller method for generating random numbers
+! have been made by Jared Arzate (jared.arzate@utexas.edu)
+! =================================================================================================
 module ziggurat
    implicit none
    private
@@ -14,23 +16,16 @@ module ziggurat
    integer,  save            ::  iz, jz, jsr, hz
    ! ====================================================================
    ! ========= avoiding allocatable arrays for pythons sake =============
-   ! ==== all corresponding code is commented for this implementation === 
+   ! ==== all corresponding code is commented for this reason  ========== 
    ! ====================================================================
    !integer, allocatable, save        :: kn(:), ke(:)
    !real, allocatable, save  :: wn(:), fn(:), we(:), fe(:)
    integer, save        :: kn(0:127), ke(0:255)
    real(dpz), save  :: wn(0:127), fn(0:127), we(0:255), fe(0:255)
 
-   PUBLIC  :: zigset, shr3, uni, rnor,get_init_status!, cleanZig
+   PUBLIC  :: zigset, shr3, uni, rnor!, cleanZig
 
 contains
-    function get_init_status( ) result(init_status)
-        implicit none
-        logical :: init_status
-        init_status = initialized
-        return
-    end function get_init_status
-
     subroutine zigset( jsrseed )
        integer, intent(in)  :: jsrseed
        integer  :: i

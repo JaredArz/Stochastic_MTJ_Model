@@ -21,6 +21,8 @@
 
 # outputs
 **/results
+**/wordstreams
+**/backup_results
 **/runs
 *.csv
 !valid_param.csv
