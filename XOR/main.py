@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 
-from mtj_types_v3 import SWrite_MTJ_rng
+from mtj_types import SWrite_MTJ_rng
 from interface_funcs import mtj_sample
 import XOR_funcs as funcs
 import tree
@@ -32,17 +32,20 @@ def main():
     no xor :              NO
     '''
 
-    length = 100000000
-    n_bins = 1
+    length = 1000
+    n_bins = 10
     kdev   = 0.0
     T      = 300
     Temps  = [290, 300, 310, 320, 330]
+    kdevs  = [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]
 
-
-    gen_x_bins(n_bins, T, kdev, length, "NO", out_dir, None)
+    #gen_x_bins(n_bins, T, kdev, length, "NO", out_dir, None)
     #gen_bin_T_sweep(n_bins, Temps, length, "NO", out_dir, None, 0)
     #gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 1, 1)
     #gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 2, 2)
+    gen_bin_kdev_sweep(n_bins, kdevs, length, "NO", out_dir, None,   0)
+    gen_bin_kdev_sweep(n_bins, kdevs, length, "OSS", out_dir, 1,    1)
+    #gen_bin_kdev_sweep(n_bins, kdevs, length, "2S1D", out_dir, 2,   2)
 
     print("--- %s seconds ---" % (time.time() - start_time))
 
@@ -73,11 +76,12 @@ def gen_x_bins(x, T, kdev, length, method, out_dir, depth = None, iteration = No
         else:
             probs.append( np.sum(stream)/length )
 
-    np.savez(f"{out_dir}/metadata_{iteration}.npz",
-             T = T, kdev=kdev, word_size=word_size,
-             length=length, depth = depth, method = method)
+    #FIXME only include metadata if calling to plot FIXME
+    #np.savez(f"{out_dir}/metadata_{iteration}.npz",
+    #         T = T, kdev=kdev, word_size=word_size,
+    #         length=length, depth = depth, method = method)
 
-    np.savez(f"{out_dir}/plottable_{T}_streamdata_{iteration}.npz",
+    np.savez(f"{out_dir}/plottable_{T}_{kdev}_streamdata_{iteration}.npz",
              probs=probs)
 
     return probs
@@ -98,6 +102,21 @@ def gen_bin_T_sweep(x, Temps, length, method, out_dir, depth = None, iteration =
 
     return probs_per_temp
 
+def gen_bin_kdev_sweep(x, kdevs, length, method, out_dir, depth = None, iteration = None):
+
+    probs_per_kdev = []
+    for kdev in kdevs:
+        probs = gen_x_bins(x, 300, kdev, length, method, out_dir, depth)
+        probs_per_kdev.append( np.average( probs ) )
+
+    np.savez(f"{out_dir}/metadata_sweep_{iteration}.npz",
+             kdevs=kdevs, word_size=word_size,
+             length=length, depth = depth, method = method)
+
+    np.savez(f"{out_dir}/plottable_kdev_Sweep_{iteration}.npz",
+             probs_per_kdev = probs_per_kdev)
+
+    return probs_per_kdev
 
 
 def get_wordstream_with_XOR(generator, devs, args, depth, out_dir, iteration = None):

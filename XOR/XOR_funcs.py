@@ -5,6 +5,7 @@ from datetime import datetime
 import numpy as np
 from interface_funcs import mtj_sample
 from scipy.stats import chi2
+from misc_funcs import find_idx_at_nearest
 
 import mtj_helper as helper
 
@@ -33,7 +34,7 @@ def p_to_V(p) -> float:
         exit()
     V_range = np.load('./V_range.npy')
     ps = np.load('./ps.npy')
-    return V_range[helper.find_idx_at_nearest(ps, p)]
+    return V_range[find_idx_at_nearest(ps, p)]
 
 def get_uniformity(word_stream, word_size, record_size):
     word_freq = np.zeros( 2**word_size )
