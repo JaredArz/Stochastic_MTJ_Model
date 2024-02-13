@@ -26,7 +26,7 @@ class TensorboardCallback_SingleProcess(BaseCallback):
     self.logger.record("energy", self.env.energy)
     self.logger.record("current_config_score", self.env.current_config_score)
     self.logger.record("best_config_score", self.env.best_config_score)
-    if (self.num_timesteps % 500 == 0):
+    if (self.num_timesteps % 1 == 0):
       self.logger.dump(self.num_timesteps)
     return True
     
@@ -51,8 +51,6 @@ class TensorboardCallback_MultiProcess(BaseCallback):
 
 def Train_Model(model_dir, log_dir, num_envs:int=1, training_timesteps:int=1000, log_window:int=100, eval:bool=False):
   if num_envs == 1:
-    # Calls each environment in sequence on the current Python process; better for simple environments
-    # env = make_vec_env(SOT_Env, n_envs=num_envs)
     env = SOT_Env()
     callback = TensorboardCallback_SingleProcess(env)
   else:
@@ -95,8 +93,8 @@ def Test_Model(model_path:str, episodes:int):
       infos.append(info)
       config_scores.append(env.current_config_score)
 
-      print(f"Action: {action}")
-      print(f"Obs   : {obs}")
+      # print(f"Action: {action}")
+      # print(f"Obs   : {obs}")
       print(f"Reward: {reward}")
 
     best_episode_config = infos[np.argmin(config_scores)]
@@ -105,7 +103,6 @@ def Test_Model(model_path:str, episodes:int):
     print("**************************************************************************\n")
   
   print(f"Best Config: {env.best_config}")
-
   env.close()
 
 
@@ -118,21 +115,19 @@ def Test_Env(episodes=5):
     score = 0 
     
     while not done:
-      # env.render()
       action = env.action_space.sample()
       obs, reward, terminated, truncated, info = env.step(action)
       score += reward
       done = terminated or truncated
 
-      print(f"Action: {action}")
-      print(f"Obs   : {obs}")
+      # print(f"Action: {action}")
+      # print(f"Obs   : {obs}")
       print(f"Reward: {reward}")
 
     print(f"\nEpisode: {episode} Score: {score}")
     print("**************************************************************************\n")
   
   print(f"Best Config: {env.best_config}")
-
   env.close()
 
 

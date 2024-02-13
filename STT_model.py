@@ -30,13 +30,16 @@ def SOT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, eta, J_reset, t_pulse, t_rel
                t_relax=t_relax)
 
   # Check if config is valid
-  is_valid = valid_config(*mtj_check(dev, 0, 100))
+  valid = valid_config(*mtj_check(dev, 0, 100))
+  if valid == False:
+    return None, None, None, None, None, None, None
 
   # Sample device to get bitstream and energy consumption
   number_history, bitstream, energy_avg = get_energy(dev, samples, jz_lut_she) #TODO: Change jz_lut_she!!!!
   
   # Build gamma distribution
-  xxis, pdf = gamma_pdf(g1=1, g2=0.01, nrange=256)
+  # xxis, pdf = gamma_pdf(g1=1, g2=0.01, nrange=256)
+  xxis, pdf = gamma_pdf(g1=50, g2=311.44, nrange=256)
   
   # Calculate chi2
   counts, _ = np.histogram(number_history,bins=256)
@@ -81,3 +84,20 @@ if __name__ == "__main__":
   plt.title("PDF Comparison")
   plt.legend()
   plt.show()
+
+
+
+  '''
+  alpha_range = [0.01, 0.1]
+  Ki_range = [0.2e-3, 1e-3]
+  Ms_range = [0.3e6, 2e6]
+  Rp_range = [500, 50000]
+  TMR_range = [0.3, 6] # No longer vary; default to 3
+  eta_range = [0.1, 2] # Only for SOT
+  J_she_range = [0.01e12, 5e12] # Only for SOT
+  J_stt_range = [] # Only for STT
+  J_reset = [] # Only for STT (3 * J_stt)
+  t_reset = [] # Only for STT (3 * t_pulse)
+  t_pulse_range = [0.5e-9, 75e-9]
+  t_relax_range = [0.5e-9, 75e-9]
+  '''

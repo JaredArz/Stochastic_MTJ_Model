@@ -2,8 +2,9 @@ import os
 import sys
 import random
 import numpy as np
-import matplotlib.pyplot as plt
+import scipy.stats as stats 
 from scipy.special import rel_entr
+import matplotlib.pyplot as plt
 
 from mtj_types  import SHE_MTJ_rng, SWrite_MTJ_rng, VCMA_MTJ_rng
 from mtj_helper import valid_config, get_energy, gamma_pdf
@@ -28,16 +29,22 @@ def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, sampl
                t_relax=t_relax)
 
   # Check if config is valid
-  is_valid = valid_config(*mtj_check(dev, 0, 100))
+  valid = valid_config(*mtj_check(dev, 0, 100))
+  if valid == False:
+    return None, None, None, None, None, None, None
 
   # Sample device to get bitstream and energy consumption
   number_history, bitstream, energy_avg = get_energy(dev, samples, jz_lut_she)
   
   # Build gamma distribution
   xxis, pdf = gamma_pdf(g1=1, g2=0.01, nrange=256)
+  # xxis = np.linspace(0, 0.5, 256)
+  # pdf = stats.gamma.pdf(xxis, a=50, scale=1/311.44)
+  # pdf[0] = pdf[1] # Avoid first value of zero
+  # pdf = pdf/np.sum(pdf)
   
   # Calculate chi2
-  counts, _ = np.histogram(number_history,bins=256)
+  counts, _ = np.histogram(number_history, bins=256)
   pdf = pdf*samples
   chi2 = 0
   for j in range(256):
@@ -51,6 +58,8 @@ def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, sampl
 
 
 if __name__ == "__main__":
+  SAMPLES = 2500
+  
   alpha = 0.01
   Ki = 0.0002
   Ms = 300000
@@ -62,18 +71,17 @@ if __name__ == "__main__":
   t_relax = 7.5e-08
   d = 3e-09
   tf = 1.1e-09
-  SAMPLES = 100000
-
-  chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=SAMPLES)
-  kl_div_score = sum(rel_entr(countData, exp_pdf))
+  
+  chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=SAMPLES)
+  kl_div_score = sum(rel_entr(countData, pdf))
   energy = np.mean(energy_avg)
-
+  
+  print("Chi2  :", chi2)
   print("KL_Div:", kl_div_score)
   print("Energy:", energy)
-  print()
 
   plt.plot(xxis, countData, color="red", label="Actual PDF")
-  plt.plot(xxis, exp_pdf,'k--', label="Expected PDF")
+  plt.plot(xxis, pdf,'k--', label="Expected PDF")
   plt.xlabel("Generated Number")
   plt.ylabel("Normalized")
   plt.title("PDF Comparison")

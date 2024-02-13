@@ -60,12 +60,8 @@ def gamma_pdf(g1, g2, nrange) -> list:
     pdf.append(gval)
 
   # Normalize exponential distribution
-  pdfsum = 0
-  for j in range(nrange):
-    pdfsum += pdf[j]
-
-  pdf = pdf/pdfsum
-
+  pdf = pdf/np.sum(pdf)
+  
   return xxis, pdf
 
 

@@ -8,7 +8,6 @@ from gym.spaces import Discrete, Box, Dict, Tuple, MultiBinary, MultiDiscrete
 import sys
 sys.path.append("../")
 sys.path.append("../fortran_source")
-# from mtj_model import mtj_run
 from SOT_model import SOT_Model
 
 
@@ -27,7 +26,7 @@ def unnormalize(n, min, max):
 
 class SOT_Env(Env):
   def __init__(self):
-    self.PID = random.randint(0, 100000)
+    self.episode_length = EPISODE_LENGTH
     self.dev_samples = DEV_SAMPLES
     self.invalid_config = 0
 
@@ -61,7 +60,7 @@ class SOT_Env(Env):
       self.d = 3e-09
       self.tf = 1.1e-09
 
-      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
       if chi2 != None:
         break
     
@@ -70,27 +69,25 @@ class SOT_Env(Env):
     self.Ki_range = [0.2e-3, 1e-3]
     self.Ms_range = [0.3e6, 2e6]
     self.Rp_range = [500, 50000]
-    self.TMR_range = [0.3, 6]
-    self.eta_range = [0.1, 0.8]
-    self.J_she_range = [0.01e12, 1e12]
+    self.eta_range = [0.1, 2]
+    self.J_she_range = [0.01e12, 5e12]
     self.t_pulse_range = [0.5e-9, 75e-9]
     self.t_relax_range = [0.5e-9, 75e-9]
 
     # Get initial config score
-    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf)
     self.best_config_score = self.current_config_score
     self.best_config = {"alpha":self.alpha, "Ki":self.Ki, "Ms":self.Ms, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_she":self.J_she, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf, "kl_div_score":self.kl_div_score, "energy":self.energy}
 
     # Continuous Actions: modify the 8 parameters; normalized values between 0-1 for best practice
-    self.action_space = Box(low=0, high=1, shape=(8,), dtype=np.float32)
+    self.action_space = Box(low=0, high=1, shape=(7,), dtype=np.float32)
 
     # Observations: current parameter values, current config score, best config score discovered
     self.observation_space = Dict({"alpha":Box(low=self.alpha_range[0], high=self.alpha_range[1], shape=(1,), dtype=np.float32),
                                    "Ki":Box(low=self.Ki_range[0], high=self.Ki_range[1], shape=(1,), dtype=np.float32),
                                    "Ms":Box(low=self.Ms_range[0], high=self.Ms_range[1], shape=(1,), dtype=np.float32),
                                    "Rp":Box(low=self.Rp_range[0], high=self.Rp_range[1], shape=(1,), dtype=np.float32),
-                                   "TMR":Box(low=self.TMR_range[0], high=self.TMR_range[1], shape=(1,), dtype=np.float32),
                                    "eta":Box(low=self.eta_range[0], high=self.eta_range[1], shape=(1,), dtype=np.float32),
                                    "J_she":Box(low=self.J_she_range[0], high=self.J_she_range[1], shape=(1,), dtype=np.float32),
                                    "t_pulse":Box(low=self.t_pulse_range[0], high=self.t_pulse_range[1], shape=(1,), dtype=np.float32),
@@ -104,7 +101,6 @@ class SOT_Env(Env):
     self.obs["Ki"] = np.array([self.Ki], dtype=np.float32)
     self.obs["Ms"] = np.array([self.Ms], dtype=np.float32)
     self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
-    self.obs["TMR"] = np.array([self.TMR], dtype=np.float32)
     self.obs["eta"] = np.array([self.eta], dtype=np.float32)
     self.obs["J_she"] = np.array([self.J_she], dtype=np.float32)
     self.obs["t_pulse"] = np.array([self.t_pulse], dtype=np.float32)
@@ -112,9 +108,6 @@ class SOT_Env(Env):
     self.obs["current_config_score"] = np.array([self.current_config_score], dtype=np.float32)
     self.obs["best_config_score"] = np.array([self.best_config_score], dtype=np.float32)
     
-    # Set episode length
-    self.episode_length = EPISODE_LENGTH
-
 
   def set_limit(self, current, lower, upper):
     x = abs(current-lower)
@@ -135,9 +128,6 @@ class SOT_Env(Env):
       return True
     elif self.Rp < self.Rp_range[0] or self.Rp > self.Rp_range[1]:
       self.Rp = self.set_limit(self.Rp, self.Rp_range[0], self.Rp_range[1])
-      return True
-    elif self.TMR < self.TMR_range[0] or self.TMR > self.TMR_range[1]:
-      self.TMR = self.set_limit(self.TMR, self.TMR_range[0], self.TMR_range[1])
       return True
     elif self.eta < self.eta_range[0] or self.eta > self.eta_range[1]:
       self.eta = self.set_limit(self.eta, self.eta_range[0], self.eta_range[1])
@@ -160,17 +150,23 @@ class SOT_Env(Env):
     self.Ki = unnormalize(actions[1], self.Ki_range[0], self.Ki_range[1])
     self.Ms = unnormalize(actions[2], self.Ms_range[0], self.Ms_range[1])
     self.Rp = unnormalize(actions[3], self.Rp_range[0], self.Rp_range[1])
-    self.TMR = unnormalize(actions[4], self.TMR_range[0], self.TMR_range[1])
-    self.eta = unnormalize(actions[5], self.eta_range[0], self.eta_range[1])
-    self.J_she = unnormalize(actions[6], self.J_she_range[0], self.J_she_range[1])
-    self.t_pulse = unnormalize(actions[7], self.t_pulse_range[0], self.t_pulse_range[1])
-    self.t_relax = unnormalize(actions[7], self.t_relax_range[0], self.t_relax_range[1]) # potentially change
+    self.eta = unnormalize(actions[4], self.eta_range[0], self.eta_range[1])
+    self.J_she = unnormalize(actions[5], self.J_she_range[0], self.J_she_range[1])
+    self.t_pulse = unnormalize(actions[6], self.t_pulse_range[0], self.t_pulse_range[1])
+    self.t_relax = unnormalize(actions[6], self.t_relax_range[0], self.t_relax_range[1]) # potentially change
+    self.TMR = 3
+    self.d = 3e-09
+    self.tf = 1.1e-09
 
 
   def get_config_score(self, chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf):
     if chi2 == None:
       self.invalid_config = 1
-      return self.current_config_score
+      self.kl_div_score = 1000000
+      self.energy = 1000000
+      score = 1000000
+      # score = self.current_config_score
+      return score
     
     w1 = 0.5
     w2 = 0.5
@@ -201,7 +197,7 @@ class SOT_Env(Env):
     self.apply_continuous_action(action)
     
     # Sample new configuration
-    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+    chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf)
     
     # Calculate reward
@@ -213,7 +209,6 @@ class SOT_Env(Env):
     self.obs["Ki"] = np.array([self.Ki], dtype=np.float32)
     self.obs["Ms"] = np.array([self.Ms], dtype=np.float32)
     self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
-    self.obs["TMR"] = np.array([self.TMR], dtype=np.float32)
     self.obs["eta"] = np.array([self.eta], dtype=np.float32)
     self.obs["J_she"] = np.array([self.J_she], dtype=np.float32)
     self.obs["t_pulse"] = np.array([self.t_pulse], dtype=np.float32)
@@ -258,8 +253,6 @@ class SOT_Env(Env):
   
 
   def reset(self, seed=None, options=None):
-    # super().reset(seed=seed)
-
     # Initial parameter values
     # self.alpha = 0.03
     # self.Ki = 0.0009725695027196851
@@ -288,12 +281,12 @@ class SOT_Env(Env):
       self.d = 3e-09
       self.tf = 1.1e-09
 
-      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+      chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
       if chi2 != None:
         break
 
     # Get initial config score
-    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples, runID=self.PID)
+    # chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(self.alpha, self.Ki, self.Ms, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_she, self.t_pulse, self.t_relax, samples=self.dev_samples)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf)
     # self.best_config_score = self.current_config_score
 
@@ -303,7 +296,6 @@ class SOT_Env(Env):
     self.obs["Ki"] = np.array([self.Ki], dtype=np.float32)
     self.obs["Ms"] = np.array([self.Ms], dtype=np.float32)
     self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
-    self.obs["TMR"] = np.array([self.TMR], dtype=np.float32)
     self.obs["eta"] = np.array([self.eta], dtype=np.float32)
     self.obs["J_she"] = np.array([self.J_she], dtype=np.float32)
     self.obs["t_pulse"] = np.array([self.t_pulse], dtype=np.float32)

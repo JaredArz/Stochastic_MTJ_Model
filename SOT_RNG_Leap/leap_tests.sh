@@ -6,4 +6,4 @@
 #SBATCH --error=runs/errors/run_%A-%a.txt
 
 sleep 10
-srun -n 1 python -u SOT_RNG_Leap.py --ID $SLURM_ARRAY_TASK_ID
+srun -n 1 python -u SOT_RNG_Leap_SingleProc.py --ID $SLURM_ARRAY_TASK_ID

@@ -22,20 +22,20 @@ from leap_ec.multiobjective.problems import MultiObjectiveProblem, SCHProblem
 
 sys.path.append("../")
 sys.path.append("../fortran_source")
-# from mtj_model import mtj_run
 from SOT_model import SOT_Model
-import inspect
 
 
 # Hyperparameters
+POP_SIZE = 50
+MAX_GENERATION = 100
+
 DEV_SAMPLES = 2500
 alpha_range = (0.01, 0.1)
 Ki_range = (0.2e-3, 1e-3)
 Ms_range = (0.3e6, 2e6)
 Rp_range = (500, 50000)
-TMR_range = (0.3, 6)
-eta_range = (0.1, 0.8)
-J_she_range = (0.01e12, 1e12)
+eta_range = (0.1, 2)
+J_she_range = (0.01e12, 5e12)
 t_pulse_range = (0.5e-9, 75e-9)
 t_relax_range = (0.5e-9, 75e-9)
 
@@ -50,13 +50,13 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
                                                                               Ki=params[1], 
                                                                               Ms=params[2], 
                                                                               Rp=params[3],
-                                                                              TMR=params[4], 
+                                                                              TMR=3, 
                                                                               d=3e-09, 
                                                                               tf=1.1e-09, 
-                                                                              eta=params[5], 
-                                                                              J_she=params[6], 
-                                                                              t_pulse=params[7], 
-                                                                              t_relax=params[7], 
+                                                                              eta=params[4], 
+                                                                              J_she=params[5], 
+                                                                              t_pulse=params[6], 
+                                                                              t_relax=params[6], 
                                                                               samples=DEV_SAMPLES)
     
     if chi2 == None:    # Penalize when config fails
@@ -79,13 +79,12 @@ def print_generation(population):
 
 
 def train(runID):
-  pop_size = 50
-  max_generation = 100
+  # pop_size = 50
+  # max_generation = 100
   param_bounds = [alpha_range,    # alpha bounds 
                   Ki_range,       # Ki bounds 
                   Ms_range,       # Ms bounds
                   Rp_range,       # Rp bounds
-                  TMR_range,      # TMR bounds
                   eta_range,      # eta bounds
                   J_she_range,    # J_she bounds
                   t_pulse_range]  # t_pulse bounds
@@ -96,12 +95,11 @@ def train(runID):
               clone,
               mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations=1),
               evaluate,
-              # print_individual, # only if you want to see every single new offspring
-              pool(size=pop_size),
+              pool(size=POP_SIZE),
               print_generation]
   
-  final_pop = generalized_nsga_2(max_generations=max_generation,
-                                pop_size=pop_size,
+  final_pop = generalized_nsga_2(max_generations=MAX_GENERATION,
+                                pop_size=POP_SIZE,
                                 problem=MTJ_RNG_Problem(runID),
                                 representation=representation,
                                 pipeline=pipeline)
@@ -116,12 +114,13 @@ def analyze_results(runID):
 
   df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])
   df.columns = ["genome","kl_div","energy","rank","distance"]
-
+  print(df.iloc[0])
+  print()
+  print(df.iloc[0]["genome"])
+  
   # Plot Pareto Front
-  # df.plot(x="kl_div", y="energy", kind="scatter")
-  # plt.show()
-
-  print(df)
+  df.plot(x="kl_div", y="energy", kind="scatter")
+  plt.show()
 
 
 
