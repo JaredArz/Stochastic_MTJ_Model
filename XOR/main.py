@@ -32,26 +32,30 @@ def main():
     no xor :              NO
     '''
 
-    length = 1000
-    n_bins = 10
+    length = 500
+    n_bins = 500
     kdev   = 0.0
     T      = 300
     Temps  = [290, 300, 310, 320, 330]
-    kdevs  = [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]
+    #kdevs  = [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]
+    kdevs  = [0.01, 0.02, 0.03, 0.04, 0.05]
 
-    #gen_x_bins(n_bins, T, kdev, length, "NO", out_dir, None)
-    #gen_bin_T_sweep(n_bins, Temps, length, "NO", out_dir, None, 0)
-    #gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 1, 1)
-    #gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 2, 2)
-    gen_bin_kdev_sweep(n_bins, kdevs, length, "NO", out_dir, None,   0)
-    gen_bin_kdev_sweep(n_bins, kdevs, length, "OSS", out_dir, 1,    1)
-    #gen_bin_kdev_sweep(n_bins, kdevs, length, "2S1D", out_dir, 2,   2)
+    #gen_x_bins(n_bins, T, kdev, length, "NO", out_dir, True)
+    #gen_bin_T_sweep(n_bins, Temps, length, "NO", out_dir,   0)
+    #gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 1)
+    #gen_bin_T_sweep(n_bins, Temps, length, "2S2D", out_dir, 2)
+    gen_bin_kdev_sweep(n_bins, kdevs, length, "NO", out_dir,   0)
+    gen_bin_kdev_sweep(n_bins, kdevs, length, "2S1D", out_dir, 1)
+    gen_bin_kdev_sweep(n_bins, kdevs, length, "2S1D", out_dir, 2)
 
+    np.savez(f"{out_dir}/metadata_kdev_sweep.npz",
+             kdevs = kdevs, word_size = word_size,
+             length = length)
     print("--- %s seconds ---" % (time.time() - start_time))
 
 
 # generates x bin data with given configuration.
-def gen_x_bins(x, T, kdev, length, method, out_dir, depth = None, iteration = None):
+def gen_x_bins(x, T, kdev, length, method, out_dir, depth, plotting_flag):
     if method == "2S1D":
         func = two_stream_one_dev
         args = (T, kdev, length, depth, out_dir)
@@ -76,50 +80,45 @@ def gen_x_bins(x, T, kdev, length, method, out_dir, depth = None, iteration = No
         else:
             probs.append( np.sum(stream)/length )
 
-    #FIXME only include metadata if calling to plot FIXME
-    #np.savez(f"{out_dir}/metadata_{iteration}.npz",
-    #         T = T, kdev=kdev, word_size=word_size,
-    #         length=length, depth = depth, method = method)
-
-    np.savez(f"{out_dir}/plottable_{T}_{kdev}_streamdata_{iteration}.npz",
-             probs=probs)
-
+    if plotting_flag:
+        np.savez(f"{out_dir}/metadata_single_plot.npz",
+                 T = T, kdev=kdev, word_size=word_size,
+                 length=length, depth = depth, method = method)
+        np.savez(f"{out_dir}/plottable_{T}_{kdev}_streamdata_single_plot.npz",
+                 probs=probs)
     return probs
 
-def gen_bin_T_sweep(x, Temps, length, method, out_dir, depth = None, iteration = None):
-
+def gen_bin_T_sweep(x, Temps, length, method, out_dir, depth):
     probs_per_temp = []
     for T in Temps:
-        probs = gen_x_bins(x, T, 0, length, method, out_dir, depth)
+        probs = gen_x_bins(x, T, 0, length, method, out_dir, depth, False)
         probs_per_temp.append( np.average( probs ) )
 
-    np.savez(f"{out_dir}/metadata_sweep_{iteration}.npz",
+    np.savez(f"{out_dir}/metadata_sweep_{depth}.npz",
              Temps = Temps, word_size=word_size,
              length=length, depth = depth, method = method)
 
-    np.savez(f"{out_dir}/plottable_{T}_Sweep_{iteration}.npz",
+    np.savez(f"{out_dir}/plottable_{T}_Sweep_{depth}.npz",
              probs_per_temp = probs_per_temp)
 
     return probs_per_temp
 
-def gen_bin_kdev_sweep(x, kdevs, length, method, out_dir, depth = None, iteration = None):
+def gen_bin_kdev_sweep(x, kdevs, length, method, out_dir, depth):
 
     probs_per_kdev = []
     for kdev in kdevs:
-        probs = gen_x_bins(x, 300, kdev, length, method, out_dir, depth)
+        probs = gen_x_bins(x, 300, kdev, length, method, out_dir, depth, False)
         probs_per_kdev.append( np.average( probs ) )
 
-    np.savez(f"{out_dir}/metadata_sweep_{iteration}.npz",
-             kdevs=kdevs, word_size=word_size,
-             length=length, depth = depth, method = method)
 
-    np.savez(f"{out_dir}/plottable_kdev_Sweep_{iteration}.npz",
-             probs_per_kdev = probs_per_kdev)
+    np.savez(f"{out_dir}/plottable_kdev_sweep_{depth}.npz",
+             probs_per_kdev = probs_per_kdev, method = method,
+             depth = depth)
 
     return probs_per_kdev
 
 
-def get_wordstream_with_XOR(generator, devs, args, depth, out_dir, iteration = None):
+def get_wordstream_with_XOR(generator, devs, args, depth, out_dir):
     if out_dir is None:
         return
 
@@ -133,10 +132,7 @@ def get_wordstream_with_XOR(generator, devs, args, depth, out_dir, iteration = N
     XORd = funcs.recursive_XOR(root)
 
     '''
-    if iteration == None:
-        np.save(out_dir + f'/XORd_stream.npy', XORd)
-    else:
-        np.save(out_dir + f'/XORd_stream_{iteration}.npy', XORd)
+    np.save(out_dir + f'/XORd_stream.npy', XORd)
     '''
     return XORd
 
@@ -144,21 +140,16 @@ def get_wordstream_with_XOR(generator, devs, args, depth, out_dir, iteration = N
 
 #  ========== different methods of generating an XORd bitstream ===========
 
-def no_xor(T, kdev, length, out_dir, iteration = None):
+def no_xor(T, kdev, length, out_dir):
     dev = SWrite_MTJ_rng("NYU")
     dev.set_vals() #default device parameters are now updated to be NYU dev
     dev.set_vals(K_295 = dev.K_295 * np.random.normal(1,kdev), T = T)
 
-    if iteration == None:
-        funcs.gen_wordstream(dev, V_50, word_size, length, out_dir + '/stream.npy')
-        stream = np.load(out_dir + f'/stream.npy')
-    else:
-        funcs.gen_wordstream(dev, V_50, word_size, length, out_dir + f'/stream_{i}.npy')
-        stream = np.load(out_dir + f'/stream_{i}.npy')
-
+    funcs.gen_wordstream(dev, V_50, word_size, length, out_dir + '/stream.npy')
+    stream = np.load(out_dir + f'/stream.npy')
     return stream
 
-def one_stream_split(T, kdev, length, out_dir, iteration = None):
+def one_stream_split(T, kdev, length, out_dir):
     dev = SWrite_MTJ_rng("NYU")
     dev.set_vals() #default device parameters are now updated to be NYU dev
     dev.set_vals(K_295 = dev.K_295 * np.random.normal(1,kdev), T = T)
@@ -176,23 +167,20 @@ def one_stream_split(T, kdev, length, out_dir, iteration = None):
     XORd = funcs.recursive_XOR(root)
 
     '''
-    if iteration == None:
-        np.save(out_dir + f'/XORd_stream.npy', XORd)
-    else:
-        np.save(out_dir + f'/XORd_stream_{iteration}.npy', XORd)
+    np.save(out_dir + f'/XORd_stream.npy', XORd)
     '''
     return XORd
 
-def two_stream_one_dev(T, kdev, length, depth, out_dir, iteration = None):
+def two_stream_one_dev(T, kdev, length, depth, out_dir):
     dev = SWrite_MTJ_rng("NYU")
     dev.set_vals()
     dev.set_vals(K_295 = dev.K_295 * np.random.normal(1,kdev), T = T)
 
     XORd = get_wordstream_with_XOR(funcs.gen_wordstream,
-                            (dev, copy.deepcopy(dev)), (V_50, word_size, length), depth, out_dir, iteration)
+                            (dev, copy.deepcopy(dev)), (V_50, word_size, length), depth, out_dir)
     return XORd
 
-def two_stream_two_dev(T, kdev, length, depth, out_dir, iteration = None):
+def two_stream_two_dev(T, kdev, length, depth, out_dir):
     dev_L = SWrite_MTJ_rng("NYU")
     dev_L.set_vals()
     dev_L.set_vals(K_295 = dev_L.K_295 * np.random.normal(1,kdev), T = T)
@@ -202,7 +190,7 @@ def two_stream_two_dev(T, kdev, length, depth, out_dir, iteration = None):
     dev_R.set_vals(K_295 = dev_R.K_295 * np.random.normal(1,kdev), T = T)
 
     XORd = get_wordstream_with_XOR(funcs.gen_wordstream,
-                            (dev_L, dev_R), (V_50, word_size, length), depth, out_dir, iteration)
+                            (dev_L, dev_R), (V_50, word_size, length), depth, out_dir)
     return XORd
 
 if __name__ == "__main__":

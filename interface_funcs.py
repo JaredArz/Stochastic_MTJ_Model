@@ -7,7 +7,7 @@ import sampling as f90
 import os
 import numpy as np
 
-using_voltage = 1
+using_voltage = 0
 
 # NOTE: assumes ohmic relationship
 def V_to_J(dev, V):

@@ -1,155 +1,141 @@
 import sys
 sys.path.append("../")
-import helper_funcs as helper
 import glob
+from scipy.fft import fft, ifft
 import matplotlib.pyplot as plt
 import XOR_funcs as funcs
-import helper_funcs
+import misc_funcs as helper
 import numpy as np
-from scipy.stats import chi2
 
-word_size = 8
+word_size = 1
+kdevs  = [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]
 
-label_dict = { "2S1D" : "Two streams w/ one dev",
-               "2S2D" : "Two streams w/ two dev",
-               "OSS"  : "One stream split"}
-
+label_dict = { "2S1D" : "Two streams w/ 1 dev",
+               "2S2D" : "Two streams w/ 2 dev",
+               "OSS"  : "One stream split",
+               "NO"   : "No XOR"}
 def main():
     if len(sys.argv) == 2:
         dir_path = sys.argv[1]
-        T_uniformity_plot(dir_path)
+        plot_fig_2(dir_path, "kdevs")
     else:
         print("pass folder as arg")
 
-def load_baseline():
-    f_data = np.load('base_uniformity.npz')
-    return f_data
 
-def init_uniformity_plot():
+def init_fig1(length):
     fig, ax = plt.subplots()
-    ax.set_xlim( [0,255] )
-    ax.set_ylim( [0.001,0.009] )
-    ax.set_xlabel( 'Generated 8-bit Number' )
+    ax.set_ylim( [0.3,0.7] )
+    ax.set_xlabel( f'Bin index ({length:.0e} Bits/Bin)' )
     ax.set_ylabel( 'p' )
     return fig, ax
 
-def init_p_measure_plot():
+def init_fig1_fft():
     fig, ax = plt.subplots()
-    ax.set_xlabel( 'T [K]' )
+    #ax.set_xlim( [0,100] )
+    ax.set_ylim( [0,8] )
+    ax.set_xlabel( f'frequency' )
+    return fig, ax
+
+def init_fig2_Temps():
+    fig, ax = plt.subplots()
+    ax.set_ylim( [0.375,0.625] )
+    ax.set_xlabel( f'Temperature [K]' )
     ax.set_ylabel( 'p' )
     return fig, ax
 
-def T_uniformity_plot(data_path):
-    fig, ax = init_uniformity_plot()
+def init_fig2_kdevs():
+    fig, ax = plt.subplots()
+    ax.set_xlabel( f'Anisotropy Energy % Deviation' )
+    ax.set_ylabel( 'p' )
+    return fig, ax
 
-    base_data = load_baseline()
-    metadata = np.load(data_path + '/metadata.npz')
-    depth = metadata['depth']
-    method = metadata['method']
-    T = metadata['T']
+def init_fig2_diff_Temps():
+    fig, ax = plt.subplots()
+    ax.set_ylim( [10**-5,10**0] )
+    ax.set_xlabel( f'Temperature [K]' )
+    ax.set_ylabel( 'Absolute difference from 0.5' )
+    return fig, ax
 
-    xor = np.load(glob.glob(data_path + '/*XOR.npz')[0])
-    L1  = np.load(glob.glob(data_path + '/*L1.npz')[0])
-    R1  = np.load(glob.glob(data_path + '/*R1.npz')[0])
-    data_set = [base_data, xor, L1, R1]
-    opacity = [0.9, 0.7, 0.4, 0.4]
-    colors = ['black', 'grey', 'red', 'blue']
-    labels = ['base', 'xor', 'input a', 'input b']
+def init_fig2_diff_kdevs():
+    fig, ax = plt.subplots()
+    ax.set_ylim( [10**-5,10**0] )
+    ax.set_xlabel( f'Anisotropy Energy % Deviation' )
+    ax.set_ylabel( 'Absolute difference from 0.5' )
+    return fig, ax
 
-    if depth == 2:
-        pass
-        ''' FIXME
-        L2 = np.load(glob.glob(data_path + '/*L2.npz')[0])
-        R2 = np.load(glob.glob(data_path + '/*R2.npz')[0])
-        data_set.append(L2)
-        data_set.append(R2)
-        '''
+def plot_fig_1(data_path):
 
-    lines = [ ax.plot(data['x'], alpha=opacity[i], label=labels[i], color=colors[i]) for i,data in enumerate(data_set)  ]
-    stats = [ f"{data['chisq']:.2f}" + ' | ' + f"{data['p_val']:.2f}" for data in data_set ]
-    legend1 = ax.legend()
-    plt.legend([l[0] for l in lines], stats, loc=4)
-    plt.gca().add_artist(legend1)
-    #plt.title(f"Temperature whitening (T={T}), {depth} XOR(s) {label_dict[method]}")
+    metadata = np.load(glob.glob(data_path + '/*metadata*.npz')[0])
+    try:
+        depth = int(metadata['depth'])
+    except(ValueError):
+        depth = 0
+    length = metadata['length']
+    method = str(metadata['method'])
+    T = int(metadata['T'])
+    kdev = int(metadata['kdev'])
+    fig, ax = init_fig1(length)
+    fig_fft, ax_fft = init_fig1_fft()
+
+    probs = np.load(glob.glob(data_path + '/*streamdata*.npz')[0])
+    ax.plot( probs["probs"], color='blue')
+
+    ax.legend()
+    plt.title(f"Bit stream w/ T={T}, kdev = {kdev}, {depth} XOR(s) {label_dict[method]}")
+
+    ax_fft.plot( fft( probs["probs"] ), color='blue')
+    helper.prompt_show()
+    helper.prompt_save_svg(fig, f"{data_path}/fig1.svg")
+    helper.prompt_save_svg(fig_fft, f"{data_path}/fig1_fft.svg")
+
+
+def plot_fig_2(data_path, kind):
+    metadatas = np.sort(glob.glob(data_path + '/*metadata*.npz'))
+    #FIXME:
+    metadatas = metadatas[1:]
+    x = kdevs
+    base = [0.5 for _ in range(len(x))]
+    depths = []
+    for m in metadatas:
+        try:
+            depths.append(np.load(m)['depth'])
+        except(ValueError):
+            depths.append(0)
+    print(depths)
+    methods = [str((np.load(m))['method']) for m in metadatas]
+    print(methods)
+    data_files = np.sort(glob.glob(data_path + '/*Sweep*.npz'))
+    print(data_files)
+
+    if kind == "Temps":
+        fig, ax = init_fig2_Temps()
+        fig_diff, ax_diff = init_fig2_diff_Temps()
+        plt.title(f"Temperature Whitening")
+        ys = [np.load(data)['probs_per_temp'] for data in data_files]
+        #x = metadatas["Temps"]
+    elif kind == "kdevs":
+        fig, ax = init_fig2_kdevs()
+        fig_diff, ax_diff = init_fig2_diff_kdevs()
+        plt.title(f"Device Variation Whitening")
+        ys = [np.load(data)['probs_per_kdev'] for data in data_files]
+        # FIXME
+        #x = metadatas["kdevs"]
+    else:
+        print("world ending critical failure")
+
+    colors = ['black', 'blue', 'red']
+    labels = [ label_dict[method] + ", " + str(depths[i]) + " XOR" for i,method in enumerate(methods) ]
+    _ = [ ax.scatter(x, y, label=labels[i], color=colors[i], s=36, marker='^') for i,y in enumerate(ys)  ]
+    _ = [ ax_diff.scatter(x, abs(base-y), label=labels[i], color=colors[i], s=36, marker='^') for i,y in enumerate(ys)  ]
+
+    ax.legend()
+    ax.axhline(0.5, linestyle = 'dashed', alpha = 0.33)
+    ax_diff.set_yscale('log')
+    ax_diff.legend()
 
     helper.prompt_show()
-    helper.prompt_save_svg(fig,'test.svg')
-
-def K_uniformity_plot(data_path):
-    fig, ax = init_uniformity_plot()
-
-    base_data = load_baseline()
-    metadata = np.load(data_path + '/metadata.npz')
-    depth = metadata['depth']
-    method = metadata['method']
-    K = metadata['Kdev']
-
-    xor = np.load(glob.glob(data_path + '/*XOR.npz')[0])
-    L1  = np.load(glob.glob(data_path + '/*L1.npz')[0])
-    R1  = np.load(glob.glob(data_path + '/*R1.npz')[0])
-    data_set = [base_data, xor, L1, R1]
-    opacity = [0.9, 0.7, 0.4, 0.4]
-    colors = ['black', 'grey', 'red', 'blue']
-    labels = ['base', 'xor', 'input a', 'input b']
-
-    if depth == 2:
-        pass
-        ''' FIXME
-        L2 = np.load(glob.glob(data_path + '/*L2.npz')[0])
-        R2 = np.load(glob.glob(data_path + '/*R2.npz')[0])
-        data_set.append(L2)
-        data_set.append(R2)
-        '''
-
-    lines = [ ax.plot(data['x'], alpha=opacity[i], label=labels[i], color=colors[i]) for i,data in enumerate(data_set)  ]
-    stats = [ f"{data['chisq']:.2f}" + ' | ' + f"{data['p_val']:.2f}" for data in data_set ]
-    legend1 = ax.legend()
-    plt.legend([l[0] for l in lines], stats, loc=4)
-    plt.gca().add_artist(legend1)
-    #plt.title(f"Temperature whitening (T={T}), {depth} XOR(s) {label_dict[method]}")
-
-    helper.prompt_show()
-    helper.prompt_save_svg(fig,'test.svg')
-
-
-def T_p_measure_plot(data_path):
-    fig, ax = init_p_measure_plot()
-
-    metadata = np.load(data_path + '/metadata.npz')
-    depth  = metadata['depth']
-    method = metadata['method']
-    Temps = metadata['Temps']
-    #Temps = [300, 315, 330]
-
-    data = np.load(glob.glob(data_path + '/plottable*')[0])
-    ps = data['x']
-
-    ax.plot(Temps,ps)
-
-    plt.title(f"meta p")
-
-    helper.prompt_show()
-    helper.prompt_save_svg(fig,'metaptest.svg')
-
-
-def K_p_measure_plot(data_path):
-    fig, ax = init_p_measure_plot()
-
-    metadata = np.load(data_path + '/metadata.npz')
-    depth  = metadata['depth']
-    method = metadata['method']
-    Kdevs = metadata['Kdevs']
-    #Temps = [300, 315, 330]
-
-    data = np.load(glob.glob(data_path + '/plottable*')[0])
-    ps = data['x']
-
-    ax.plot(Kdevs,ps)
-
-    plt.title(f"meta p")
-
-    helper.prompt_show()
-    helper.prompt_save_svg(fig,'metaptest.svg')
+    helper.prompt_save_svg(fig, f"{data_path}/fig2.svg")
+    helper.prompt_save_svg(fig_diff, f"{data_path}/fig2_diff.svg")
 
 
 if __name__ == "__main__":
