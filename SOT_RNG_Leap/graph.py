@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from paretoset import paretoset
+from scipy.special import rel_entr
 
 sys.path.append("../")
 sys.path.append("../fortran_source")
-from mtj_model import mtj_run
+from SOT_model import SOT_Model
 from SOT_RNG_Leap_SingleProc import MTJ_RNG_Problem
 
 
@@ -38,8 +39,8 @@ def pareto_front(plot=True):
 
   # Plot pareto front
   if plot == True:
-    ax = df.plot.scatter(x="kl_div", y="energy", c="blue")
-    pareto_df.plot.scatter(x="kl_div", y="energy", c="red", ax=ax)
+    ax = df.plot.scatter(x="kl_div", y="energy", c="blue", label="Sample")
+    pareto_df.plot.scatter(x="kl_div", y="energy", c="red", ax=ax, label="Pareto Front")
     plt.show()
   
   return df, pareto_df
@@ -58,26 +59,31 @@ def plot_distributions():
     params.append(param)
   
   for i, param in enumerate(params):
-    print(f"{i} of {len(params)}")
+    print(f"{i} of {len(params)-1}")
     alpha = param["genome"][0]
     Ki = param["genome"][1]
     Ms = param["genome"][2]
     Rp = param["genome"][3]
-    TMR = param["genome"][4]
-    eta = param["genome"][5]
-    J_she = param["genome"][6]
-    t_pulse = param["genome"][7]
-    t_relax = param["genome"][7]
+    eta = param["genome"][4]
+    J_she = param["genome"][5]
+    t_pulse = param["genome"][6]
+    t_relax = param["genome"][6]
+    TMR = 3
     d = 3e-09
     tf = 1.1e-09
 
     while True:
-      chi2, _, _, countData, _, xxis, exp_pdf = mtj_run(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=100000)
+      chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=100000)
       if chi2 != None:
         break
+    
+    kl_div_score = sum(rel_entr(countData, pdf))
+    energy = np.mean(energy_avg)
+    param["kl_div"] = kl_div_score
+    param["energy"] = energy
 
     plt.plot(xxis, countData, color="red", label="Actual PDF")
-    plt.plot(xxis, exp_pdf,'k--', label="Expected PDF")
+    plt.plot(xxis, pdf,'k--', label="Expected PDF")
     plt.xlabel("Generated Number")
     plt.ylabel("Normalized")
     plt.title("PDF Comparison")

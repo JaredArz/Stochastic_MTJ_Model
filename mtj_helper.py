@@ -1,6 +1,8 @@
-import numpy as np
-from interface_funcs import mtj_sample
 import math
+import numpy as np
+import scipy.stats as stats
+from interface_funcs import mtj_sample
+
 
 def draw_gauss(x,psig):
     return (x*np.random.normal(1,psig))
@@ -65,6 +67,20 @@ def gamma_pdf(g1, g2, nrange) -> list:
   return xxis, pdf
 
 
+def get_pdf(type="exp"):
+  if type == "exp":
+    xxis, pdf = gamma_pdf(g1=1, g2=0.01, nrange=256)
+  elif type == "gamma":
+    xxis = np.linspace(0, 0.5, 256)
+    pdf = stats.gamma.pdf(xxis, a=50, scale=1/311.44)
+    pdf[0] = pdf[1] # Avoid first value of zero
+    pdf = pdf/np.sum(pdf)
+  else:
+    raise TypeError("Invalid pdf type")
+  
+  return xxis, pdf
+
+
 def avg_weight_across_samples(dev, apply, samples_to_avg) -> float:
     # STT device does not need to be reset on sample
     if dev.mtj_type == 1:
@@ -78,11 +94,30 @@ def avg_weight_across_samples(dev, apply, samples_to_avg) -> float:
     return sum_p/samples_to_avg
 
 
-cdf = lambda x,lmda: 1-np.exp(-lmda*x)
-def dist_rng(dev,k,init,lmda,dump_mod_val,mag_view_flag,file_ID,jz_lut_func):
-  x2 = 2**k
-  x0 = 1
-  x1 = (x2+x0)/2
+def remap(num, inMin, inMax, outMin, outMax):
+  rv = outMin + (float(num - inMin) / float(inMax - inMin) * (outMax- outMin))
+  return int(rv)
+
+
+# cdf = lambda x,lmda: 1-np.exp(-lmda*x) # change for gamma dist.
+def dist_rng(dev,k,init,lmda,dump_mod_val,mag_view_flag,file_ID,jz_lut_func,pdf_type="exp"):
+  if pdf_type == "exp":
+    x2 = 2**k
+    x0 = 1
+    x1 = (x2+x0)/2
+    cdf = lambda x,lmda: 1-np.exp(-lmda*x)
+  elif pdf_type == "gamma":
+    x2 = 0.5
+    x0 = 0
+    x1 = (x2+x0)/2
+    xxis = np.linspace(x0, x2, 256)
+    cdf_arr = stats.gamma.cdf(xxis, a=50, scale=1/311.44)
+    cdf = lambda x,lmda: cdf_arr[round(remap(x, x0, x2, 0, 255))]
+
+
+  # x2 = 2**k
+  # x0 = 1
+  # x1 = (x2+x0)/2
   theta = init
   phi = np.random.rand()*2*np.pi
   dev.set_mag_vector(phi,theta)
@@ -107,7 +142,7 @@ def dist_rng(dev,k,init,lmda,dump_mod_val,mag_view_flag,file_ID,jz_lut_func):
   return number,bits,energies
 
 
-def get_energy(dev, samples, jz_lut_func):
+def get_energy(dev, samples, jz_lut_func, pdf_type="exp"):
   k       = 8
   lmda    = 0.01
   init_t  = 9*np.pi/10
@@ -118,7 +153,7 @@ def get_energy(dev, samples, jz_lut_func):
   dump_mod_val  = 8000
 
   for j in range(samples):
-    number_j,bits_j,energies_j = dist_rng(dev,k,init_t,lmda,dump_mod_val,mag_view_flag,j+7,jz_lut_func)
+    number_j,bits_j,energies_j = dist_rng(dev,k,init_t,lmda,dump_mod_val,mag_view_flag,j+7,jz_lut_func, pdf_type)
     number_history.append(number_j)
     bitstream.append(''.join(str(i) for i in bits_j))
     energy_avg.append(np.average(energies_j))

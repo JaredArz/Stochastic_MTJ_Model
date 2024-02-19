@@ -79,8 +79,6 @@ def print_generation(population):
 
 
 def train(runID):
-  # pop_size = 50
-  # max_generation = 100
   param_bounds = [alpha_range,    # alpha bounds 
                   Ki_range,       # Ki bounds 
                   Ms_range,       # Ms bounds
