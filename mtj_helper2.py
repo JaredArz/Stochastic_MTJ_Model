@@ -155,13 +155,8 @@ def dist_rng(dev, k, init, lmda, dump_mod_val, mag_view_flag, file_ID, scurve, p
 
   for i in range(k):
     pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
-    if pright > 0.9988:
-      current = scurve.x[0]
-    elif pright < 0.002:
-      current = scurve.x[-1]
-    else:
-      f = interpolate.interp1d(scurve.y, scurve.x)
-      current = f(pright)
+    f = interpolate.interp1d(scurve.y, scurve.x, fill_value="extrapolate")
+    current = f(pright)
     
     out,energy = mtj_sample(dev, current, mag_view_flag, dump_mod_val, file_ID)
     bits.append(out)

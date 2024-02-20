@@ -13,6 +13,8 @@ from mtj_helper2 import dev_check, get_energy, get_pdf
 from interface_funcs import mtj_sample, mtj_check
 from jz_lut import jz_lut_she
 
+
+
 def profile(func):
   def inner(*args, **kwargs):
     pr = cProfile.Profile()
