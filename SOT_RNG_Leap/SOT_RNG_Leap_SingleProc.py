@@ -27,7 +27,7 @@ from SOT_model import SOT_Model
 
 # Hyperparameters
 POP_SIZE = 50
-MAX_GENERATION = 100
+MAX_GENERATION = 50
 
 DEV_SAMPLES = 2500
 alpha_range = (0.01, 0.1)

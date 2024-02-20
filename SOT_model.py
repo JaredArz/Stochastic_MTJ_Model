@@ -5,6 +5,7 @@ import numpy as np
 import scipy.stats as stats 
 from scipy.special import rel_entr
 import matplotlib.pyplot as plt
+import cProfile, pstats, io
 
 from mtj_types  import SHE_MTJ_rng, SWrite_MTJ_rng, VCMA_MTJ_rng
 # from mtj_helper import valid_config, get_energy, gamma_pdf, get_pdf
@@ -12,7 +13,20 @@ from mtj_helper2 import dev_check, get_energy, get_pdf
 from interface_funcs import mtj_sample, mtj_check
 from jz_lut import jz_lut_she
 
-
+def profile(func):
+  def inner(*args, **kwargs):
+    pr = cProfile.Profile()
+    pr.enable()
+    retval = func(*args, **kwargs)
+    pr.disable()
+    s = io.StringIO()
+    sortby = 'cumulative'
+    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    ps.print_stats()
+    #NOTE: diagnostics
+    # print(s.getvalue())
+    return retval
+  return inner
 
 # def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=1000):
 #   dev = SHE_MTJ_rng()
@@ -54,6 +68,7 @@ from jz_lut import jz_lut_she
 #   return chi2, bitstream, energy_avg, counts[0:256], number_history[0:samples], xxis, pdf
 
 
+@profile
 def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=1000):
   dev = SHE_MTJ_rng()
   dev.init() # calls both set_vals and set_mag_vector with defaultsdev.alpha = alpha
@@ -70,7 +85,7 @@ def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, sampl
                t_relax=t_relax)
 
   # Check if config is valid
-  valid, scurve = dev_check(dev)
+  valid, scurve = dev_check(dev, plot=False)
   if valid == False:
     return None, None, None, None, None, None, None
   

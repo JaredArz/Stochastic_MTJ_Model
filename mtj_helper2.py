@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats, interpolate
@@ -12,7 +13,7 @@ from mtj_types  import SWrite_MTJ_rng, SHE_MTJ_rng, VCMA_MTJ_rng
 class S_Curve:
   def __init__(self, dev, x):
     self.x = x
-    self.y = self.generate(dev, num_to_avg=1000)
+    self.y = self.generate(dev, num_to_avg=500)
 
   def generate(self, dev, num_to_avg):
     weights = []
@@ -46,8 +47,8 @@ def is_monotonic(x, y):
 
 
 def dev_check(dev, plot=False):
-  resolution1 = 50
-  resolution2 = 100
+  resolution1 = 25
+  resolution2 = 50
 
   if type(dev) == SHE_MTJ_rng:
     current = np.linspace(-1e10, 1e10, resolution1)
@@ -60,9 +61,9 @@ def dev_check(dev, plot=False):
     title = "VCMA"
   else:
     raise KeyError("Invalid dev type")
-
+  
   scurve1 = S_Curve(dev, current)
-
+  
   delta = 0.05
   max_val = np.max(scurve1.y)
   min_val = np.min(scurve1.y)
@@ -206,7 +207,7 @@ if __name__ == "__main__":
   # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=1*dev.t_pulse)
   # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=5*dev.t_pulse)
   # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=1*dev.t_pulse)
-  # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=5*dev.t_pulse)
+  dev.set_vals(Ms=0.1*dev.Ms, t_pulse=5*dev.t_pulse)
 
   # dev.set_vals(Ms_295=1.0*dev.Ms_295, t_pulse=1*dev.t_pulse)
   # dev.set_vals(Ms_295=1.0*dev.Ms_295, t_pulse=5*dev.t_pulse)
@@ -214,36 +215,5 @@ if __name__ == "__main__":
   # dev.set_vals(Ms_295=0.1*dev.Ms_295, t_pulse=5*dev.t_pulse)
   
   # Perform scurve check
-  validity, scurve = dev_check(dev, plot=False)
+  validity, scurve = dev_check(dev, plot=True)
   print("Valid:", validity)
-
-  # Build gamma distribution
-  pdf_type = "exp"
-  xxis, pdf = get_pdf(pdf_type)
-
-  # Sample device to get bitstream and energy consumption
-  number_history, bitstream, energy_avg = get_energy(dev, samples, scurve, pdf_type)
-
-  # Calculate chi2
-  counts, _ = np.histogram(number_history, bins=256)
-  pdf = pdf*samples
-  chi2 = 0
-  for j in range(256):
-    chi2 += ((counts[j]-pdf[j])**2)/pdf[j]
-
-  counts = counts/samples
-  pdf = pdf/samples
-
-  kl_div_score = sum(rel_entr(counts, pdf))
-  energy = np.mean(energy_avg)
-  print("Chi2:", chi2)
-  print("KL_Div:", kl_div_score)
-  print("Energy:", energy)
-
-  plt.plot(xxis, counts, color="red", label="Actual PDF")
-  plt.plot(xxis, pdf,'k--', label="Expected PDF")
-  plt.xlabel("Generated Number")
-  plt.ylabel("Normalized")
-  plt.title("PDF Comparison")
-  plt.legend()
-  plt.show()
