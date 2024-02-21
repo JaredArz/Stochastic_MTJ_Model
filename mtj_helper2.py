@@ -155,7 +155,9 @@ def dist_rng(dev, k, init, lmda, dump_mod_val, mag_view_flag, file_ID, scurve, p
 
   for i in range(k):
     pright = (cdf(x2,lmda)-cdf(x1,lmda))/(cdf(x2,lmda)-cdf(x0,lmda))
-    f = interpolate.interp1d(scurve.y, scurve.x, fill_value="extrapolate")
+    if pright > max(scurve.y) or pright < min(scurve.y):
+      pright = min(scurve.y, key=lambda x:abs(x-pright))
+    f = interpolate.interp1d(scurve.y, scurve.x)
     current = f(pright)
     
     out,energy = mtj_sample(dev, current, mag_view_flag, dump_mod_val, file_ID)
@@ -199,10 +201,10 @@ if __name__ == "__main__":
   dev = SHE_MTJ_rng()
   dev.init()
   
-  # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=1*dev.t_pulse)
+  dev.set_vals(Ms=1.0*dev.Ms, t_pulse=1*dev.t_pulse)
   # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=5*dev.t_pulse)
   # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=1*dev.t_pulse)
-  dev.set_vals(Ms=0.1*dev.Ms, t_pulse=5*dev.t_pulse)
+  # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=5*dev.t_pulse)
 
   # dev.set_vals(Ms_295=1.0*dev.Ms_295, t_pulse=1*dev.t_pulse)
   # dev.set_vals(Ms_295=1.0*dev.Ms_295, t_pulse=5*dev.t_pulse)
