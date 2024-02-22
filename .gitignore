@@ -26,6 +26,7 @@
 **/runs
 *.csv
 !valid_param.csv
+**/leap_results
 
 #cache
 **/__pycache__

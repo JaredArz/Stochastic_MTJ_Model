@@ -35,26 +35,24 @@ def pareto_front(plot=True):
 
   # Get pareto front values
   mask = paretoset(pareto_df, sense=["min", "min"])
-  pareto_df = pareto_df[mask]
+  pareto_df = df[mask]
 
   # Plot pareto front
   if plot == True:
     ax = df.plot.scatter(x="kl_div", y="energy", c="blue", label="Sample")
     pareto_df.plot.scatter(x="kl_div", y="energy", c="red", ax=ax, label="Pareto Front")
+    plt.title("Pareto Front")
     plt.show()
   
   return df, pareto_df
 
 
-def plot_distributions():
-  df, pareto_df = pareto_front(False)
-
+def plot_df(df, graph_name, param_name):
   params = []
-  for _, row in pareto_df.iterrows():
-    temp_df = df[(df["kl_div"] == row["kl_div"]) & (df["energy"] == row["energy"])]
-    genome = temp_df["genome"].to_list()[0]
-    kl_div = float(temp_df["kl_div"])
-    energy = float(temp_df["energy"])
+  for _, row in df.iterrows():
+    genome = row["genome"]
+    kl_div = float(row["kl_div"])
+    energy = float(row["energy"])
     param = {"genome": genome, "kl_div": kl_div, "energy": energy}
     params.append(param)
   
@@ -88,15 +86,28 @@ def plot_distributions():
     plt.ylabel("Normalized")
     plt.title("PDF Comparison")
     plt.legend()
-    plt.savefig(f"graphs/distribution_{i}.png")
+    plt.savefig(f"graphs/{graph_name}_{i}.png")
     plt.close()
 
-    with open(f"parameters/params_{i}.pkl", "wb") as file:
+    with open(f"parameters/{param_name}_{i}.pkl", "wb") as file:
       pickle.dump(param, file)
+
+
+def plot_pareto_distributions():
+  df, pareto_df = pareto_front(False)
+  print(pareto_df)
+  plot_df(pareto_df, graph_name="pareto_distribution", param_name="pareto_params")
+
+  
+def plot_top_distributions(top=10):
+  df, pareto_df = pareto_front(False)
+  df = df.sort_values(by="kl_div").head(top)
+  plot_df(df, graph_name="top_distribution", param_name="top_params")
 
 
 
 if __name__ == "__main__":
   # scraper()
   # pareto_front()
-  plot_distributions()
+  # plot_pareto_distributions()
+  plot_top_distributions(top=10)

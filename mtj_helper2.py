@@ -123,7 +123,7 @@ def get_pdf(type="exp"):
     pdf = stats.gamma.pdf(xxis, a=1, scale=1/0.01)
     pdf = pdf/np.sum(pdf)
   elif type == "gamma":
-    xxis = np.linspace(0, 0.5, 256)
+    xxis = np.linspace(0.05, 0.3, 256)
     pdf = stats.gamma.pdf(xxis, a=50, scale=1/311.44)
     pdf = pdf/np.sum(pdf)
   else:
@@ -139,8 +139,8 @@ def dist_rng(dev, k, init, lmda, dump_mod_val, mag_view_flag, file_ID, scurve, p
     x1 = (x2+x0)/2
     cdf = lambda x,lmda: 1-np.exp(-lmda*x)
   elif pdf_type == "gamma":
-    x2 = 0.5
-    x0 = 0
+    x2 = 0.3
+    x0 = 0.05
     x1 = (x2+x0)/2
     xxis = np.linspace(x0, x2, 256)
     cdf_arr = stats.gamma.cdf(xxis, a=50, scale=1/311.44)

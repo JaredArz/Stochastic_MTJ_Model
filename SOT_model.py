@@ -92,7 +92,8 @@ def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, sampl
     return None, None, None, None, None, None, None
   
   # Build gamma distribution
-  pdf_type = "exp"
+  # pdf_type = "exp"
+  pdf_type = "gamma"
   xxis, pdf = get_pdf(pdf_type)
 
   # Sample device to get bitstream and energy consumption
@@ -134,7 +135,7 @@ if __name__ == "__main__":
   print("Chi2  :", chi2)
   print("KL_Div:", kl_div_score)
   print("Energy:", energy)
-
+  
   plt.plot(xxis, countData, color="red", label="Actual PDF")
   plt.plot(xxis, pdf,'k--', label="Expected PDF")
   plt.xlabel("Generated Number")
