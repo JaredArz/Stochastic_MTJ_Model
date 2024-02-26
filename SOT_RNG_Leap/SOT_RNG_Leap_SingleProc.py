@@ -47,17 +47,17 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
   
   def evaluate(self, params):
     chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = SOT_Model(alpha=params[0], 
-                                                                              Ki=params[1], 
-                                                                              Ms=params[2], 
-                                                                              Rp=params[3],
-                                                                              TMR=3, 
-                                                                              d=3e-09, 
-                                                                              tf=1.1e-09, 
-                                                                              eta=params[4], 
-                                                                              J_she=params[5], 
-                                                                              t_pulse=params[6], 
-                                                                              t_relax=params[6], 
-                                                                              samples=DEV_SAMPLES)
+                                                                                Ki=params[1], 
+                                                                                Ms=params[2], 
+                                                                                Rp=params[3],
+                                                                                TMR=3, 
+                                                                                d=3e-09, 
+                                                                                tf=1.1e-09, 
+                                                                                eta=params[4], 
+                                                                                J_she=params[5], 
+                                                                                t_pulse=params[6], 
+                                                                                t_relax=params[6], 
+                                                                                samples=DEV_SAMPLES)
     
     if chi2 == None:    # Penalize when config fails
       # kl_div = np.inf
@@ -78,7 +78,7 @@ def print_generation(population):
   return population
 
 
-def train(runID):
+def train(pdf_type, runID):
   param_bounds = [alpha_range,    # alpha bounds 
                   Ki_range,       # Ki bounds 
                   Ms_range,       # Ms bounds
@@ -102,12 +102,12 @@ def train(runID):
                                 representation=representation,
                                 pipeline=pipeline)
   
-  with open(f"leap_results/results_{runID}.pkl", "wb") as file:
+  with open(f"{pdf_type}_results/results_{runID}.pkl", "wb") as file:
     pickle.dump(final_pop, file)
 
 
-def analyze_results(runID):
-  with open(f"leap_results/results_{runID}.pkl", "rb") as file:
+def analyze_results(pdf_type, runID):
+  with open(f"{pdf_type}_results/results_{runID}.pkl", "rb") as file:
     data = pickle.load(file)
 
   df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])
@@ -128,5 +128,8 @@ if __name__ == "__main__":
   args = parser.parse_args()
   ID = args.ID
   
-  train(ID)
-  # analyze_results(ID)
+  pdf_type = "exp"
+  # pdf_type = "gamma"
+  
+  train(pdf_type, ID)
+  # analyze_results(pdf_type, ID)

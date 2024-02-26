@@ -196,12 +196,34 @@ def get_energy(dev, samples, scurve, pdf_type="exp"):
 
 if __name__ == "__main__":
   samples = 1000
+  alpha = 0.01
+  Ki = 0.0002
+  Ms = 300000
+  Rp = 13265.555784106255
+  TMR = 0.3
+  eta = 0.8
+  J_she = 334994280934.3338
+  t_pulse = 7.5e-08
+  t_relax = 7.5e-08
+  d = 3e-09
+  tf = 1.1e-09
   
   # dev = SWrite_MTJ_rng("UTA")
   dev = SHE_MTJ_rng()
   dev.init()
+  dev.set_vals(alpha=alpha,
+               Ki=Ki,
+               Ms=Ms,
+               Rp=Rp,
+               TMR=TMR,
+               d=d,
+               tf=tf,
+               eta=eta,
+               J_she=J_she,
+               t_pulse=t_pulse,
+               t_relax=t_relax)
   
-  dev.set_vals(Ms=1.0*dev.Ms, t_pulse=1*dev.t_pulse)
+  # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=1*dev.t_pulse)
   # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=5*dev.t_pulse)
   # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=1*dev.t_pulse)
   # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=5*dev.t_pulse)

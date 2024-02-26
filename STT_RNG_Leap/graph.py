@@ -10,8 +10,8 @@ from scipy.special import rel_entr
 
 sys.path.append("../")
 sys.path.append("../fortran_source")
-from SOT_model import SOT_Model
-from SOT_RNG_Leap_SingleProc import MTJ_RNG_Problem
+from STT_model import STT_Model
+from STT_RNG_Leap_SingleProc import MTJ_RNG_Problem
 
 
 def scraper(pdf_type, csv=False):
@@ -63,11 +63,11 @@ def plot_df(df, graph_name, param_name):
   for i, param in enumerate(params):
     print(f"{i+1} of {len(params)}")
     alpha = param["genome"][0]
-    Ki = param["genome"][1]
-    Ms = param["genome"][2]
+    K_295 = param["genome"][1]
+    Ms_295 = param["genome"][2]
     Rp = param["genome"][3]
     eta = param["genome"][4]
-    J_she = param["genome"][5]
+    J_stt = param["genome"][5]
     t_pulse = param["genome"][6]
     t_relax = param["genome"][6]
     TMR = 3
@@ -75,7 +75,7 @@ def plot_df(df, graph_name, param_name):
     tf = 1.1e-09
 
     while True:
-      chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=100000)
+      chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, eta, J_stt, t_pulse, t_relax, samples=100000)
       if chi2 != None:
         break
     

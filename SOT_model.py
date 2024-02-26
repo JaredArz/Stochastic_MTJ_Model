@@ -92,8 +92,8 @@ def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, sampl
     return None, None, None, None, None, None, None
   
   # Build gamma distribution
-  # pdf_type = "exp"
-  pdf_type = "gamma"
+  pdf_type = "exp"
+  # pdf_type = "gamma"
   xxis, pdf = get_pdf(pdf_type)
 
   # Sample device to get bitstream and energy consumption

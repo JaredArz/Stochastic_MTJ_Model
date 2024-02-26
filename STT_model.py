@@ -82,12 +82,13 @@ def STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, eta, J_stt, t_pulse, t_relax
   
 
   # Check if config is valid
-  valid, scurve = dev_check(dev)
+  valid, scurve = dev_check(dev, plot=False)
   if valid == False:
     return None, None, None, None, None, None, None
 
   # Build gamma distribution
   pdf_type = "exp"
+  # pdf_type = "gamma"
   xxis, pdf = get_pdf(pdf_type)
 
   # Sample device to get bitstream and energy consumption
@@ -110,12 +111,12 @@ def STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, eta, J_stt, t_pulse, t_relax
 if __name__ == "__main__":
   SAMPLES = 2500
 
-  alpha = 0.01
-  K_295 = 0.0002
-  Ms_295 = 300000
-  Rp = 13265.555784106255
-  TMR = 0.3
-  eta = 0.8
+  alpha = 0.03
+  K_295 = 1.0056364e-3
+  Ms_295 = 1.2e6
+  Rp = 5e3
+  TMR = 1.2
+  eta = 0.3
   J_stt = -136090192630.6827
   t_pulse = 7.5e-08
   t_relax = 7.5e-08
