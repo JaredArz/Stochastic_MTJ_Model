@@ -9,7 +9,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, StopTrainingOnRewardThreshold
 
-from SOT_Env import SOT_Env
+from STT_Env import STT_Env
 
 
 # Custom callback for plotting additional values in tensorboard.
@@ -51,11 +51,11 @@ class TensorboardCallback_MultiProcess(BaseCallback):
 
 def Train_Model(pdf_type, model_dir, log_dir, num_envs:int=1, training_timesteps:int=1000, log_window:int=100, eval:bool=False):
   if num_envs == 1:
-    env = SOT_Env(pdf_type)
+    env = STT_Env(pdf_type)
     callback = TensorboardCallback_SingleProcess(env)
   else:
     # Distributes each environment to its own process; better for complex environments
-    make_env = lambda : SOT_Env(pdf_type)
+    make_env = lambda : STT_Env(pdf_type)
     env = make_vec_env(make_env, n_envs=num_envs, vec_env_cls=SubprocVecEnv)
     callback = TensorboardCallback_MultiProcess(num_envs)
   
@@ -76,7 +76,7 @@ def Train_Model(pdf_type, model_dir, log_dir, num_envs:int=1, training_timesteps
 
 def Test_Model(pdf_type, model_path:str, episodes:int):
   model = PPO.load(model_path)
-  env = SOT_Env(pdf_type)
+  env = STT_Env(pdf_type)
 
   for episode in range(1, episodes+1):
     obs, _ = env.reset()
@@ -108,7 +108,7 @@ def Test_Model(pdf_type, model_path:str, episodes:int):
 
 
 def Test_Env(pdf_type, episodes=5):
-  env = SOT_Env(pdf_type)
+  env = STT_Env(pdf_type)
 
   for episode in range(1, episodes+1):
     obs, _ = env.reset()

@@ -71,7 +71,7 @@ def profile(func):
 
 
 @profile
-def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=1000):
+def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=1000, pdf_type="exp"):
   dev = SHE_MTJ_rng()
   dev.init() # calls both set_vals and set_mag_vector with defaultsdev.alpha = alpha
   dev.set_vals(alpha=alpha,
@@ -92,8 +92,6 @@ def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, sampl
     return None, None, None, None, None, None, None
   
   # Build gamma distribution
-  pdf_type = "exp"
-  # pdf_type = "gamma"
   xxis, pdf = get_pdf(pdf_type)
 
   # Sample device to get bitstream and energy consumption
@@ -115,6 +113,8 @@ def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, sampl
 
 if __name__ == "__main__":
   SAMPLES = 2500
+  PDF_TYPE = "exp"
+  # PDF_TYPE = "gamma"
   
   alpha = 0.01
   Ki = 0.0002
@@ -128,7 +128,7 @@ if __name__ == "__main__":
   d = 3e-09
   tf = 1.1e-09
   
-  chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=SAMPLES)
+  chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=SAMPLES, pdf_type=PDF_TYPE)
   kl_div_score = sum(rel_entr(countData, pdf))
   energy = np.mean(energy_avg)
   

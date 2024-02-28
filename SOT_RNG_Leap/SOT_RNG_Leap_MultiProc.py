@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import pickle
@@ -39,9 +40,9 @@ t_relax_range = (0.5e-9, 75e-9)
 
 
 class MTJ_RNG_Problem(MultiObjectiveProblem):
-  def __init__(self, runID):
+  def __init__(self, pdf_type):
     super().__init__(maximize=(False, False))
-    self.runID = runID
+    self.pdf_type = pdf_type
   
   def evaluate(self, params):
     chi2, bitstream, energy_avg, countData, bitData,  xxis, exp_pdf = SOT_Model(alpha=params[0], 
@@ -55,7 +56,8 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
                                                                                 J_she=params[5], 
                                                                                 t_pulse=params[6], 
                                                                                 t_relax=params[6], 
-                                                                                samples=DEV_SAMPLES)
+                                                                                samples=DEV_SAMPLES,
+                                                                                pdf_type=self.pdf_type)
     
     if chi2 == None:    # Penalize when config fails
       # kl_div = np.inf
@@ -91,16 +93,18 @@ def train(pdf_type, runID):
   
   final_pop = steady_state_nsga_2(client, MAX_BIRTHS,
                    pop_size=POP_SIZE, init_pop_size=POP_SIZE,
-                   problem=MTJ_RNG_Problem(runID),
+                   problem=MTJ_RNG_Problem(pdf_type),
                    representation=representation,
                    offspring_pipeline=pipeline)
   
-  with open(f"{pdf_type}_results/results_{runID}.pkl", "wb") as file:
+  result_dir = f"{pdf_type}_results"
+  os.makedirs(result_dir, exist_ok=True)
+  with open(f"{result_dir}/{pdf_type}_{runID}.pkl", "wb") as file:
     pickle.dump(final_pop, file)
 
 
 def analyze_results(pdf_type, runID):
-  with open(f"{pdf_type}_results/results_{runID}.pkl", "rb") as file:
+  with open(f"{pdf_type}_results/{pdf_type}_{runID}.pkl", "rb") as file:
     data = pickle.load(file)
 
   df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])
