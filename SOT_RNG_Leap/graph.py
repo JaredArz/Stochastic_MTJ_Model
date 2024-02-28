@@ -51,7 +51,7 @@ def pareto_front(pdf_type, plot=True):
   return df, pareto_df
 
 
-def plot_df(df, graph_name, param_name):
+def plot_df(df, graph_name, param_name, pdf_type):
   params = []
   for _, row in df.iterrows():
     genome = row["genome"]
@@ -75,7 +75,7 @@ def plot_df(df, graph_name, param_name):
     tf = 1.1e-09
 
     while True:
-      chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=100000)
+      chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=100000, pdf_type=pdf_type)
       if chi2 != None:
         break
     
@@ -100,13 +100,13 @@ def plot_df(df, graph_name, param_name):
 def plot_pareto_distributions(pdf_type):
   df, pareto_df = pareto_front(pdf_type, False)
   print(pareto_df)
-  plot_df(pareto_df, graph_name=f"pareto_dist_{pdf_type}", param_name=f"pareto_params_{pdf_type}")
+  plot_df(pareto_df, graph_name=f"pareto_dist_{pdf_type}", param_name=f"pareto_params_{pdf_type}", pdf_type=pdf_type)
 
   
 def plot_top_distributions(pdf_type, top=10):
   df, pareto_df = pareto_front(pdf_type, False)
   df = df.sort_values(by="kl_div").head(top)
-  plot_df(df, graph_name=f"top_dist_{pdf_type}", param_name=f"top_params_{pdf_type}")
+  plot_df(df, graph_name=f"top_dist_{pdf_type}", param_name=f"top_params_{pdf_type}", pdf_type=pdf_type)
 
 
 
