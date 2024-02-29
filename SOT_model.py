@@ -73,7 +73,7 @@ def profile(func):
 @profile
 def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=1000, pdf_type="exp"):
   dev = SHE_MTJ_rng()
-  dev.init() # calls both set_vals and set_mag_vector with defaultsdev.alpha = alpha
+  dev.init() # calls both set_vals and set_mag_vector with defaults
   dev.set_vals(alpha=alpha,
                Ki=Ki,
                Ms=Ms,
@@ -113,8 +113,8 @@ def SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, sampl
 
 if __name__ == "__main__":
   SAMPLES = 2500
-  PDF_TYPE = "exp"
-  # PDF_TYPE = "gamma"
+  # PDF_TYPE = "exp"
+  PDF_TYPE = "gamma"
   
   alpha = 0.01
   Ki = 0.0002

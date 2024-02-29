@@ -35,8 +35,6 @@ alpha_range = (0.01, 0.1)
 K_295_range = (0.2e-3, 1e-3)
 Ms_295_range = (0.3e6, 2e6)
 Rp_range = (500, 50000)
-eta_range = (0.1, 2)
-J_stt_range = (-136090192630.6827, -113236607131.10739)
 t_pulse_range = (0.5e-9, 75e-9)
 t_relax_range = (0.5e-9, 75e-9)
 
@@ -53,11 +51,9 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
                                                                                 Rp=params[3],
                                                                                 TMR=3, 
                                                                                 d=3e-09, 
-                                                                                tf=1.1e-09, 
-                                                                                eta=params[4], 
-                                                                                J_stt=params[5], 
-                                                                                t_pulse=params[6], 
-                                                                                t_relax=params[6], 
+                                                                                tf=1.1e-09,
+                                                                                t_pulse=params[4], 
+                                                                                t_relax=params[4], 
                                                                                 samples=DEV_SAMPLES,
                                                                                 pdf_type=self.pdf_type)
     
@@ -85,8 +81,6 @@ def train(pdf_type, runID):
                   K_295_range,    # K_295 bounds 
                   Ms_295_range,   # Ms_295 bounds
                   Rp_range,       # Rp bounds
-                  eta_range,      # eta bounds
-                  J_stt_range,    # J_stt bounds
                   t_pulse_range]  # t_pulse bounds
   
   representation = Representation(initialize=create_real_vector(bounds=param_bounds))
@@ -132,8 +126,8 @@ if __name__ == "__main__":
   args = parser.parse_args()
   ID = args.ID
 
-  pdf_type = "exp"
-  # pdf_type = "gamma"
+  # pdf_type = "exp"
+  pdf_type = "gamma"
   
   train(pdf_type, ID)
   # analyze_results(pdf_type, ID)

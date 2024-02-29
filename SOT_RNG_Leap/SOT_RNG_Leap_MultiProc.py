@@ -125,8 +125,8 @@ if __name__ == "__main__":
   args = parser.parse_args()
   ID = args.ID
   
-  pdf_type = "exp"
-  # pdf_type = "gamma"
+  # pdf_type = "exp"
+  pdf_type = "gamma"
   
   train(pdf_type, ID)
   # analyze_results(pdf_type, ID)

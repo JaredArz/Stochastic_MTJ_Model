@@ -11,9 +11,9 @@ from mtj_types  import SWrite_MTJ_rng, SHE_MTJ_rng, VCMA_MTJ_rng
 
 
 class S_Curve:
-  def __init__(self, dev, x):
+  def __init__(self, dev, x, num_to_avg):
     self.x = x
-    self.y = self.generate(dev, num_to_avg=500)
+    self.y = self.generate(dev, num_to_avg=num_to_avg)
 
   def generate(self, dev, num_to_avg):
     weights = []
@@ -47,48 +47,42 @@ def is_monotonic(x, y):
 
 
 def dev_check(dev, plot=False):
-  resolution1 = 25
-  resolution2 = 50
+  resolution = 50
 
   if type(dev) == SHE_MTJ_rng:
-    current = np.linspace(-1e10, 1e10, resolution1)
+    current = np.linspace(-1e10, 1e10, resolution)
     title = "SHE"
   elif type(dev) == SWrite_MTJ_rng:
-    current = np.linspace(-1e12, 0,  resolution1)
+    current = np.linspace(-1e12, 0, resolution)
     title = "SWrite"
   elif type(dev) == VCMA_MTJ_rng:
-    current = np.linspace(-1e10, 1e10, resolution1)
+    current = np.linspace(-1e10, 1e10, resolution)
     title = "VCMA"
   else:
     raise KeyError("Invalid dev type")
   
-  scurve1 = S_Curve(dev, current)
+  scurve1 = S_Curve(dev, current, num_to_avg=500)
   
-  delta = 0.05
+  delta = 0.025
   max_val = np.max(scurve1.y)
   min_val = np.min(scurve1.y)
-  stop_flag = True
-  start = None
-  end = None
+  stop_flag = False
+  start = 0
+  end = len(scurve1.y)-1
   
-  if scurve1.y[0] > scurve1.y[-1]:
-    for i, val in enumerate(scurve1.y):
-      if (val < max_val) and (max_val-val >= delta) and (stop_flag == True):
-        start = i
-        stop_flag = False
-      if (val > min_val) and (val-min_val >= delta):
-        end = i
-  else:
-    for i, val in enumerate(scurve1.y):
-      if (val < max_val) and (max_val-val >= delta):
-        end = i
-      if (val > min_val) and (val-min_val >= delta) and (stop_flag == True):
-        start = i
-        stop_flag = False
+  for i, val in enumerate(scurve1.y):
+    if (val < max_val) and (max_val-val >= delta) and (stop_flag == False):
+      start = i
+      stop_flag = True
+    if (val > min_val) and (val-min_val >= delta):
+      end = i
   
-  current2 = np.linspace(scurve1.x[start], scurve1.x[end], resolution2)
-  scurve2 = S_Curve(dev, current2)
+  current2 = np.linspace(scurve1.x[start], scurve1.x[end], resolution)
+  scurve2 = S_Curve(dev, current2, num_to_avg=750)
   monotonicity, peak_x, peak_y = is_monotonic(scurve2.x, scurve2.y)
+  
+  prob_diff = max(scurve2.y) - min(scurve2.y)
+  validity = True if (monotonicity and prob_diff >= 0.8) else False
   
   if plot:
     plt.subplot(1, 2, 1)
@@ -106,10 +100,8 @@ def dev_check(dev, plot=False):
     plt.xlabel("J [A/m^2]")
     plt.title(f"S-Curve 2: {title}")
     plt.show()
-  
-  prob_diff = max(scurve2.y) - min(scurve2.y)
-  validity = True if (monotonicity and prob_diff >= 0.65) else False
-  return validity, scurve1
+
+  return validity, scurve2
 
 
 def remap(num, inMin, inMax, outMin, outMax):
@@ -144,7 +136,7 @@ def dist_rng(dev, k, init, lmda, dump_mod_val, mag_view_flag, file_ID, scurve, p
     x1 = (x2+x0)/2
     xxis = np.linspace(x0, x2, 256)
     cdf_arr = stats.gamma.cdf(xxis, a=50, scale=1/311.44)
-    cdf = lambda x,lmda: cdf_arr[round(remap(x, x0, x2, 0, 255))]
+    cdf = lambda x,lmda: cdf_arr[round(remap(x, 0.05, 0.3, 0, 255))]
 
   theta = init
   phi = np.random.rand()*2*np.pi
@@ -171,7 +163,7 @@ def dist_rng(dev, k, init, lmda, dump_mod_val, mag_view_flag, file_ID, scurve, p
     
     x1 = (x2+x0)/2
     number += out*2**(k-i-1)
-
+  
   return number,bits,energies
 
 
@@ -195,44 +187,72 @@ def get_energy(dev, samples, scurve, pdf_type="exp"):
 
 
 if __name__ == "__main__":
-  samples = 1000
-  alpha = 0.01
-  Ki = 0.0002
-  Ms = 300000
-  Rp = 13265.555784106255
-  TMR = 0.3
-  eta = 0.8
-  J_she = 334994280934.3338
-  t_pulse = 7.5e-08
-  t_relax = 7.5e-08
-  d = 3e-09
-  tf = 1.1e-09
-  
   # dev = SWrite_MTJ_rng("UTA")
   dev = SHE_MTJ_rng()
   dev.init()
-  dev.set_vals(alpha=alpha,
-               Ki=Ki,
-               Ms=Ms,
-               Rp=Rp,
-               TMR=TMR,
-               d=d,
-               tf=tf,
-               eta=eta,
-               J_she=J_she,
-               t_pulse=t_pulse,
-               t_relax=t_relax)
-  
-  # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=1*dev.t_pulse)
-  # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=5*dev.t_pulse)
-  # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=1*dev.t_pulse)
-  # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=5*dev.t_pulse)
 
-  # dev.set_vals(Ms_295=1.0*dev.Ms_295, t_pulse=1*dev.t_pulse)
-  # dev.set_vals(Ms_295=1.0*dev.Ms_295, t_pulse=5*dev.t_pulse)
-  # dev.set_vals(Ms_295=0.1*dev.Ms_295, t_pulse=1*dev.t_pulse)
-  # dev.set_vals(Ms_295=0.1*dev.Ms_295, t_pulse=5*dev.t_pulse)
+  if type(dev) == SHE_MTJ_rng:
+    # SOT Parameters
+    samples = 1000
+    alpha = 0.01
+    Ki = 0.0002
+    Ms = 300000
+    Rp = 13265.555784106255
+    TMR = 0.3
+    eta = 0.8
+    J_she = 334994280934.3338
+    t_pulse = 7.5e-08
+    t_relax = 7.5e-08
+    d = 3e-09
+    tf = 1.1e-09
+
+    dev.set_vals(alpha=alpha,
+                Ki=Ki,
+                Ms=Ms,
+                Rp=Rp,
+                TMR=TMR,
+                d=d,
+                tf=tf,
+                eta=eta,
+                J_she=J_she,
+                t_pulse=t_pulse,
+                t_relax=t_relax)
+    
+    # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=1*dev.t_pulse)
+    # dev.set_vals(Ms=1.0*dev.Ms, t_pulse=5*dev.t_pulse)
+    # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=1*dev.t_pulse)
+    # dev.set_vals(Ms=0.1*dev.Ms, t_pulse=5*dev.t_pulse)
+
+  elif type(dev) == SWrite_MTJ_rng:
+    # STT Parameters
+    alpha = 0.03
+    K_295 = 1.0056364e-3
+    Ms_295 = 1.2e6
+    Rp = 5e3
+    TMR = 3
+    t_pulse = 1e-9
+    t_relax = 10e-9
+    d = 3e-09
+    tf = 1.1e-09
+
+    dev.set_vals(alpha=alpha,
+                K_295=K_295,
+                Ms_295=Ms_295,
+                Rp=Rp,
+                TMR=TMR,
+                d=d,
+                tf=tf,
+                t_reset=3*t_pulse,
+                t_pulse=t_pulse,
+                t_relax=t_relax)
+    
+    # dev.set_vals(Ms_295=1.0*dev.Ms_295, t_pulse=1*dev.t_pulse)
+    # dev.set_vals(Ms_295=1.0*dev.Ms_295, t_pulse=5*dev.t_pulse)
+    # dev.set_vals(Ms_295=0.1*dev.Ms_295, t_pulse=1*dev.t_pulse)
+    # dev.set_vals(Ms_295=0.1*dev.Ms_295, t_pulse=5*dev.t_pulse)
   
   # Perform scurve check
+  start_time = time.time()
   validity, scurve = dev_check(dev, plot=True)
   print("Valid:", validity)
+  print(f"Runtime: {(time.time() - start_time)} seconds")

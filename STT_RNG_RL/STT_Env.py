@@ -36,9 +36,7 @@ class STT_Env(Env):
     self.K_295 = 1.0056364e-3
     self.Ms_295 = 1.2e6
     self.Rp = 5e3
-    self.TMR = 1.2
-    self.eta = 0.3
-    self.J_stt = 1.67e11
+    self.TMR = 3
     self.t_pulse = 1e-9
     self.t_relax = 10e-9
     self.d = 3e-09
@@ -49,27 +47,23 @@ class STT_Env(Env):
     self.K_295_range = [0.2e-3, 1e-3]
     self.Ms_295_range = [0.3e6, 2e6]
     self.Rp_range = [500, 50000]
-    self.eta_range = [0.1, 2]
-    self.J_stt_range = [-136090192630.6827, -113236607131.10739]
     self.t_pulse_range = [0.5e-9, 75e-9]
     self.t_relax_range = [0.5e-9, 75e-9]
 
     # Get initial config score
-    chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(self.alpha, self.K_295, self.Ms_295, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_stt, self.t_pulse, self.t_relax, samples=self.dev_samples, pdf_type=self.pdf_type)
+    chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(self.alpha, self.K_295, self.Ms_295, self.Rp, self.TMR, self.d, self.tf, self.t_pulse, self.t_relax, samples=self.dev_samples, pdf_type=self.pdf_type)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, pdf)
     self.best_config_score = self.current_config_score
-    self.best_config = {"alpha":self.alpha, "K_295":self.K_295, "Ms_295":self.Ms_295, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_stt":self.J_stt, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf, "kl_div_score":self.kl_div_score, "energy":self.energy}
+    self.best_config = {"alpha":self.alpha, "K_295":self.K_295, "Ms_295":self.Ms_295, "Rp":self.Rp, "TMR":self.TMR, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf, "kl_div_score":self.kl_div_score, "energy":self.energy}
 
     # Continuous Actions: modify the 8 parameters; normalized values between 0-1 for best practice
-    self.action_space = Box(low=0, high=1, shape=(7,), dtype=np.float32)
+    self.action_space = Box(low=0, high=1, shape=(5,), dtype=np.float32)
 
     # Observations: current parameter values, current config score, best config score discovered
     self.observation_space = Dict({"alpha":Box(low=self.alpha_range[0], high=self.alpha_range[1], shape=(1,), dtype=np.float32),
                                    "K_295":Box(low=self.K_295_range[0], high=self.K_295_range[1], shape=(1,), dtype=np.float32),
                                    "Ms_295":Box(low=self.Ms_295_range[0], high=self.Ms_295_range[1], shape=(1,), dtype=np.float32),
                                    "Rp":Box(low=self.Rp_range[0], high=self.Rp_range[1], shape=(1,), dtype=np.float32),
-                                   "eta":Box(low=self.eta_range[0], high=self.eta_range[1], shape=(1,), dtype=np.float32),
-                                   "J_stt":Box(low=self.J_stt_range[0], high=self.J_stt_range[1], shape=(1,), dtype=np.float32),
                                    "t_pulse":Box(low=self.t_pulse_range[0], high=self.t_pulse_range[1], shape=(1,), dtype=np.float32),
                                    "t_relax":Box(low=self.t_relax_range[0], high=self.t_relax_range[1], shape=(1,), dtype=np.float32),
                                    "current_config_score":Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
@@ -81,8 +75,6 @@ class STT_Env(Env):
     self.obs["K_295"] = np.array([self.K_295], dtype=np.float32)
     self.obs["Ms_295"] = np.array([self.Ms_295], dtype=np.float32)
     self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
-    self.obs["eta"] = np.array([self.eta], dtype=np.float32)
-    self.obs["J_stt"] = np.array([self.J_stt], dtype=np.float32)
     self.obs["t_pulse"] = np.array([self.t_pulse], dtype=np.float32)
     self.obs["t_relax"] = np.array([self.t_relax], dtype=np.float32)
     self.obs["current_config_score"] = np.array([self.current_config_score], dtype=np.float32)
@@ -94,10 +86,8 @@ class STT_Env(Env):
     self.K_295 = unnormalize(actions[1], self.K_295_range[0], self.K_295_range[1])
     self.Ms_295 = unnormalize(actions[2], self.Ms_295_range[0], self.Ms_295_range[1])
     self.Rp = unnormalize(actions[3], self.Rp_range[0], self.Rp_range[1])
-    self.eta = unnormalize(actions[4], self.eta_range[0], self.eta_range[1])
-    self.J_stt = unnormalize(actions[5], self.J_stt_range[0], self.J_stt_range[1])
-    self.t_pulse = unnormalize(actions[6], self.t_pulse_range[0], self.t_pulse_range[1])
-    self.t_relax = unnormalize(actions[6], self.t_relax_range[0], self.t_relax_range[1]) # potentially change
+    self.t_pulse = unnormalize(actions[4], self.t_pulse_range[0], self.t_pulse_range[1])
+    self.t_relax = unnormalize(actions[4], self.t_relax_range[0], self.t_relax_range[1]) # potentially change
     self.TMR = 3
     self.d = 3e-09
     self.tf = 1.1e-09
@@ -126,7 +116,7 @@ class STT_Env(Env):
       self.invalid_config = 0
     elif self.current_config_score < self.best_config_score:  # Minimization reward scheme
       self.best_config_score = self.current_config_score
-      self.best_config = {"alpha":self.alpha, "K_295":self.K_295, "Ms_295":self.Ms_295, "Rp":self.Rp, "TMR":self.TMR, "eta":self.eta, "J_stt":self.J_stt, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf, "kl_div_score":self.kl_div_score, "energy":self.energy}
+      self.best_config = {"alpha":self.alpha, "K_295":self.K_295, "Ms_295":self.Ms_295, "Rp":self.Rp, "TMR":self.TMR, "t_pulse":self.t_pulse, "t_relax":self.t_relax, "d":self.d, "tf":self.tf, "kl_div_score":self.kl_div_score, "energy":self.energy}
       reward = 1 
     else: 
       reward = 0 
@@ -139,7 +129,7 @@ class STT_Env(Env):
     self.apply_continuous_action(action)
     
     # Sample new configuration
-    chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(self.alpha, self.K_295, self.Ms_295, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_stt, self.t_pulse, self.t_relax, samples=self.dev_samples, pdf_type=self.pdf_type)
+    chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(self.alpha, self.K_295, self.Ms_295, self.Rp, self.TMR, self.d, self.tf, self.t_pulse, self.t_relax, samples=self.dev_samples, pdf_type=self.pdf_type)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData,  xxis, pdf)
     
     # Calculate reward
@@ -151,8 +141,6 @@ class STT_Env(Env):
     self.obs["K_295"] = np.array([self.K_295], dtype=np.float32)
     self.obs["Ms_295"] = np.array([self.Ms_295], dtype=np.float32)
     self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
-    self.obs["eta"] = np.array([self.eta], dtype=np.float32)
-    self.obs["J_stt"] = np.array([self.J_stt], dtype=np.float32)
     self.obs["t_pulse"] = np.array([self.t_pulse], dtype=np.float32)
     self.obs["t_relax"] = np.array([self.t_relax], dtype=np.float32)
     self.obs["current_config_score"] = np.array([self.current_config_score], dtype=np.float32)
@@ -164,8 +152,6 @@ class STT_Env(Env):
                 "Ms_295"  : self.Ms_295,
                 "Rp"      : self.Rp,
                 "TMR"     : self.TMR,
-                "eta"     : self.eta,
-                "J_stt"   : self.J_stt,
                 "t_pulse" : self.t_pulse,
                 "t_relax" : self.t_relax,
                 "d"       : self.d,
@@ -200,16 +186,14 @@ class STT_Env(Env):
     self.K_295 = 1.0056364e-3
     self.Ms_295 = 1.2e6
     self.Rp = 5e3
-    self.TMR = 1.2
-    self.eta = 0.3
-    self.J_stt = 1.67e11
+    self.TMR = 3
     self.t_pulse = 1e-9
     self.t_relax = 10e-9
     self.d = 3e-09
     self.tf = 1.1e-09
 
     # Get initial config score
-    chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(self.alpha, self.K_295, self.Ms_295, self.Rp, self.TMR, self.d, self.tf, self.eta, self.J_stt, self.t_pulse, self.t_relax, samples=self.dev_samples, pdf_type=self.pdf_type)
+    chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(self.alpha, self.K_295, self.Ms_295, self.Rp, self.TMR, self.d, self.tf, self.t_pulse, self.t_relax, samples=self.dev_samples, pdf_type=self.pdf_type)
     self.current_config_score = self.get_config_score(chi2, bitstream, energy_avg, countData, bitData, xxis, pdf)
     # self.best_config_score = self.current_config_score
 
@@ -219,8 +203,6 @@ class STT_Env(Env):
     self.obs["K_295"] = np.array([self.K_295], dtype=np.float32)
     self.obs["Ms_295"] = np.array([self.Ms_295], dtype=np.float32)
     self.obs["Rp"] = np.array([self.Rp], dtype=np.float32)
-    self.obs["eta"] = np.array([self.eta], dtype=np.float32)
-    self.obs["J_stt"] = np.array([self.J_stt], dtype=np.float32)
     self.obs["t_pulse"] = np.array([self.t_pulse], dtype=np.float32)
     self.obs["t_relax"] = np.array([self.t_relax], dtype=np.float32)
     self.obs["current_config_score"] = np.array([self.current_config_score], dtype=np.float32)

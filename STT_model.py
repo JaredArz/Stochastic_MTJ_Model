@@ -60,13 +60,9 @@ from jz_lut import jz_lut_write
 #   return chi2, bitstream, energy_avg, counts[0:256], number_history[0:samples], xxis, pdf
 
 
-def STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, eta, J_stt, t_pulse, t_relax, samples=1000, pdf_type="exp"):
+def STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, t_pulse, t_relax, samples=1000, pdf_type="exp"):
   dev = SWrite_MTJ_rng(flavor="UTA")
-  dev.init() # calls both set_vals and set_mag_vector with defaultsdev.alpha = alpha
-
-  J_reset = 3*J_stt
-  t_reset = 3*t_pulse
-
+  dev.init() # calls both set_vals and set_mag_vector with defaults
   dev.set_vals(alpha=alpha,
                K_295=K_295,
                Ms_295=Ms_295,
@@ -74,13 +70,10 @@ def STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, eta, J_stt, t_pulse, t_relax
                TMR=TMR,
                d=d,
                tf=tf,
-               eta=eta,
-               J_reset=J_reset,
-               t_reset=t_reset,
+               t_reset=3*t_pulse,
                t_pulse=t_pulse,
                t_relax=t_relax)
   
-
   # Check if config is valid
   valid, scurve = dev_check(dev, plot=False)
   if valid == False:
@@ -108,22 +101,20 @@ def STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, eta, J_stt, t_pulse, t_relax
 
 if __name__ == "__main__":
   SAMPLES = 2500
-  PDF_TYPE = "exp"
-  # PDF_TYPE = "gamma"
+  # PDF_TYPE = "exp"
+  PDF_TYPE = "gamma"
 
   alpha = 0.03
   K_295 = 1.0056364e-3
   Ms_295 = 1.2e6
   Rp = 5e3
-  TMR = 1.2
-  eta = 0.3
-  J_stt = 1.67e11
+  TMR = 3
   t_pulse = 1e-9
   t_relax = 10e-9
   d = 3e-09
   tf = 1.1e-09
 
-  chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, eta, J_stt, t_pulse, t_relax, samples=SAMPLES, pdf_type=PDF_TYPE)
+  chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, t_pulse, t_relax, samples=SAMPLES, pdf_type=PDF_TYPE)
   kl_div_score = sum(rel_entr(countData, pdf))
   energy = np.mean(energy_avg)
   
