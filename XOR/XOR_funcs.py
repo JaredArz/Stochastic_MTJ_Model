@@ -62,3 +62,39 @@ def get_out_path() -> str:
     make_dir("./wordstreams")
     make_dir(f"{out_path}")
     return out_path
+
+def get_arr_inds(p):
+    if p < 2:
+        return 0,5
+    elif p < 4:
+        return 1,5
+    elif p < 6:
+        return 2,5
+    elif p < 8:
+        return 3,5
+    elif p < 10:
+        return 4,5
+    elif p < 12:
+        return 2,0
+    elif p < 14:
+        return 2,1
+    elif p < 16:
+        return 2,2
+    elif p < 18:
+        return 2,3
+    elif p < 20:
+        return 2,4
+    elif p < 22:
+        return 2,5
+    elif p < 24:
+        return 2,6
+    elif p < 26:
+        return 2,7
+    elif p < 28:
+        return 2,8
+    elif p < 30:
+        return 2,9
+    elif p < 32:
+        return 2,10
+    else:
+        return 2,5

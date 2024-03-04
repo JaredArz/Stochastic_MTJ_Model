@@ -12,7 +12,7 @@ def prompt_show():
     valid_user_input = False
     while(not valid_user_input):
         print("Show figure? y/n")
-        user_input = input()
+        user_input = 'y' #input()
         if user_input == 'y' or user_input == 'Y':
             plt.show()
             valid_user_input = True
@@ -25,7 +25,7 @@ def prompt_save_svg(fig,path):
     valid_user_input = False
     while(not valid_user_input):
         print("Save figure? y/n")
-        user_input = input()
+        user_input = 'y' #input()
         if user_input == 'y' or user_input == 'Y':
             fig.savefig(path, format='svg', dpi=1200)
             valid_user_input = True
