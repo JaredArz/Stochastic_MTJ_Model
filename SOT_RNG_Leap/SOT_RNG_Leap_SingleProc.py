@@ -88,7 +88,7 @@ def train(pdf_type, runID):
 
   pipeline = [tournament_selection, # uses domination comparison in MultiObjective.worse_than()
               clone,
-              mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations=1),
+              mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations="isotropic"),
               evaluate,
               pool(size=POP_SIZE),
               print_generation]
