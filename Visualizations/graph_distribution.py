@@ -7,61 +7,105 @@ import sys
 sys.path.append("../")
 sys.path.append("../fortran_source")
 from SOT_model import SOT_Model
+from STT_model import STT_Model
 
 
-
-if __name__ == "__main__":
-  SAMPLES = 100000
-
-  # RL parameters
-  # alpha = 0.01
-  # Ki = 0.0002
-  # Ms = 300000
-  # Rp = 50000
-  # TMR = 3
-  # eta = 0.1
-  # J_she = 2682648494243.622
-  # t_pulse = 7.5e-08
-  # t_relax = 7.5e-08
-  # d = 3e-09
-  # tf = 1.1e-09
-
-  # Leap parameters
-  alpha = 1.00000000e-02
-  Ki = 2.00000000e-04
-  Ms = 5.27236029e+05
-  Rp = 7.48289966e+03
-  TMR = 3
-  eta = 1.00000000e-01
-  J_she = 4.18373011e+11
-  t_pulse = 5.00000000e-10
-  t_relax = 5.00000000e-10
-  d = 3e-09
-  tf = 1.1e-09
-
-  # alpha = 1.0e-01
-  # Ki = 2e-04
-  # Ms = 4.83880725e+05
-  # Rp = 2.48441928e+03
-  # TMR = 3
-  # eta = 2.31278960e-01
-  # J_she = 1.59392596e+12
-  # t_pulse = 5.0e-10
-  # t_relax = 5.0e-10
-  # d = 3e-09
-  # tf = 1.1e-09
+def graph_SOT(params, pdf_type, samples):
+  alpha = params["alpha"]
+  Ki = params["Ki"]
+  Ms = params["Ms"]
+  Rp = params["Rp"]
+  TMR = params["TMR"]
+  eta = params["eta"]
+  J_she = params["J_she"]
+  t_pulse = params["t_pulse"]
+  t_relax = params["t_relax"]
+  d = params["d"]
+  tf = params["tf"]
   
-  chi2, bitstream, energy_avg, countData, bitData, xxis, exp_pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=SAMPLES)
-  kl_div_score = sum(rel_entr(countData, exp_pdf))
-  energy = np.mean(energy_avg)
+  chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples, pdf_type)
+  
+  if chi2 == None:
+    raise Exception("Configuration checks failed")
 
+  kl_div_score = sum(rel_entr(countData, pdf))
+  energy = np.mean(energy_avg)
+  
+  print("Chi2  :", chi2)
+  print("KL_Div:", kl_div_score)
+  print("Energy:", energy)
+  
+  plt.plot(xxis, countData, color="red", label="Actual PDF")
+  plt.plot(xxis, pdf,'k--', label="Expected PDF")
+  plt.xlabel("Generated Number")
+  plt.ylabel("Normalized")
+  plt.title(f"SOT {pdf_type.capitalize()} PDF Comparison")
+  plt.legend()
+  plt.show()
+
+
+def graph_STT(params, pdf_type, samples):
+  alpha = params["alpha"]
+  K_295 = params["K_295"]
+  Ms_295 = params["Ms_295"]
+  Rp = params["Rp"]
+  TMR = params["TMR"]
+  t_pulse = params["t_pulse"]
+  t_relax = params["t_relax"]
+  d = params["d"]
+  tf = params["tf"]
+
+  chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(alpha, K_295, Ms_295, Rp, TMR, d, tf, t_pulse, t_relax, samples, pdf_type)
+  
+  if chi2 == None:
+    raise Exception("Configuration checks failed")
+  
+  kl_div_score = sum(rel_entr(countData, pdf))
+  energy = np.mean(energy_avg)
+  
+  print("Chi2  :", chi2)
   print("KL_Div:", kl_div_score)
   print("Energy:", energy)
 
   plt.plot(xxis, countData, color="red", label="Actual PDF")
-  plt.plot(xxis, exp_pdf,'k--', label="Expected PDF")
+  plt.plot(xxis, pdf,'k--', label="Expected PDF")
   plt.xlabel("Generated Number")
   plt.ylabel("Normalized")
-  plt.title("PDF Comparison")
+  plt.title(f"STT {pdf_type.capitalize()} PDF Comparison")
   plt.legend()
   plt.show()
+
+
+
+if __name__ == "__main__":
+  samples = 100000
+  pdf_type = "gamma"
+
+  SOT_params = {
+    "alpha"   : 0.01,
+    "Ki"      : 0.0002,
+    "Ms"      : 300000,
+    "Rp"      : 13265.555784106255,
+    "TMR"     : 0.3,
+    "eta"     : 0.8,
+    "J_she"   : 334994280934.3338,
+    "t_pulse" : 7.5e-08,
+    "t_relax" : 7.5e-08,
+    "d"       : 3e-09,
+    "tf"      : 1.1e-09
+  }
+
+  STT_params = {
+    "alpha"   : 0.03,
+    "K_295"   : 1.0056364e-3,
+    "Ms_295"  : 1.2e6,
+    "Rp"      : 5e3,
+    "TMR"     : 3,
+    "t_pulse" : 1e-9,
+    "t_relax" : 10e-9,
+    "d"       : 3e-09,
+    "tf"      : 1.1e-09
+  }
+
+  graph_SOT(SOT_params, pdf_type, samples)
+  # graph_STT(STT_params, pdf_type, samples)

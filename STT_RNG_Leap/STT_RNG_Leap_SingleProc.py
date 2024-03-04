@@ -7,19 +7,14 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import rel_entr
-from toolz import pipe
-from distributed import Client, LocalCluster
 
-from leap_ec import test_env_var
-from leap_ec.representation import Representation
-from leap_ec.ops import tournament_selection, clone, evaluate, pool
-from leap_ec.real_rep.initializers import create_real_vector
-from leap_ec.real_rep.ops import mutate_gaussian
-from leap_ec.probe import print_individual
-from leap_ec.multiobjective.probe import ParetoPlotProbe2D
 from leap_ec.global_vars import context
+from leap_ec.representation import Representation
+from leap_ec.real_rep.ops import mutate_gaussian
+from leap_ec.real_rep.initializers import create_real_vector
+from leap_ec.ops import tournament_selection, clone, evaluate, pool
 from leap_ec.multiobjective.nsga2 import generalized_nsga_2
-from leap_ec.multiobjective.problems import MultiObjectiveProblem, SCHProblem
+from leap_ec.multiobjective.problems import MultiObjectiveProblem
 
 sys.path.append("../")
 sys.path.append("../fortran_source")
@@ -87,7 +82,7 @@ def train(pdf_type, runID):
 
   pipeline = [tournament_selection, # uses domination comparison in MultiObjective.worse_than()
               clone,
-              mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations=1),
+              mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations="isotropic"),
               evaluate,
               pool(size=POP_SIZE),
               print_generation]

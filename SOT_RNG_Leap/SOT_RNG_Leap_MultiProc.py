@@ -10,13 +10,13 @@ from scipy.special import rel_entr
 from toolz import pipe
 from distributed import Client, LocalCluster
 
+from leap_ec.global_vars import context
 from leap_ec.representation import Representation
-from leap_ec.ops import tournament_selection, clone, evaluate, pool
-from leap_ec.real_rep.initializers import create_real_vector
 from leap_ec.real_rep.ops import mutate_gaussian
-from leap_ec.probe import print_individual
-from leap_ec.multiobjective.problems import MultiObjectiveProblem, SCHProblem
+from leap_ec.real_rep.initializers import create_real_vector
+from leap_ec.ops import tournament_selection, clone, evaluate, pool
 from leap_ec.multiobjective.asynchronous import steady_state_nsga_2
+from leap_ec.multiobjective.problems import MultiObjectiveProblem
 
 sys.path.append("../")
 sys.path.append("../fortran_source")
@@ -72,6 +72,12 @@ class MTJ_RNG_Problem(MultiObjectiveProblem):
     return fitness
 
 
+def print_update(population):
+  fitnesses = [genome.fitness for genome in population]
+  birth = context["leap"]["births"]+1
+  print(f"Birth: {birth} of {MAX_BIRTHS}, Min Fitness: {min(fitnesses)}")
+
+
 def train(pdf_type, runID):
   param_bounds = [alpha_range,    # alpha bounds 
                   Ki_range,       # Ki bounds 
@@ -89,13 +95,16 @@ def train(pdf_type, runID):
   pipeline = [tournament_selection, # uses domination comparison in MultiObjective.worse_than()
               clone,
               mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations=1),
-              pool(size=1)]
+              pool(size=1),
+              print_update]
   
-  final_pop = steady_state_nsga_2(client, MAX_BIRTHS,
-                   pop_size=POP_SIZE, init_pop_size=POP_SIZE,
-                   problem=MTJ_RNG_Problem(pdf_type),
-                   representation=representation,
-                   offspring_pipeline=pipeline)
+  final_pop = steady_state_nsga_2(client, 
+                                  MAX_BIRTHS,
+                                  pop_size=POP_SIZE, 
+                                  init_pop_size=POP_SIZE,
+                                  problem=MTJ_RNG_Problem(pdf_type),
+                                  representation=representation,
+                                  offspring_pipeline=pipeline)
   
   result_dir = f"{pdf_type}_results"
   os.makedirs(result_dir, exist_ok=True)
