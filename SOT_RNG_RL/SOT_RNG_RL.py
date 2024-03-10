@@ -1,5 +1,5 @@
-import inspect
 import os
+import csv
 import argparse
 import numpy as np
 from stable_baselines3.ppo.ppo import PPO
@@ -74,9 +74,13 @@ def Train_Model(pdf_type, model_dir, log_dir, num_envs:int=1, training_timesteps
     print(evaluation)
 
 
-def Test_Model(pdf_type, model_path:str, episodes:int):
+def Test_Model(pdf_type, model_path:str, csvFile:str, episodes:int):
   model = PPO.load(model_path)
   env = SOT_Env(pdf_type)
+
+  f = open(csvFile, "w")
+  writeFile = csv.writer(f)
+  writeFile.writerow(["Episode", "Reward", "alpha", "Ki", "Ms", "Rp", "TMR", "eta", "J_she", "t_pulse", "t_relax", "d", "tf", "kl_div_score", "energy"])
 
   for episode in range(1, episodes+1):
     obs, _ = env.reset()
@@ -94,6 +98,10 @@ def Test_Model(pdf_type, model_path:str, episodes:int):
       infos.append(info)
       config_scores.append(env.current_config_score)
 
+      if reward != -1:
+        writeFile.writerow([episode, reward, info["alpha"], info["Ki"], info["Ms"], info["Rp"], info["TMR"], info["eta"], info["J_she"], info["t_pulse"], info["t_relax"], info["d"], info["tf"], info["kl_div_score"], info["energy"]])
+        f.flush()
+
       # print(f"Action: {action}")
       # print(f"Obs   : {obs}")
       print(f"Reward: {reward}")
@@ -104,6 +112,7 @@ def Test_Model(pdf_type, model_path:str, episodes:int):
     print("**************************************************************************\n")
   
   print(f"Best Config: {env.best_config}")
+  f.close()
   env.close()
 
 
@@ -142,8 +151,8 @@ if __name__ == "__main__":
 
   if (args.activity == "TrainModel"):
     model_name = "mtj_model_1"
-    model_dir = os.path.join(f"JETCAS_{args.pdf_type}_Training", "Saved_Models", model_name)
-    log_dir = os.path.join(f"JETCAS_{args.pdf_type}_Training", "Logs", model_name)
+    model_dir = os.path.join(f"SOT_{args.pdf_type}_Training", "Saved_Models", model_name)
+    log_dir = os.path.join(f"SOT_{args.pdf_type}_Training", "Logs", model_name)
     training_timesteps = 500000
     log_window = training_timesteps//1000
     num_envs = 1
@@ -153,8 +162,10 @@ if __name__ == "__main__":
 
 
   if (args.activity == "TestModel"):
-    model_path = "JETCAS_Training/Saved_Models/mtj_model_1/timestep-20500.zip"
-    Test_Model(args.pdf_type, model_path, episodes=150)
+    model_path = "JETCAS_gamma_Training/Saved_Models/mtj_model_1/timestep-6000.zip"
+    model_version = model_path.split("/")[-1][:-4]
+    csvFile = f"SOT_{args.pdf_type.capitalize()}_Model-{model_version}_Results.csv"
+    Test_Model(args.pdf_type, model_path, csvFile, episodes=150)
 
 
   if (args.activity == "TestEnv"):
