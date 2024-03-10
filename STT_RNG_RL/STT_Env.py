@@ -31,17 +31,6 @@ class STT_Env(Env):
     self.dev_samples = DEV_SAMPLES
     self.invalid_config = 0
 
-    # Initial parameter values
-    self.alpha = 0.03
-    self.K_295 = 1.0056364e-3
-    self.Ms_295 = 1.2e6
-    self.Rp = 5e3
-    self.TMR = 3
-    self.t_pulse = 1e-9
-    self.t_relax = 10e-9
-    self.d = 3e-09
-    self.tf = 1.1e-09
-    
     # Parameter ranges
     self.alpha_range = [0.01, 0.1]
     self.K_295_range = [0.2e-3, 1e-3]
@@ -49,6 +38,17 @@ class STT_Env(Env):
     self.Rp_range = [500, 50000]
     self.t_pulse_range = [0.5e-9, 75e-9]
     self.t_relax_range = [0.5e-9, 75e-9]
+
+    # Initial parameter values
+    self.alpha = unnormalize(random.uniform(0, 1), self.alpha_range[0], self.alpha_range[1])
+    self.K_295 = unnormalize(random.uniform(0, 1), self.K_295_range[0], self.K_295_range[1])
+    self.Ms_295 = unnormalize(random.uniform(0, 1), self.Ms_295_range[0], self.Ms_295_range[1])
+    self.Rp = unnormalize(random.uniform(0, 1), self.Rp_range[0], self.Rp_range[1])
+    self.t_pulse = unnormalize(random.uniform(0, 1), self.t_pulse_range[0], self.t_pulse_range[1])
+    self.t_relax = self.t_pulse
+    self.TMR = 3
+    self.d = 3e-09
+    self.tf = 1.1e-09
 
     # Get initial config score
     chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = STT_Model(self.alpha, self.K_295, self.Ms_295, self.Rp, self.TMR, self.d, self.tf, self.t_pulse, self.t_relax, samples=self.dev_samples, pdf_type=self.pdf_type)
@@ -182,13 +182,13 @@ class STT_Env(Env):
 
   def reset(self, seed=None, options=None):
     # Initial parameter values
-    self.alpha = 0.03
-    self.K_295 = 1.0056364e-3
-    self.Ms_295 = 1.2e6
-    self.Rp = 5e3
+    self.alpha = unnormalize(random.uniform(0, 1), self.alpha_range[0], self.alpha_range[1])
+    self.K_295 = unnormalize(random.uniform(0, 1), self.K_295_range[0], self.K_295_range[1])
+    self.Ms_295 = unnormalize(random.uniform(0, 1), self.Ms_295_range[0], self.Ms_295_range[1])
+    self.Rp = unnormalize(random.uniform(0, 1), self.Rp_range[0], self.Rp_range[1])
+    self.t_pulse = unnormalize(random.uniform(0, 1), self.t_pulse_range[0], self.t_pulse_range[1])
+    self.t_relax = self.t_pulse
     self.TMR = 3
-    self.t_pulse = 1e-9
-    self.t_relax = 10e-9
     self.d = 3e-09
     self.tf = 1.1e-09
 

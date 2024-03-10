@@ -14,7 +14,6 @@ matplotlib_axes_logger.setLevel('ERROR')
 sys.path.append("../")
 sys.path.append("../fortran_source")
 from SOT_model import SOT_Model
-from SOT_RNG_Leap_SingleProc import MTJ_RNG_Problem
 
 
 param_ranges = {
@@ -31,28 +30,19 @@ param_ranges = {
 }
 
 
-def scraper(pdf_type, csv=False):
-  path = f"{pdf_type}_results/"
-
-  dataframes = []
-  for i, file in enumerate(glob.glob(os.path.join(path, '*.pkl'))):
-    with open(file, "rb") as f:
-      data = pickle.load(f)
-      df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])
-      df.columns = ["genome","kl_div","energy","rank","distance"]
-      dataframes.append(df)
-
-  df = pd.concat(dataframes, axis=0)
-  if csv:
-    csv_filename = f"{pdf_type}_results.csv"
-    df.to_csv(csv_filename, encoding='utf-8', index=False)
+def scraper(csvFile):
+  df = pd.read_csv(csvFile)
+  df = df.sort_values(by="kl_div_score")
+  subset = ["alpha", "Ki", "Ms", "Rp", "TMR", "eta", "J_she", "t_pulse", "t_relax", "d", "tf"]
+  df.drop_duplicates(subset=subset, keep="first")
   
   return df
 
 
-def pareto_front(pdf_type, plot=True):
-  df = scraper(pdf_type)
-  pareto_df = df[["kl_div", "energy"]]
+def pareto_front(csvFile, plot=True):
+  pdf_type = csvFile.split("_")[1]
+  df = scraper(csvFile)
+  pareto_df = df[["kl_div_score", "energy"]]
 
   # Get pareto front values
   mask = paretoset(pareto_df, sense=["min", "min"])
@@ -60,9 +50,9 @@ def pareto_front(pdf_type, plot=True):
 
   # Plot pareto front
   if plot == True:
-    ax = df.plot.scatter(x="kl_div", y="energy", c="blue", label="Sample")
-    pareto_df.plot.scatter(x="kl_div", y="energy", c="red", ax=ax, label="Pareto Front")
-    plt.title(f"SOT {pdf_type.capitalize()} Pareto Front")
+    ax = df.plot.scatter(x="kl_div_score", y="energy", c="blue", label="Sample")
+    pareto_df.plot.scatter(x="kl_div_score", y="energy", c="red", ax=ax, label="Pareto Front")
+    plt.title(f"SOT {pdf_type} Pareto Front")
     plt.show()
   
   return df, pareto_df
@@ -71,28 +61,39 @@ def pareto_front(pdf_type, plot=True):
 def plot_df(df, graph_name, param_name, pdf_type):
   os.makedirs("graphs", exist_ok=True)
   os.makedirs("parameters", exist_ok=True)
-  
+
   params = []
   for _, row in df.iterrows():
-    genome = row["genome"]
-    kl_div = float(row["kl_div"])
-    energy = float(row["energy"])
-    param = {"genome": genome, "kl_div": kl_div, "energy": energy}
+    param = {
+      "alpha": row["alpha"],
+      "Ki": row["Ki"],
+      "Ms": row["Ms"],
+      "Rp": row["Rp"],
+      "TMR": row["TMR"],
+      "eta": row["eta"],
+      "J_she": row["J_she"],
+      "t_pulse": row["t_pulse"],
+      "t_relax": row["t_relax"],
+      "d": row["d"],
+      "tf": row["tf"],
+      "kl_div_score": row["kl_div_score"],
+      "energy": row["energy"]
+    }
     params.append(param)
   
   for i, param in enumerate(params):
     print(f"{i+1} of {len(params)}")
-    alpha = param["genome"][0]
-    Ki = param["genome"][1]
-    Ms = param["genome"][2]
-    Rp = param["genome"][3]
-    eta = param["genome"][4]
-    J_she = param["genome"][5]
-    t_pulse = param["genome"][6]
-    t_relax = param["genome"][6]
-    TMR = 3
-    d = 3e-09
-    tf = 1.1e-09
+    alpha = param["alpha"]
+    Ki = param["Ki"]
+    Ms = param["Ms"]
+    Rp = param["Rp"]
+    eta = param["eta"]
+    J_she = param["J_she"]
+    t_pulse = param["t_pulse"]
+    t_relax = param["t_relax"]
+    TMR = param["TMR"]
+    d = param["d"]
+    tf = param["tf"]
 
     while True:
       chi2, bitstream, energy_avg, countData, bitData, xxis, pdf = SOT_Model(alpha, Ki, Ms, Rp, TMR, d, tf, eta, J_she, t_pulse, t_relax, samples=100000, pdf_type=pdf_type)
@@ -101,7 +102,7 @@ def plot_df(df, graph_name, param_name, pdf_type):
     
     kl_div_score = sum(rel_entr(countData, pdf))
     energy = np.mean(energy_avg)
-    param["kl_div"] = kl_div_score
+    param["kl_div_score"] = kl_div_score
     param["energy"] = energy
 
     plt.plot(xxis, countData, color="red", label="Actual PDF")
@@ -117,14 +118,16 @@ def plot_df(df, graph_name, param_name, pdf_type):
       pickle.dump(param, file)
 
 
-def plot_pareto_distributions(pdf_type):
-  df, pareto_df = pareto_front(pdf_type, False)
+def plot_pareto_distributions(csvFile):
+  pdf_type = csvFile.split("_")[1].lower()
+  df, pareto_df = pareto_front(csvFile, False)
   plot_df(pareto_df, graph_name=f"pareto_dist_{pdf_type}", param_name=f"pareto_params_{pdf_type}", pdf_type=pdf_type)
 
   
-def plot_top_distributions(pdf_type, top=10):
-  df, pareto_df = pareto_front(pdf_type, False)
-  df = df.sort_values(by="kl_div").head(top)
+def plot_top_distributions(csvFile, top=10):
+  pdf_type = csvFile.split("_")[1].lower()
+  df, pareto_df = pareto_front(csvFile, False)
+  df = df.sort_values(by="kl_div_score").head(top)
   plot_df(df, graph_name=f"top_dist_{pdf_type}", param_name=f"top_params_{pdf_type}", pdf_type=pdf_type)
 
 
@@ -133,9 +136,10 @@ def get_norm(range):
   return norm
 
 
-def graph_param_values(pdf_type, top=10):
-  df = scraper(pdf_type)
-  df = df.sort_values(by="kl_div").head(top)
+def graph_param_values(csvFile, top=10):
+  pdf_type = csvFile.split("_")[1].lower()
+  df = scraper(csvFile)
+  df = df.sort_values(by="kl_div_score").head(top)
 
   y_labels = ["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax"]
   x_labels = []
@@ -166,14 +170,14 @@ def graph_param_values(pdf_type, top=10):
   color = "coolwarm"
   cmap = matplotlib.cm.get_cmap(color)
   for _, row in df.iterrows():
-    alpha = row["genome"][0]
-    Ki = row["genome"][1]
-    Ms = row["genome"][2]
-    Rp = row["genome"][3]
-    eta = row["genome"][4]
-    J_she = row["genome"][5]
-    t_pulse = row["genome"][6]
-    t_relax = row["genome"][6]
+    alpha = row["alpha"]
+    Ki = row["Ki"]
+    Ms = row["Ms"]
+    Rp = row["Rp"]
+    eta = row["eta"]
+    J_she = row["J_she"]
+    t_pulse = row["t_pulse"]
+    t_relax = row["t_relax"]
 
     ax.scatter(i, 0, s=s, marker=marker, c=cmap(norm_alpha(alpha)))
     ax.text(i, 0, f"{alpha:.2E}", horizontalalignment="center", verticalalignment="center")
@@ -213,11 +217,10 @@ def graph_param_values(pdf_type, top=10):
 
 
 if __name__ == "__main__":
-  # pdf_type = "exp"
-  pdf_type = "gamma"
+  csvFile = "SOT_Gamma_Model-timestep-6000_Results.csv"
 
-  # scraper(pdf_type)
-  # pareto_front(pdf_type)
-  # plot_pareto_distributions(pdf_type)
-  # plot_top_distributions(pdf_type, top=10)
-  graph_param_values(pdf_type, top=10)
+  scraper(csvFile)
+  pareto_front(csvFile)
+  plot_pareto_distributions(csvFile)
+  plot_top_distributions(csvFile, top=10)
+  graph_param_values(csvFile, top=10)
