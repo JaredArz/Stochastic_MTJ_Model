@@ -62,7 +62,7 @@ def pareto_front(pdf_type, plot=True):
   if plot == True:
     ax = df.plot.scatter(x="kl_div", y="energy", c="blue", label="Sample")
     pareto_df.plot.scatter(x="kl_div", y="energy", c="red", ax=ax, label="Pareto Front")
-    plt.title("Pareto Front")
+    plt.title(f"SOT {pdf_type.capitalize()} Pareto Front")
     plt.show()
   
   return df, pareto_df
@@ -105,7 +105,7 @@ def plot_df(df, graph_name, param_name, pdf_type):
     plt.plot(xxis, pdf,'k--', label="Expected PDF")
     plt.xlabel("Generated Number")
     plt.ylabel("Normalized")
-    plt.title("PDF Comparison")
+    plt.title(f"SOT {pdf_type.capitalize()} PDF Comparison")
     plt.legend()
     plt.savefig(f"graphs/{graph_name}_{i}.png")
     plt.close()
@@ -150,13 +150,13 @@ def graph_param_values(pdf_type, top=10):
   norm_t_relax = get_norm(param_ranges["t_relax"])
   
   fig, ax = plt.subplots()
-  ax.set_xticks(np.arange(0,10,1))
-  ax.set_yticks(np.arange(0,8,1))
+  ax.set_xticks(np.arange(0,len(x_labels),1))
+  ax.set_yticks(np.arange(0,len(y_labels),1))
   ax.set_xticklabels(x_labels)
   ax.set_yticklabels(y_labels)
   ax.set_xlabel("Config ID", size=14, weight="bold")
   ax.set_ylabel("Parameters", size=14, weight="bold")
-  ax.set_title("Parameter Combinations", size=16, weight="bold")
+  ax.set_title(f"SOT {pdf_type.capitalize()} Parameter Combinations", size=16, weight="bold")
 
   i = 0
   s = 2500
@@ -211,11 +211,11 @@ def graph_param_values(pdf_type, top=10):
 
 
 if __name__ == "__main__":
-  pdf_type = "exp"
-  # pdf_type = "gamma"
+  # pdf_type = "exp"
+  pdf_type = "gamma"
 
   # scraper(pdf_type)
   # pareto_front(pdf_type)
   # plot_pareto_distributions(pdf_type)
-  # plot_top_distributions(pdf_type, top=1)
+  # plot_top_distributions(pdf_type, top=10)
   graph_param_values(pdf_type, top=10)
