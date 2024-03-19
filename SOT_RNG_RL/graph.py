@@ -59,8 +59,8 @@ def pareto_front(csvFile, plot=True):
 
 
 def plot_df(df, graph_name, param_name, pdf_type):
-  os.makedirs("graphs", exist_ok=True)
-  os.makedirs("parameters", exist_ok=True)
+  os.makedirs(f"{pdf_type}/graphs", exist_ok=True)
+  os.makedirs(f"{pdf_type}/parameters", exist_ok=True)
 
   params = []
   for _, row in df.iterrows():
@@ -111,24 +111,24 @@ def plot_df(df, graph_name, param_name, pdf_type):
     plt.ylabel("Normalized")
     plt.title(f"SOT {pdf_type.capitalize()} PDF Comparison")
     plt.legend()
-    plt.savefig(f"graphs/{graph_name}_{i}.png")
+    plt.savefig(f"{pdf_type}/graphs/{graph_name}_{i}.png")
     plt.close()
 
-    with open(f"parameters/{param_name}_{i}.pkl", "wb") as file:
+    with open(f"{pdf_type}/parameters/{param_name}_{i}.pkl", "wb") as file:
       pickle.dump(param, file)
 
 
 def plot_pareto_distributions(csvFile):
   pdf_type = csvFile.split("_")[1].lower()
   df, pareto_df = pareto_front(csvFile, False)
-  plot_df(pareto_df, graph_name=f"pareto_dist_{pdf_type}", param_name=f"pareto_params_{pdf_type}", pdf_type=pdf_type)
+  plot_df(pareto_df, graph_name=f"{pdf_type}_pareto", param_name=f"{pdf_type}_pareto", pdf_type=pdf_type)
 
   
 def plot_top_distributions(csvFile, top=10):
   pdf_type = csvFile.split("_")[1].lower()
   df, pareto_df = pareto_front(csvFile, False)
   df = df.sort_values(by="kl_div_score").head(top)
-  plot_df(df, graph_name=f"top_dist_{pdf_type}", param_name=f"top_params_{pdf_type}", pdf_type=pdf_type)
+  plot_df(df, graph_name=f"{pdf_type}_top", param_name=f"{pdf_type}_top", pdf_type=pdf_type)
 
 
 def get_norm(range):
@@ -219,8 +219,8 @@ def graph_param_values(csvFile, top=10):
 if __name__ == "__main__":
   csvFile = "SOT_Gamma_Model-timestep-6000_Results.csv"
 
-  scraper(csvFile)
-  pareto_front(csvFile)
-  plot_pareto_distributions(csvFile)
-  plot_top_distributions(csvFile, top=10)
+  # scraper(csvFile)
+  # pareto_front(csvFile)
+  # plot_pareto_distributions(csvFile)
+  # plot_top_distributions(csvFile, top=10)
   graph_param_values(csvFile, top=10)

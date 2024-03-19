@@ -9,6 +9,10 @@ from interface_funcs import mtj_sample
 from mtj_types  import SWrite_MTJ_rng, SHE_MTJ_rng, VCMA_MTJ_rng
 
 
+# GAMMA_LOWER = 0.05
+# GAMMA_UPPER = 0.3
+GAMMA_LOWER = 0.1
+GAMMA_UPPER = 0.24
 
 class S_Curve:
   def __init__(self, dev, x, num_to_avg):
@@ -115,7 +119,8 @@ def get_pdf(type="exp"):
     pdf = stats.gamma.pdf(xxis, a=1, scale=1/0.01)
     pdf = pdf/np.sum(pdf)
   elif type == "gamma":
-    xxis = np.linspace(0.05, 0.3, 256)
+    # xxis = np.linspace(0.05, 0.3, 256)
+    xxis = np.linspace(GAMMA_LOWER, GAMMA_UPPER, 256)
     pdf = stats.gamma.pdf(xxis, a=50, scale=1/311.44)
     pdf = pdf/np.sum(pdf)
   else:
@@ -131,12 +136,15 @@ def dist_rng(dev, k, init, lmda, dump_mod_val, mag_view_flag, file_ID, scurve, p
     x1 = (x2+x0)/2
     cdf = lambda x,lmda: 1-np.exp(-lmda*x)
   elif pdf_type == "gamma":
-    x2 = 0.3
-    x0 = 0.05
+    # x2 = 0.3
+    # x0 = 0.05
+    x2 = GAMMA_UPPER
+    x0 = GAMMA_LOWER
     x1 = (x2+x0)/2
     xxis = np.linspace(x0, x2, 256)
     cdf_arr = stats.gamma.cdf(xxis, a=50, scale=1/311.44)
-    cdf = lambda x,lmda: cdf_arr[round(remap(x, 0.05, 0.3, 0, 255))]
+    # cdf = lambda x,lmda: cdf_arr[round(remap(x, 0.05, 0.3, 0, 255))]
+    cdf = lambda x,lmda: cdf_arr[round(remap(x, GAMMA_LOWER, GAMMA_UPPER, 0, 255))]
 
   theta = init
   phi = np.random.rand()*2*np.pi
