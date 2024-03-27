@@ -99,14 +99,14 @@ def train(pdf_type, runID):
                                   representation=representation,
                                   offspring_pipeline=pipeline)
   
-  result_dir = f"{pdf_type}/results"
+  result_dir = f"STT_{pdf_type}/results"
   os.makedirs(result_dir, exist_ok=True)
   with open(f"{result_dir}/{pdf_type}_{runID}.pkl", "wb") as file:
     pickle.dump(final_pop, file)
 
 
 def analyze_results(pdf_type, runID):
-  with open(f"{pdf_type}/results/{pdf_type}_{runID}.pkl", "rb") as file:
+  with open(f"STT_{pdf_type}/results/{pdf_type}_{runID}.pkl", "rb") as file:
     data = pickle.load(file)
 
   df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])

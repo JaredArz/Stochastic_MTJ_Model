@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import rel_entr
 
+from leap_ec import probe
 from leap_ec.global_vars import context
 from leap_ec.representation import Representation
 from leap_ec.real_rep.ops import mutate_gaussian
@@ -22,8 +23,10 @@ from STT_model import STT_Model
 
 
 # Hyperparameters
-POP_SIZE = 50
-MAX_GENERATION = 50
+# POP_SIZE = 50
+# MAX_GENERATION = 50
+POP_SIZE = 1
+MAX_GENERATION = 1
 
 DEV_SAMPLES = 2500
 alpha_range = (0.01, 0.1)
@@ -72,6 +75,10 @@ def print_generation(population):
 
 
 def train(pdf_type, runID):
+  probe_output_dir = f"STT_{pdf_type}/probe_output"
+  os.makedirs(probe_output_dir, exist_ok=True)
+  stream_out = open(f"{probe_output_dir}/probe_output_{runID}.csv", "w")
+
   param_bounds = [alpha_range,    # alpha bounds 
                   K_295_range,    # K_295 bounds 
                   Ms_295_range,   # Ms_295 bounds
@@ -85,6 +92,7 @@ def train(pdf_type, runID):
               mutate_gaussian(std=0.5, bounds=param_bounds, expected_num_mutations="isotropic"),
               evaluate,
               pool(size=POP_SIZE),
+              probe.AttributesCSVProbe(stream=stream_out, do_fitness=True, do_genome=True),
               print_generation]
   
   final_pop = generalized_nsga_2(max_generations=MAX_GENERATION,
@@ -93,14 +101,14 @@ def train(pdf_type, runID):
                                 representation=representation,
                                 pipeline=pipeline)
   
-  result_dir = f"{pdf_type}/results"
+  result_dir = f"STT_{pdf_type}/results"
   os.makedirs(result_dir, exist_ok=True)
   with open(f"{result_dir}/{pdf_type}_{runID}.pkl", "wb") as file:
     pickle.dump(final_pop, file)
 
 
 def analyze_results(pdf_type, runID):
-  with open(f"{pdf_type}/results/{pdf_type}_{runID}.pkl", "rb") as file:
+  with open(f"STT_{pdf_type}/results/{pdf_type}_{runID}.pkl", "rb") as file:
     data = pickle.load(file)
 
   df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])

@@ -32,7 +32,7 @@ param_ranges = {
 
 
 def scraper(pdf_type, csv=False):
-  path = f"{pdf_type}/results/"
+  path = f"STT_{pdf_type}/results/"
 
   dataframes = []
   for i, file in enumerate(glob.glob(os.path.join(path, '*.pkl'))):
@@ -69,8 +69,8 @@ def pareto_front(pdf_type, plot=True):
 
 
 def plot_df(df, graph_name, param_name, pdf_type):
-  os.makedirs(f"{pdf_type}/graphs", exist_ok=True)
-  os.makedirs(f"{pdf_type}/parameters", exist_ok=True)
+  os.makedirs(f"STT_{pdf_type}/graphs", exist_ok=True)
+  os.makedirs(f"STT_{pdf_type}/parameters", exist_ok=True)
   
   params = []
   for _, row in df.iterrows():
@@ -108,10 +108,10 @@ def plot_df(df, graph_name, param_name, pdf_type):
     plt.ylabel("Normalized")
     plt.title(f"STT {pdf_type.capitalize()} PDF Comparison")
     plt.legend()
-    plt.savefig(f"{pdf_type}/graphs/{graph_name}_{i}.png")
+    plt.savefig(f"STT_{pdf_type}/graphs/{graph_name}_{i}.png")
     plt.close()
 
-    with open(f"{pdf_type}/parameters/{param_name}_{i}.pkl", "wb") as file:
+    with open(f"STT_{pdf_type}/parameters/{param_name}_{i}.pkl", "wb") as file:
       pickle.dump(param, file)
 
 
