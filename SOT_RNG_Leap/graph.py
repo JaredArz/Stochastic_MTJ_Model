@@ -1,6 +1,7 @@
 import os
 import sys
 import glob
+import ast
 import pickle
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ import matplotlib.pyplot as plt
 from paretoset import paretoset
 from scipy.special import rel_entr
 from matplotlib.axes._axes import _log as matplotlib_axes_logger
-matplotlib_axes_logger.setLevel('ERROR')
+matplotlib_axes_logger.setLevel("ERROR")
 
 sys.path.append("../")
 sys.path.append("../fortran_source")
@@ -35,7 +36,7 @@ def scraper(pdf_type, csv=False):
   path = f"SOT_{pdf_type}/results/"
 
   dataframes = []
-  for i, file in enumerate(glob.glob(os.path.join(path, '*.pkl'))):
+  for i, file in enumerate(glob.glob(os.path.join(path, "*.pkl"))):
     with open(file, "rb") as f:
       data = pickle.load(f)
       df = pd.DataFrame([(x.genome, x.fitness[0], x.fitness[1], x.rank, x.distance) for x in data])
@@ -45,7 +46,7 @@ def scraper(pdf_type, csv=False):
   df = pd.concat(dataframes, axis=0)
   if csv:
     csv_filename = f"{pdf_type}_results.csv"
-    df.to_csv(csv_filename, encoding='utf-8', index=False)
+    df.to_csv(csv_filename, encoding="utf-8", index=False)
   
   return df
 
@@ -77,7 +78,7 @@ def plot_df(df, graph_name, param_name, pdf_type):
     genome = row["genome"]
     kl_div = float(row["kl_div"])
     energy = float(row["energy"])
-    param = {"genome": genome, "kl_div": kl_div, "energy": energy}
+    param = {"genome": genome, "kl_div": kl_div, "energy": energy, "xxis": None, "countData": None}
     params.append(param)
   
   for i, param in enumerate(params):
@@ -103,9 +104,11 @@ def plot_df(df, graph_name, param_name, pdf_type):
     energy = np.mean(energy_avg)
     param["kl_div"] = kl_div_score
     param["energy"] = energy
+    param["xxis"] = xxis
+    param["countData"] = countData
 
-    plt.plot(xxis, countData, color="red", label="Actual PDF")
-    plt.plot(xxis, pdf,'k--', label="Expected PDF")
+    plt.plot(xxis, countData, color="royalblue", label="SOT PDF")
+    plt.plot(xxis, pdf, color="dimgray", linestyle="dashed", label="Expected PDF")
     plt.xlabel("Generated Number")
     plt.ylabel("Normalized")
     plt.title(f"SOT {pdf_type.capitalize()} PDF Comparison")
@@ -158,7 +161,7 @@ def graph_param_values(pdf_type, top=10):
   ax.set_yticklabels(y_labels)
   ax.set_xlabel("Config ID", size=14, weight="bold")
   ax.set_ylabel("Parameters", size=14, weight="bold")
-  ax.set_title(f"SOT {pdf_type.capitalize()} Parameter Combinations", size=16, weight="bold")
+  ax.set_title(f"SOT {pdf_type.capitalize()} Parameter Combinations (LEAP)", size=16, weight="bold")
 
   i = 0
   s = 2500
@@ -211,6 +214,93 @@ def graph_param_values(pdf_type, top=10):
   plt.show()
 
 
+def graph_param_exploration(pdf_type):
+  path = f"SOT_{pdf_type}/probe_output/"
+
+  main_df = pd.DataFrame(columns=["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax"])
+  for i, csvFile in enumerate(glob.glob(os.path.join(path, "*.csv"))):
+    df = pd.read_csv(csvFile)
+
+    for genome in df["genome"]:
+      genome = ast.literal_eval(genome)
+      genome.append(genome[-1])
+      main_df.loc[len(main_df)] = genome
+
+  num_bins = 15
+  samples = len(main_df)
+
+  alpha_counts, _ = np.histogram(main_df["alpha"].to_list(), bins=num_bins)
+  alpha_counts = alpha_counts/samples
+  alpha_xxis = np.linspace(param_ranges["alpha"][0], param_ranges["alpha"][1], num_bins)
+
+  Ki_counts, _ = np.histogram(main_df["Ki"].to_list(), bins=num_bins)
+  Ki_counts = Ki_counts/samples
+  Ki_xxis = np.linspace(param_ranges["Ki"][0], param_ranges["Ki"][1], num_bins)
+
+  Ms_counts, _ = np.histogram(main_df["Ms"].to_list(), bins=num_bins)
+  Ms_counts = Ms_counts/samples
+  Ms_xxis = np.linspace(param_ranges["Ms"][0], param_ranges["Ms"][1], num_bins)
+
+  Rp_counts, _ = np.histogram(main_df["Rp"].to_list(), bins=num_bins)
+  Rp_counts = Rp_counts/samples
+  Rp_xxis = np.linspace(param_ranges["Rp"][0], param_ranges["Rp"][1], num_bins)
+
+  eta_counts, _ = np.histogram(main_df["eta"].to_list(), bins=num_bins)
+  eta_counts = eta_counts/samples
+  eta_xxis = np.linspace(param_ranges["eta"][0], param_ranges["eta"][1], num_bins)
+
+  J_she_counts, _ = np.histogram(main_df["J_she"].to_list(), bins=num_bins)
+  J_she_counts = J_she_counts/samples
+  J_she_xxis = np.linspace(param_ranges["J_she"][0], param_ranges["J_she"][1], num_bins)
+
+  t_relax_counts, _ = np.histogram(main_df["t_relax"].to_list(), bins=num_bins)
+  t_relax_counts = t_relax_counts/samples
+  t_relax_xxis = np.linspace(param_ranges["t_relax"][0], param_ranges["t_relax"][1], num_bins)
+
+  t_pulse_counts, _ = np.histogram(main_df["t_pulse"].to_list(), bins=num_bins)
+  t_pulse_counts = t_pulse_counts/samples
+  t_pulse_xxis = np.linspace(param_ranges["t_pulse"][0], param_ranges["t_pulse"][1], num_bins)
+
+  fig, axs = plt.subplots(2, 4, sharey=True, layout="tight")
+
+  axs[0,0].plot(alpha_xxis, alpha_counts, color="royalblue")
+  axs[0,0].set_xticks([param_ranges["alpha"][0], param_ranges["alpha"][1]], visible=True, rotation="horizontal")
+  axs[0,0].set_title("alpha")
+
+  axs[0,1].plot(Ki_xxis, Ki_counts, color="royalblue")
+  axs[0,1].set_xticks([param_ranges["Ki"][0], param_ranges["Ki"][1]], visible=True, rotation="horizontal")
+  axs[0,1].set_title("Ki")
+
+  axs[0,2].plot(Ms_xxis, Ms_counts, color="royalblue")
+  axs[0,2].set_xticks([param_ranges["Ms"][0], param_ranges["Ms"][1]], visible=True, rotation="horizontal")
+  axs[0,2].set_title("Ms")
+
+  axs[0,3].plot(Rp_xxis, Rp_counts, color="royalblue")
+  axs[0,3].set_xticks([param_ranges["Rp"][0], param_ranges["Rp"][1]], visible=True, rotation="horizontal")
+  axs[0,3].set_title("Rp")
+
+  axs[1,0].plot(eta_xxis, eta_counts, color="royalblue")
+  axs[1,0].set_xticks([param_ranges["eta"][0], param_ranges["eta"][1]], visible=True, rotation="horizontal")
+  axs[1,0].set_title("eta")
+
+  axs[1,1].plot(J_she_xxis, J_she_counts, color="royalblue")
+  axs[1,1].set_xticks([param_ranges["J_she"][0], param_ranges["J_she"][1]], visible=True, rotation="horizontal")
+  axs[1,1].set_title("J_she")
+
+  axs[1,2].plot(t_pulse_xxis, t_pulse_counts, color="royalblue")
+  axs[1,2].set_xticks([param_ranges["t_pulse"][0], param_ranges["t_pulse"][1]], visible=True, rotation="horizontal")
+  axs[1,2].set_title("t_pulse")
+
+  axs[1,3].plot(t_relax_xxis, t_relax_counts, color="royalblue")
+  axs[1,3].set_xticks([param_ranges["t_relax"][0], param_ranges["t_relax"][1]], visible=True, rotation="horizontal")
+  axs[1,3].set_title("t_relax")
+  
+  fig.supxlabel("Parameter Range", size=18, weight="bold")
+  fig.supylabel("Probability", size=18, weight="bold", x=-0.001)
+  fig.suptitle(f"SOT {pdf_type.capitalize()} Parameter Exploration (LEAP)", size=20, weight="bold")
+  plt.show()
+
+
 
 if __name__ == "__main__":
   # pdf_type = "exp"
@@ -220,4 +310,5 @@ if __name__ == "__main__":
   # pareto_front(pdf_type)
   # plot_pareto_distributions(pdf_type)
   # plot_top_distributions(pdf_type, top=10)
-  graph_param_values(pdf_type, top=10)
+  # graph_param_values(pdf_type, top=10)
+  graph_param_exploration(pdf_type)

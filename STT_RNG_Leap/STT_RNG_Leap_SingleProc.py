@@ -23,10 +23,8 @@ from STT_model import STT_Model
 
 
 # Hyperparameters
-# POP_SIZE = 50
-# MAX_GENERATION = 50
-POP_SIZE = 1
-MAX_GENERATION = 1
+POP_SIZE = 50
+MAX_GENERATION = 50
 
 DEV_SAMPLES = 2500
 alpha_range = (0.01, 0.1)

@@ -59,8 +59,8 @@ def pareto_front(csvFile, plot=True):
 
 
 def plot_df(df, graph_name, param_name, pdf_type):
-  os.makedirs(f"{pdf_type}/graphs", exist_ok=True)
-  os.makedirs(f"{pdf_type}/parameters", exist_ok=True)
+  os.makedirs(f"SOT_{pdf_type}/graphs", exist_ok=True)
+  os.makedirs(f"SOT_{pdf_type}/parameters", exist_ok=True)
 
   params = []
   for _, row in df.iterrows():
@@ -77,7 +77,9 @@ def plot_df(df, graph_name, param_name, pdf_type):
       "d": row["d"],
       "tf": row["tf"],
       "kl_div_score": row["kl_div_score"],
-      "energy": row["energy"]
+      "energy": row["energy"],
+      "xxis": None,
+      "countData": None
     }
     params.append(param)
   
@@ -104,17 +106,19 @@ def plot_df(df, graph_name, param_name, pdf_type):
     energy = np.mean(energy_avg)
     param["kl_div_score"] = kl_div_score
     param["energy"] = energy
+    param["xxis"] = xxis
+    param["countData"] = countData
 
-    plt.plot(xxis, countData, color="red", label="Actual PDF")
-    plt.plot(xxis, pdf,'k--', label="Expected PDF")
+    plt.plot(xxis, countData, color="royalblue", label="SOT PDF")
+    plt.plot(xxis, pdf, color="dimgray", linestyle="dashed", label="Expected PDF")
     plt.xlabel("Generated Number")
     plt.ylabel("Normalized")
     plt.title(f"SOT {pdf_type.capitalize()} PDF Comparison")
     plt.legend()
-    plt.savefig(f"{pdf_type}/graphs/{graph_name}_{i}.png")
+    plt.savefig(f"SOT_{pdf_type}/graphs/{graph_name}_{i}.png")
     plt.close()
 
-    with open(f"{pdf_type}/parameters/{param_name}_{i}.pkl", "wb") as file:
+    with open(f"SOT_{pdf_type}/parameters/{param_name}_{i}.pkl", "wb") as file:
       pickle.dump(param, file)
 
 
@@ -162,7 +166,7 @@ def graph_param_values(csvFile, top=10):
   ax.set_yticklabels(y_labels)
   ax.set_xlabel("Config ID", size=14, weight="bold")
   ax.set_ylabel("Parameters", size=14, weight="bold")
-  ax.set_title(f"SOT {pdf_type.capitalize()} Parameter Combinations", size=16, weight="bold")
+  ax.set_title(f"SOT {pdf_type.capitalize()} Parameter Combinations (RL)", size=16, weight="bold")
 
   i = 0
   s = 2500
@@ -215,12 +219,93 @@ def graph_param_values(csvFile, top=10):
   plt.show()
 
 
+def graph_param_exploration(csvFile):
+  pdf_type = csvFile.split("/")[-1].split("_")[1].lower()
+  df = scraper(csvFile)
+
+  num_bins = 15
+  samples = len(df)
+
+  alpha_counts, _ = np.histogram(df["alpha"].to_list(), bins=num_bins)
+  alpha_counts = alpha_counts/samples
+  alpha_xxis = np.linspace(param_ranges["alpha"][0], param_ranges["alpha"][1], num_bins)
+
+  Ki_counts, _ = np.histogram(df["Ki"].to_list(), bins=num_bins)
+  Ki_counts = Ki_counts/samples
+  Ki_xxis = np.linspace(param_ranges["Ki"][0], param_ranges["Ki"][1], num_bins)
+
+  Ms_counts, _ = np.histogram(df["Ms"].to_list(), bins=num_bins)
+  Ms_counts = Ms_counts/samples
+  Ms_xxis = np.linspace(param_ranges["Ms"][0], param_ranges["Ms"][1], num_bins)
+
+  Rp_counts, _ = np.histogram(df["Rp"].to_list(), bins=num_bins)
+  Rp_counts = Rp_counts/samples
+  Rp_xxis = np.linspace(param_ranges["Rp"][0], param_ranges["Rp"][1], num_bins)
+
+  eta_counts, _ = np.histogram(df["eta"].to_list(), bins=num_bins)
+  eta_counts = eta_counts/samples
+  eta_xxis = np.linspace(param_ranges["eta"][0], param_ranges["eta"][1], num_bins)
+
+  J_she_counts, _ = np.histogram(df["J_she"].to_list(), bins=num_bins)
+  J_she_counts = J_she_counts/samples
+  J_she_xxis = np.linspace(param_ranges["J_she"][0], param_ranges["J_she"][1], num_bins)
+
+  t_relax_counts, _ = np.histogram(df["t_relax"].to_list(), bins=num_bins)
+  t_relax_counts = t_relax_counts/samples
+  t_relax_xxis = np.linspace(param_ranges["t_relax"][0], param_ranges["t_relax"][1], num_bins)
+
+  t_pulse_counts, _ = np.histogram(df["t_pulse"].to_list(), bins=num_bins)
+  t_pulse_counts = t_pulse_counts/samples
+  t_pulse_xxis = np.linspace(param_ranges["t_pulse"][0], param_ranges["t_pulse"][1], num_bins)
+
+  fig, axs = plt.subplots(2, 4, sharey=True, layout="tight")
+
+  axs[0,0].plot(alpha_xxis, alpha_counts, color="royalblue")
+  axs[0,0].set_xticks([param_ranges["alpha"][0], param_ranges["alpha"][1]], visible=True, rotation="horizontal")
+  axs[0,0].set_title("alpha")
+
+  axs[0,1].plot(Ki_xxis, Ki_counts, color="royalblue")
+  axs[0,1].set_xticks([param_ranges["Ki"][0], param_ranges["Ki"][1]], visible=True, rotation="horizontal")
+  axs[0,1].set_title("Ki")
+
+  axs[0,2].plot(Ms_xxis, Ms_counts, color="royalblue")
+  axs[0,2].set_xticks([param_ranges["Ms"][0], param_ranges["Ms"][1]], visible=True, rotation="horizontal")
+  axs[0,2].set_title("Ms")
+
+  axs[0,3].plot(Rp_xxis, Rp_counts, color="royalblue")
+  axs[0,3].set_xticks([param_ranges["Rp"][0], param_ranges["Rp"][1]], visible=True, rotation="horizontal")
+  axs[0,3].set_title("Rp")
+
+  axs[1,0].plot(eta_xxis, eta_counts, color="royalblue")
+  axs[1,0].set_xticks([param_ranges["eta"][0], param_ranges["eta"][1]], visible=True, rotation="horizontal")
+  axs[1,0].set_title("eta")
+
+  axs[1,1].plot(J_she_xxis, J_she_counts, color="royalblue")
+  axs[1,1].set_xticks([param_ranges["J_she"][0], param_ranges["J_she"][1]], visible=True, rotation="horizontal")
+  axs[1,1].set_title("J_she")
+
+  axs[1,2].plot(t_pulse_xxis, t_pulse_counts, color="royalblue")
+  axs[1,2].set_xticks([param_ranges["t_pulse"][0], param_ranges["t_pulse"][1]], visible=True, rotation="horizontal")
+  axs[1,2].set_title("t_pulse")
+
+  axs[1,3].plot(t_relax_xxis, t_relax_counts, color="royalblue")
+  axs[1,3].set_xticks([param_ranges["t_relax"][0], param_ranges["t_relax"][1]], visible=True, rotation="horizontal")
+  axs[1,3].set_title("t_relax")
+  
+  fig.supxlabel("Parameter Range", size=18, weight="bold")
+  fig.supylabel("Probability", size=18, weight="bold", x=-0.001)
+  fig.suptitle(f"SOT {pdf_type.capitalize()} Parameter Exploration (RL)", size=20, weight="bold")
+  plt.show()
+
+
 
 if __name__ == "__main__":
   csvFile = "SOT_Gamma_Model-timestep-6000_Results.csv"
-
+  
+  
   # scraper(csvFile)
   # pareto_front(csvFile)
   # plot_pareto_distributions(csvFile)
-  # plot_top_distributions(csvFile, top=10)
-  graph_param_values(csvFile, top=10)
+  plot_top_distributions(csvFile, top=10)
+  # graph_param_values(csvFile, top=10)
+  # graph_param_exploration(csvFile)
