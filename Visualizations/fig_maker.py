@@ -39,47 +39,27 @@ param_ranges = {
   "t_relax" : (0.5e-9, 75e-9)
 }
 
-def get_df(device, pdf_type):
+def get_best_df(opt, device, pdf_type):
   if device == "SOT":
-    df = pd.DataFrame(columns=["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax", "kl_div_score", "energy", "xxis", "countData"])
-    param_path = f"../SOT_RNG_Leap/SOT_{pdf_type}/parameters"
+    columns = ["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax", "kl_div_score", "energy", "xxis", "countData"]
+    df = pd.DataFrame(columns=columns)
   elif device == "STT":
-    df = pd.DataFrame(columns=["alpha", "K_295", "Ms_295", "Rp", "t_pulse", "t_relax", "kl_div_score", "energy", "xxis", "countData"])
-    param_path = f"../STT_RNG_Leap/STT_{pdf_type}/parameters"
-  else:
-    raise ValueError("Incorrect device type")
+    columns = ["alpha", "K_295", "Ms_295", "Rp", "t_pulse", "t_relax", "kl_div_score", "energy", "xxis", "countData"]
+    df = pd.DataFrame(columns=columns)
+  
+  param_path = f"../{device}_RNG_{opt}/{device}_{pdf_type}/parameters"
 
   for i, pklFile in enumerate(glob.glob(os.path.join(param_path, "*.pkl"))):
     with open(pklFile, "rb") as f:
       data = pickle.load(f)
       
-      if device == "SOT":
-        alpha = data["genome"][0]
-        Ki = data["genome"][1]
-        Ms = data["genome"][2]
-        Rp = data["genome"][3]
-        eta = data["genome"][4]
-        J_she = data["genome"][5]
-        t_pulse = data["genome"][6]
-        t_relax = data["genome"][6]
-        kl_div_score = data["kl_div"]
-        energy = data["energy"]
-        xxis = data["xxis"]
-        countData = data["countData"]
-        row = [alpha, Ki, Ms, Rp, eta, J_she, t_pulse, t_relax, kl_div_score, energy, xxis, countData]
-      
-      elif device == "STT":
-        alpha = data["genome"][0]
-        K_295 = data["genome"][1]
-        Ms_295 = data["genome"][2]
-        Rp = data["genome"][3]
-        t_pulse = data["genome"][4]
-        t_relax = data["genome"][4]
-        kl_div_score = data["kl_div"]
-        energy = data["energy"]
-        xxis = data["xxis"]
-        countData = data["countData"]
-        row = [alpha, K_295, Ms_295, Rp, t_pulse, t_relax, kl_div_score, energy, xxis, countData]
+      if opt == "Leap":
+        genome = list(data["genome"])
+        genome.append(genome[-1])
+        row = [data[key] for key in ["kl_div", "energy", "xxis", "countData"]]
+        row = genome + row
+      elif opt == "RL":
+        genome = row = [data[key] for key in columns]
       
       df.loc[len(df)] = row
 
@@ -89,7 +69,10 @@ def get_df(device, pdf_type):
   return df
 
 
-def top_distributions(device, pdf_type, top=5):
+def top_distributions(opt, device, pdf_type, top=5):
+  if opt != "Leap" and opt != "RL":
+    raise ValueError("Incorrect optimization type")
+  
   if device == "SOT":
     best_color = SOT_color
     avg_color = SOT_color2
@@ -100,7 +83,7 @@ def top_distributions(device, pdf_type, top=5):
     raise ValueError("Incorrect device type")
 
   xxis, target_pdf, prng_pdf = prng_dist(samples=100_000)
-  df = get_df(device, pdf_type)
+  df = get_best_df(opt, device, pdf_type)
   df_top = df.head(top)
 
   pdf_arr = []
@@ -123,7 +106,7 @@ def top_distributions(device, pdf_type, top=5):
   axs.plot(xxis, prng_pdf, color=prng_pdf_color, linewidth=linewidth, label="PRNG")
   axs.plot(xxis, target_pdf, color=target_pdf_color, linewidth=linewidth, linestyle="dashed", label="Target")
   axs.tick_params(axis="both", which="major", labelsize=tick_size)
-  axs.set_title(f"{device} PDF Comparison (LEAP)", size=title_size, weight="bold")
+  axs.set_title(f"{device} PDF Comparison ({opt.upper()})", size=title_size, weight="bold")
   axs.set_xlabel("Generated Number", size=axis_size, weight="bold")
   axs.set_ylabel("Probability", size=axis_size, weight="bold")
   axs.legend(fontsize=legend_size)
@@ -135,7 +118,10 @@ def get_norm(range):
   return norm
 
 
-def parameter_heatmap(device, pdf_type, top=5):
+def parameter_heatmap(opt, device, pdf_type, top=5):
+  if opt != "Leap" and opt != "RL":
+    raise ValueError("Incorrect optimization type")
+  
   if device == "SOT":
     params = ["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax"]
     ylabels = ["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax"]
@@ -145,7 +131,7 @@ def parameter_heatmap(device, pdf_type, top=5):
   else:
     raise ValueError("Incorrect device type")
   
-  df = get_df(device, pdf_type)
+  df = get_best_df(opt, device, pdf_type)
   df_top = df.head(top)
   xlabels = [f"config_{i}" for i in range(len(df_top))]
 
@@ -187,31 +173,44 @@ def parameter_heatmap(device, pdf_type, top=5):
   cbar.ax.yaxis.set_ticks([0,1])
   cbar.ax.set_yticklabels(["Min", "Max"], fontsize=tick_size)
   axs.tick_params(axis="both", which="major", labelsize=tick_size)
-  axs.set_title(f"{device} Top Parameter Configurations (LEAP)", size=title_size, weight="bold")
+  axs.set_title(f"{device} Top Parameter Configurations ({opt.upper()})", size=title_size, weight="bold")
   axs.set_xlabel("Config ID", size=axis_size, weight="bold")
   axs.set_ylabel("Parameters", size=axis_size, weight="bold")
   plt.show()
 
 
-def get_probe_df(device, pdf_type):
-  if device == "SOT":
-    probe_df = pd.DataFrame(columns=["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax", "kl_div_score", "energy"])
-    probe_path = f"../SOT_RNG_Leap/SOT_{pdf_type}/probe_output"
-  elif device == "STT":
-    probe_df = pd.DataFrame(columns=["alpha", "K_295", "Ms_295", "Rp", "t_pulse", "t_relax", "kl_div_score", "energy"])
-    probe_path = f"../STT_RNG_Leap/STT_{pdf_type}/probe_output"
-  else:
-    raise ValueError("Incorrect device type")
+def get_full_df(opt, device, pdf_type):
+  if opt == "Leap":
+    if device == "SOT":
+      columns = ["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax", "kl_div_score", "energy"]
+    elif device == "STT":
+      columns=["alpha", "K_295", "Ms_295", "Rp", "t_pulse", "t_relax", "kl_div_score", "energy"]
+    
+    full_df = pd.DataFrame(columns=columns)
+    probe_path = f"../{device}_RNG_{opt}/{device}_{pdf_type}/probe_output"
 
-  for _, csvFile in enumerate(glob.glob(os.path.join(probe_path, "*.csv"))):
-    df = pd.read_csv(csvFile)
-    for _, row in df.iterrows():
-      fitness = ast.literal_eval(row["fitness"])
-      genome = ast.literal_eval(row["genome"])
-      genome.append(genome[-1])
-      probe_df.loc[len(probe_df)] = genome + fitness
+    for _, csvFile in enumerate(glob.glob(os.path.join(probe_path, "*.csv"))):
+      df = pd.read_csv(csvFile)
+      for _, row in df.iterrows():
+        fitness = ast.literal_eval(row["fitness"])
+        genome = ast.literal_eval(row["genome"])
+        genome.append(genome[-1])
+        full_df.loc[len(full_df)] = genome + fitness
+  
+  elif opt == "RL":
+    if device == "SOT":
+      subset = ["alpha", "Ki", "Ms", "Rp", "TMR", "eta", "J_she", "t_pulse", "t_relax", "d", "tf"]
+    elif device == "STT":
+      subset = ["alpha", "K_295", "Ms_295", "Rp", "TMR", "t_pulse", "t_relax", "d", "tf"]
+      
+    csvFile = f"../{device}_RNG_RL/{device}_Gamma_Model-timestep-6000_Results.csv"
+    full_df = pd.read_csv(csvFile)
+    full_df = full_df.sort_values(by="kl_div_score")
+    full_df.drop_duplicates(subset=subset, keep="first")
+    full_df.reset_index(drop=True, inplace=True)
 
-  return probe_df
+  return full_df
+
 
 
 def get_dist(df, param, bins, samples):
@@ -222,7 +221,10 @@ def get_dist(df, param, bins, samples):
   return xxis, counts
 
 
-def parameter_exploration(device, pdf_type):
+def parameter_exploration(opt, device, pdf_type):
+  if opt != "Leap" and opt != "RL":
+    raise ValueError("Incorrect optimization type")
+  
   if device == "SOT":
     color = SOT_color
     rows = 2
@@ -236,13 +238,13 @@ def parameter_exploration(device, pdf_type):
   else:
     raise ValueError("Incorrect device type")
   
-  probe_df = get_probe_df(device, pdf_type)
+  full_df = get_full_df(opt, device, pdf_type)
   bins = 15
-  samples = len(probe_df)
+  samples = len(full_df)
   
   param_dict = dict()
   for param in params:
-    xxis, counts = get_dist(probe_df, param, bins, samples)
+    xxis, counts = get_dist(full_df, param, bins, samples)
     param_dict[f"{param}_xxis"] = xxis
     param_dict[f"{param}_counts"] = counts
   
@@ -266,13 +268,16 @@ def parameter_exploration(device, pdf_type):
       param = "Ms" if param == "Ms_295" else param
       axs[row,col].set_title(param, size=subtitle_size)
 
-  fig.suptitle(f"{device} Parameter Exploration (LEAP)", size=title_size, weight="bold")
+  fig.suptitle(f"{device} Parameter Exploration ({opt.upper()})", size=title_size, weight="bold")
   fig.supxlabel("Parameter Range", size=axis_size, weight="bold")
   fig.supylabel("Probability", size=axis_size, weight="bold")
   plt.show()
 
 
-def pareto_front(device, pdf_type):
+def pareto_front(opt, device, pdf_type):
+  if opt != "Leap" and opt != "RL":
+    raise ValueError("Incorrect optimization type")
+  
   if device == "SOT":
     color = SOT_color
   elif device == "STT":
@@ -280,7 +285,7 @@ def pareto_front(device, pdf_type):
   else:
     raise ValueError("Incorrect device type")
 
-  probe_df = get_probe_df(device, pdf_type)
+  probe_df = get_full_df(opt, device, pdf_type)
 
   df = probe_df[ (probe_df["kl_div_score"] != 1000000) & (probe_df["energy"] != 1000000) ]
   pareto_df = df[["kl_div_score", "energy"]]
@@ -298,7 +303,7 @@ def pareto_front(device, pdf_type):
   axs.scatter(pareto_df["kl_div_score"], pareto_df["energy"], color=pareto_color, s=marker_size, label="Pareto Front")
   axs.tick_params(axis="both", which="major", labelsize=tick_size)
   axs.yaxis.get_offset_text().set_fontsize(tick_size)
-  axs.set_title(f"{device} Pareto Front (LEAP)", size=title_size, weight="bold")
+  axs.set_title(f"{device} Pareto Front ({opt.upper()})", size=title_size, weight="bold")
   axs.set_xlabel("KL Divergence Score", size=axis_size, weight="bold")
   axs.set_ylabel("Energy", size=axis_size, weight="bold")
   axs.legend(fontsize=legend_size)
@@ -307,11 +312,15 @@ def pareto_front(device, pdf_type):
 
 
 if __name__ == "__main__":
-  device = "SOT"
-  # device = "STT"
+  # opt = "Leap"
+  opt = "RL"
+
+  # device = "SOT"
+  device = "STT"
+
   pdf_type = "gamma"
 
-  # top_distributions(device, pdf_type, top=5)
-  parameter_heatmap(device, pdf_type, top=5)
-  # parameter_exploration(device, pdf_type)
-  # pareto_front(device, pdf_type)
+  # top_distributions(opt, device, pdf_type, top=5)
+  # parameter_heatmap(opt, device, pdf_type, top=5)
+  # parameter_exploration(opt, device, pdf_type)
+  pareto_front(opt, device, pdf_type)
