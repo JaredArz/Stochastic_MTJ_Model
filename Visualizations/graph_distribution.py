@@ -78,19 +78,19 @@ def graph_STT(params, pdf_type, samples):
 
 
 if __name__ == "__main__":
-  samples = 100000
+  samples = 100_000
   pdf_type = "gamma"
 
   SOT_params = {
-    "alpha"   : 0.01,
-    "Ki"      : 0.0002,
-    "Ms"      : 300000,
-    "Rp"      : 13265.555784106255,
-    "TMR"     : 0.3,
-    "eta"     : 0.8,
-    "J_she"   : 334994280934.3338,
-    "t_pulse" : 7.5e-08,
-    "t_relax" : 7.5e-08,
+    "alpha"   : 0.03,
+    "Ki"      : 1.0056364e-3,
+    "Ms"      : 1.2e6,
+    "Rp"      : 5e3,
+    "TMR"     : 3,
+    "eta"     : 0.3,
+    "J_she"   : 5e11,
+    "t_pulse" : 10e-9,
+    "t_relax" : 15e-9,
     "d"       : 3e-09,
     "tf"      : 1.1e-09
   }

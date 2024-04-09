@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.special import rel_entr
 
 from mtj_types  import SHE_MTJ_rng, SWrite_MTJ_rng, VCMA_MTJ_rng
-# from mtj_helper import valid_config, get_energy, gamma_pdf, get_pdf
-from mtj_helper2 import dev_check, get_energy, get_pdf
+from mtj_helper import dev_check, get_energy, get_pdf
 from interface_funcs import mtj_sample, mtj_check
 from jz_lut import jz_lut_write
 
