@@ -98,9 +98,11 @@ def Test_Model(pdf_type, model_path:str, csvFile:str, episodes:int):
       infos.append(info)
       config_scores.append(env.current_config_score)
 
-      if reward != -1:
-        writeFile.writerow([episode, reward, info["alpha"], info["Ki"], info["Ms"], info["Rp"], info["TMR"], info["eta"], info["J_she"], info["t_pulse"], info["t_relax"], info["d"], info["tf"], info["kl_div_score"], info["energy"]])
-        f.flush()
+      # if reward != -1:
+      #   writeFile.writerow([episode, reward, info["alpha"], info["Ki"], info["Ms"], info["Rp"], info["TMR"], info["eta"], info["J_she"], info["t_pulse"], info["t_relax"], info["d"], info["tf"], info["kl_div_score"], info["energy"]])
+      #   f.flush()
+      writeFile.writerow([episode, reward, info["alpha"], info["Ki"], info["Ms"], info["Rp"], info["TMR"], info["eta"], info["J_she"], info["t_pulse"], info["t_relax"], info["d"], info["tf"], info["kl_div_score"], info["energy"]])
+      f.flush()
 
       # print(f"Action: {action}")
       # print(f"Obs   : {obs}")
