@@ -64,7 +64,7 @@ def get_best_df(opt, device, pdf_type):
         row = [data[key] for key in ["kl_div", "energy", "xxis", "countData"]]
         row = genome + row
       elif opt == "RL":
-        genome = row = [data[key] for key in columns]
+        row = [data[key] for key in columns]
       
       df.loc[len(df)] = row
 
@@ -412,7 +412,7 @@ if __name__ == "__main__":
 
   pdf_type = "gamma"
 
-  # top_distributions(opt, device, pdf_type, top=5)
+  top_distributions(opt, device, pdf_type, top=5)
   # parameter_heatmap(opt, device, pdf_type, top=5)
-  parameter_exploration(opt, device, pdf_type)
+  # parameter_exploration(opt, device, pdf_type)
   # pareto_front(opt, device, pdf_type)
