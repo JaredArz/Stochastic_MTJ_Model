@@ -309,6 +309,6 @@ if __name__ == "__main__":
   # scraper(pdf_type)
   # pareto_front(pdf_type)
   # plot_pareto_distributions(pdf_type)
-  # plot_top_distributions(pdf_type, top=10)
+  plot_top_distributions(pdf_type, top=10)
   # graph_param_values(pdf_type, top=10)
-  graph_param_exploration(pdf_type)
+  # graph_param_exploration(pdf_type)
