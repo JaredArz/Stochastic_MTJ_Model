@@ -44,7 +44,7 @@ param_ranges = {
   "t_relax" : (0.5e-9, 75e-9)
 }
 
-def get_best_df(opt, device, pdf_type):
+def get_best_df(opt, device, pdf_type, csv_name=None):
   if device == "SOT":
     columns = ["alpha", "Ki", "Ms", "Rp", "eta", "J_she", "t_pulse", "t_relax", "kl_div_score", "energy", "xxis", "countData"]
     df = pd.DataFrame(columns=columns)
@@ -70,6 +70,10 @@ def get_best_df(opt, device, pdf_type):
 
   df = df.sort_values(by="kl_div_score")
   df.reset_index(drop=True, inplace=True)
+
+  if csv_name != None:
+    df = df.drop(columns=["xxis", "countData"])
+    df.to_csv(csv_name, index=False)
 
   return df
 
@@ -404,15 +408,18 @@ def pareto_front(opt, device, pdf_type):
 
 
 if __name__ == "__main__":
-  opt = "Leap"
-  # opt = "RL"
+  # opt = "Leap"
+  opt = "RL"
 
-  # device = "SOT"
-  device = "STT"
+  device = "SOT"
+  # device = "STT"
 
   pdf_type = "gamma"
 
-  top_distributions(opt, device, pdf_type, top=5)
+  # top_distributions(opt, device, pdf_type, top=5)
   # parameter_heatmap(opt, device, pdf_type, top=5)
   # parameter_exploration(opt, device, pdf_type)
   # pareto_front(opt, device, pdf_type)
+
+  csv_name = f"{device}_{opt}.csv"
+  get_best_df(opt, device, pdf_type, csv_name=csv_name)
