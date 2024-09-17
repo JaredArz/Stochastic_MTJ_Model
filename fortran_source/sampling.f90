@@ -715,16 +715,18 @@ module sampling
                xi = (2*e*tf*P*alphar) / (h_bar*uB*abs(eta))
                ! assumption: eta = spin hall angle
 
-               dphi = gammap*(Ax*(-cos_theta*cos_phi - alpha*sin_phi) + Ay*(-cos_theta*sin_phi + alpha*cos_phi)      &
-                      + Az*sin_theta)/(sin_theta)                                                                    &
-                      + J_SHE*F*eta*(sin_phi-alpha*cos_phi*cos_theta)/(sin_theta * (1_dp + alpha**2))                &
-                      + xi * J_SHE*F*eta*(sin_phi-alpha*cos_phi*cos_theta)/(sin_theta * (1_dp + alpha**2))           &
-                      - ((alpha*F*P*J_STT)/(1_dp+alpha**2))                                                          
-               dtheta = gammap*(Ax*(alpha*cos_theta*cos_phi - sin_phi) + Ay*(alpha*cos_theta*sin_phi + cos_phi)      &
+               dtheta = gammap*(Ax*(alpha*cos_theta*cos_phi - sin_phi)                                               &
+                      + Ay*(alpha*cos_theta*sin_phi + cos_phi)                                                       &
                       - Az*alpha*sin_theta)                                                                          &
                       - J_SHE*F*eta*(cos_phi*cos_theta + (alpha*sin_phi)/(1_dp + alpha**2))                          &
-                      - xi * J_SHE*F*eta*(cos_phi*cos_theta + (alpha*sin_phi)/(1_dp + alpha**2))                     &                     
+                      + xi * J_SHE*F*eta*(alpha*cos_phi*cos_theta - (sin_phi)/(1_dp + alpha**2))                     &                     
                       + ((F*P*J_STT)*sin_theta/(1_dp+alpha**2))                                                      
+               dphi = gammap*(Ax*(-cos_theta*cos_phi - alpha*sin_phi)                                                &
+                      + Ay*(-cos_theta*sin_phi + alpha*cos_phi)                                                      &
+                      + Az*sin_theta)/(sin_theta)                                                                    &
+                      + J_SHE*F*eta*(sin_phi - alpha*cos_phi*cos_theta)/(sin_theta * (1_dp + alpha**2))                &
+                      - xi * J_SHE*F*eta*(alpha*sin_phi - cos_phi*cos_theta)/(sin_theta * (1_dp + alpha**2))           &
+                      - ((alpha*F*P*J_STT)/(1_dp+alpha**2))                                                          
 
                ! only accounting for z-component
                R1 = Rp*(1_dp+(V/Vh)**2+TMR)/(1_dp+(V/Vh)**2 + TMR*(1_dp+cos_theta)/2_dp)
