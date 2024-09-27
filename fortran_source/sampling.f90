@@ -657,35 +657,6 @@ module sampling
 
         subroutine drive(V, J_SHE, J_STT, K_295, Ms_295, steps, t_i, phi_i, theta_i,&
                          phi_evol, theta_evol, temp_evol, cuml_pow, heating_enabled)
-               
-               !  ---------------------------------------------   !
-               !              LLG Variable Table                  !
-               !  ---------------------------------------------   !
-               !  phi            Azimuthal angle
-               !  theta          Polar angle
-               !  cos_theta      Cosine of the polar angle theta
-               !  sin_theta      Sine of the polar angle theta
-               !  cos_phi        Cosine of the azimuthal angle phi
-               !  sin_phi        Sine of the azimuthal angle phi
-               !  dphi           Time derivative of the azimuthal angle phi (dphi/dt)
-               !  dtheta         Time derivative of the polar angle theta (dtheta/dt)
-               !  gammap         Gyromagnetic ratio
-               !  alpha          Gilbert damping parameter
-               !  Ax, Ay, Az     Components of the effective magnetic field (H_eff)
-               !  Hx, Hy, Hz     Components of the external magnetic field
-               !  Nx, Ny, Nz     Demagnetizing factors along the x, y, z axes
-               !  Hk             Uniaxial anisotropy field strength
-               !  Htherm         Thermal field strength
-               !  rnor()         Random number generator for thermal noise (normal distribution)
-               !  J_STT          Spin current density for Spin-Transfer Torque (STT)
-               !  J_SHE          Spin Hall effect-related current density (contributing to Spin-Orbit Torque)
-               !  F              Scaling factor (related to torque strength, could include hbar/2eMs*d)
-               !  eta            Efficiency factor for SOT (possibly related to spin Hall angle)
-               !  P              Spin polarization factor for STT
-               !  xi             Ratio scaling the damping-like SOT to produce field-like SOT
-               !  tf             Thickness of Ferromagnet
-               !  ---------------------------------------------   !
-
            implicit none
            integer,  parameter :: dp = kind(0.0d0)
            real(dp), intent(in) :: V, J_SHE, J_STT, K_295, Ms_295
@@ -695,7 +666,7 @@ module sampling
            real(dp), intent(inout) :: phi_i, theta_i, cuml_pow
            integer,  intent(inout) :: t_i
            real(dp) :: Hk, Ax, Ay, Az, dphi, dtheta, R1, pow, cos_theta, sin_theta,&
-                       cos_phi, sin_phi, v_pow, she_pow, T_init, xi
+                       cos_phi, sin_phi, v_pow, she_pow, T_init
            integer  :: i
 
            Hk = ((2.0_dp*Ki)/(tf*Ms*u0)) - ((2.0_dp*ksi*V)/(u0*Ms*tox*tf))
@@ -712,20 +683,13 @@ module sampling
                Ax = Hx-Nx*Ms*sin_theta*cos_phi     +rnor()*Htherm
                Ay = Hy-Ny*Ms*sin_theta*sin_phi     +rnor()*Htherm
                Az = Hz-Nz*Ms*cos_theta+Hk*cos_theta+rnor()*Htherm
-               xi = (2*e*tf*P*alphar) / (h_bar*uB*abs(eta))
-               ! assumption: eta = spin hall angle
 
-               dphi = gammap*(Ax*(-cos_theta*cos_phi - alpha*sin_phi) + Ay*(-cos_theta*sin_phi + alpha*cos_phi)      &
-                      + Az*sin_theta)/(sin_theta)                                                                    &
-                      + J_SHE*F*eta*(sin_phi-alpha*cos_phi*cos_theta)/(sin_theta * (1_dp + alpha**2))                &
-                      + xi * J_SHE*F*eta*(sin_phi-alpha*cos_phi*cos_theta)/(sin_theta * (1_dp + alpha**2))           &
-                      - ((alpha*F*P*J_STT)/(1_dp+alpha**2))                                                          
-               dtheta = gammap*(Ax*(alpha*cos_theta*cos_phi - sin_phi) + Ay*(alpha*cos_theta*sin_phi + cos_phi)      &
-                      - Az*alpha*sin_theta)                                                                          &
-                      - J_SHE*F*eta*(cos_phi*cos_theta + (alpha*sin_phi)/(1_dp + alpha**2))                          &
-                      - xi * J_SHE*F*eta*(cos_phi*cos_theta + (alpha*sin_phi)/(1_dp + alpha**2))                     &                     
-                      + ((F*P*J_STT)*sin_theta/(1_dp+alpha**2))                                                      
-
+               dphi = gammap*(Ax*(-cos_theta*cos_phi - alpha*sin_phi) + Ay*(-cos_theta*sin_phi + alpha*cos_phi)&
+                      + Az*sin_theta)/(sin_theta)+J_SHE*F*eta*(sin_phi-alpha*cos_phi*cos_theta)/(sin_theta&
+                      * (1_dp+alpha**2)) - ((alpha*F*P*J_STT)/(1_dp+alpha**2))
+               dtheta = gammap*(Ax*(alpha*cos_theta*cos_phi - sin_phi) + Ay*(alpha*cos_theta*sin_phi+cos_phi)&
+                      - Az*alpha*sin_theta) - J_SHE*F*eta*(cos_phi*cos_theta + (alpha*sin_phi)/(1_dp+alpha**2))&
+                      + ((F*P*J_STT)*sin_theta/(1_dp+alpha**2))
                ! only accounting for z-component
                R1 = Rp*(1_dp+(V/Vh)**2+TMR)/(1_dp+(V/Vh)**2 + TMR*(1_dp+cos_theta)/2_dp)
 
