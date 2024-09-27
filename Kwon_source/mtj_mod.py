@@ -1,6 +1,6 @@
 import numpy as np
 
-def mtj_mod(init,phi_init,t_step,v_pulse,t_pulse,t_relax,Happl,Hshe,J_stt,J_she,vhold):
+def mtj_mod(init,phi_init,t_step,v_pulse,t_pulse,t_relax,Happl,Hshe,J_stt,J_she,vhold,xi):
     bitstr = []
 
     uB = 9.274e-24
@@ -47,7 +47,7 @@ def mtj_mod(init,phi_init,t_step,v_pulse,t_pulse,t_relax,Happl,Hshe,J_stt,J_she,
 
     # DL / FL ratio
     # xi = (2*e*tf*P*alphar) / (h_bar*uB*abs(eta))
-    xi = 2 # joos
+    # xi = -0.001 # joos
     
     # Spin torque factor;
     F = (gamma*h_bar)/(2*u0*e*tf*Ms)     
@@ -140,5 +140,4 @@ def mtj_mod(init,phi_init,t_step,v_pulse,t_pulse,t_relax,Happl,Hshe,J_stt,J_she,
     mz = np.cos(theta)
     G = 1/np.array(R)
     t = np.arange(0,len(mz)*t_step,t_step)
-    print(f"xi: {xi}")
     return theta[-1],phi[-1],np.array(t),np.array(R),G,np.array(mx),np.array(my),np.array(mz),bitstr[0],np.array(power),energy[-1]
