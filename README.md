@@ -1,14 +1,10 @@
 # Stochastic MTJ device models
-### contact: jared.arzate@utexas.edu
+[See more of our work](https://utinclab.com)
+### contact: jared.arzate@utexas.edu, ajmaicke@utexas.edu
 ##  Device models included:
 ### - SOT MTJ
 ### - VCMA MTJ
 ### - STT Stochastic Write MTJ
-
-## Working:
-### - [X] Serial
-### - [ ] Parallel
-### - [X] Thread safe
 
 ## Usage:
 First, navigate into the fortran_source directory and compile with:
@@ -21,23 +17,25 @@ This binary does the heavy lifting, computing the magnetization dynamics of a st
 
 `interface_funcs.py` has a user function `mtj_sample(device, J_stt,...)` which will call this binary and handle the language interface.
 
-`mtj_sample(device, J_stt,...)` simultes the pulsing and relaxing of
+`mtj_sample(dev, ...)` simultes the pulsing dynamics of
 a *_MTJ_rng device (class described below) passed in as the first argument.
-This device class should be intialized with device parameters and an initial magnetization vector.
+This object should be intialized with device parameters and an initial magnetization vector.
+
+See [S. Liu et al., Random Bitstream Generation Using Voltage-Controlled Magnetic Anisotropy and Spin Orbit Torque Magnetic Tunnel Junctions, IEEE Journal on Exploratory Solid-State Computational Devices and Circuits, vol. 8, no. 2, pp. 194-202 (Dec. 2022).](https://ieeexplore.ieee.org/abstract/document/9998481) for more information on the devices.
 
 The other arguments are as follows:
-- Jstt:     spin-transfer torque current to apply.
+- applied:     spin-transfer torque current density to apply.
 
 (enter the following as named arguments)
-- view_mag_flag: enables/disables history of phi and theta.
-- dump_mod: save history of phi and theta every n samples if view_mag_flag enabled.
+- view_mag_flag: enables/disables saving of magnetization trajectory (phi, theta).
+- dump_mod: if view_mag_flag is enabled, sample phi and theta every n timesteps to save.
 
-Optional arguments (Used in the backend!):
-- file_ID:      needed if parallelized as each concurrent sample must have a unique file ID.
+Optional arguments (Used in the backend):
+- file_ID:      If parallelized and saving magnetization trajcetory, each concurrent sample will need a unique file ID (this data is transferred via files instead of arrays from Fortran to Python).
 
 Returns:
-- bit sampled
-- energy used in joules
+- Bit outcome (1/0)
+- Energy used in joules
 
 Import this function in python with: 
 `from interface_funcs import mtj_sample`
@@ -67,7 +65,7 @@ The devices have the following as modifiable parameters:
 - eta   [dimensionless] : Spin hall angle
 - alpha [dimensionless] : Gilbert damping factor
 - Rp   [$`\Omega`$] : Resistance in the parallel state
-- TMR  [dimensionless] : Tunneling magneto resistance
+- TMR  [dimensionless] : Tunneling magnetoresistance
 - t_pulse  [$`s`$] : Pulse time
 - t_relax  [$`s`$] : Relax time
 - Nx  [dimensionless] : Demagnetization factors in x, y, and z
@@ -85,11 +83,11 @@ Stochastic Write only:
 
 Anistropy and magnetic saturation are defined strictly at 295K. This enables the joule heating model for the NYU device. The current type implementation mandates that the UT Austin device follows the naming convention even without a joule heating model.
 
-- K_295 [$`\frac{J}{m^2}`$] : Anisotropy at room temp
-- Ms_295 [$`\frac{A}{m}`$] : Magnetic saturation at room temp
+- K_295 [$`\frac{J}{m^2}`$] : Anisotropy at 295K
+- Ms_295 [$`\frac{A}{m}`$] : Magnetic saturation at 295K
 - J_reset [$`\frac{A}{m^2}`$] : Reset current density
 - H_reset [$`\frac{A}{m}`$] : Reset applied magnetic field
-- t_reset [$`s`$] : Reset time
+- t_reset [$`s`$] : Reset pulse time
 
 ## Device to Device / Cycle to Cycle variation
 Device-to-device/cycle-to-cycle variation can be modeled crudely using a gaussian distrubition around a given device parameter using `vary_param(dev, param, std dev.)` in `mtj_helper.py`. This function takes a device, a named parameter, and the standard deviation for a gaussian distribution centered around the current device parameters value and returns a modified device. 
@@ -116,6 +114,11 @@ for PI, 0 is success, -1 is PMA too strong, +1 is IMA too strong. Note that if t
 
 ## Slurm
 Neither the fortran or python code is paralleized with openMP or MPI.
+
+Currently:
+- [X] Serial
+- [ ] Parallel
+- [X] Thread safe
 
 ## Examples
 ```
